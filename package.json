@@ -1,0 +1,26 @@
+{
+  "name": "insa_intern_mgmt",
+  "private": true,
+  "scripts": {
+    "build": "turbo run build",
+    "dev": "turbo run dev",
+    "lint": "turbo run lint",
+    "format": "prettier --write \"**/*.{ts,tsx,md}\"",
+    "check-types": "turbo run check-types"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.6",
+    "@types/multer": "^2.0.0",
+    "prettier": "^3.7.4",
+    "turbo": "^2.6.3",
+    "typescript": "5.9.3"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "packageManager": "npm@11.7.0",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ]
+}
