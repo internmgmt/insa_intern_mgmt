@@ -1,0 +1,18 @@
+[
+  {
+    "id": "1",
+    "name": "Abebe Kebede",
+    "university": "AAU",
+    "field": "Software Engineering",
+    "status": "Active",
+    "gpa": "3.8"
+  },
+  {
+    "id": "2",
+    "name": "Sara Tesfaye",
+    "university": "ASTU",
+    "field": "Computer Science",
+    "status": "Active",
+    "gpa": "3.9"
+  }
+]

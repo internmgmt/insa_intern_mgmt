@@ -1,0 +1,318 @@
+@import "tailwindcss";
+
+@theme inline {
+  --color-background: rgb(var(--background));
+  --color-foreground: rgb(var(--foreground));
+
+  --color-card: rgb(var(--card));
+  --color-card-foreground: rgb(var(--card-foreground));
+
+  --color-popover: rgb(var(--popover));
+  --color-popover-foreground: rgb(var(--popover-foreground));
+
+  --color-primary: rgb(var(--primary));
+  --color-primary-foreground: rgb(var(--primary-foreground));
+
+  --color-secondary: rgb(var(--secondary));
+  --color-secondary-foreground: rgb(var(--secondary-foreground));
+
+  --color-muted: rgb(var(--muted));
+  --color-muted-foreground: rgb(var(--muted-foreground));
+
+  --color-accent: rgb(var(--accent));
+  --color-accent-foreground: rgb(var(--accent-foreground));
+
+  --color-destructive: rgb(var(--destructive));
+  --color-destructive-foreground: rgb(var(--destructive-foreground));
+
+  --color-border: rgb(var(--border));
+  --color-input: rgb(var(--input));
+  --color-ring: rgb(var(--ring));
+
+  --color-success: rgb(var(--success));
+  --color-success-foreground: rgb(var(--success-foreground));
+
+  --color-warning: rgb(var(--warning));
+  --color-warning-foreground: rgb(var(--warning-foreground));
+
+  --radius-sm: calc(var(--radius) - 2px);
+  --radius-md: var(--radius);
+  --radius-lg: calc(var(--radius) + 2px);
+  --radius-xl: calc(var(--radius) + 6px);
+}
+
+:root {
+  /* Default Light – Obsidian palette */
+  --background: 251 251 253;
+  --foreground: 28 27 35;
+
+  --card: 245 247 251;
+  --card-foreground: 28 27 35;
+
+  --popover: 245 247 251;
+  --popover-foreground: 28 27 35;
+
+  --primary: 30 99 216; /* #1E63D8 */
+  --primary-foreground: 255 255 255;
+
+  --secondary: 75 85 99;
+  --secondary-foreground: 255 255 255;
+
+  --muted: 245 247 251;
+  --muted-foreground: 98 104 116;
+
+  --accent: 242 246 250;
+  --accent-foreground: 230 234 240;
+
+  --destructive: 239 68 68;
+  --destructive-foreground: 255 255 255;
+
+  --success: 16 185 129;
+  --success-foreground: 255 255 255;
+
+  --warning: 245 158 11;
+  --warning-foreground: 28 27 35;
+
+  --border: 224 229 240;
+  --input: 242 246 250;
+  --ring: 37 99 235;
+
+  --radius: 0.625rem;
+}
+
+.dark {
+  /* Default Dark – Obsidian palette */
+  --background: 14 15 20;
+  --foreground: 230 234 240;
+
+  --card: 22 23 29;
+  --card-foreground: 230 234 240;
+
+  --popover: 22 23 29;
+  --popover-foreground: 230 234 240;
+
+  --primary: 51 94 217; /* #335ED9 */
+  --primary-foreground: 255 255 255;
+
+  --secondary: 98 108 128;
+  --secondary-foreground: 14 15 20;
+
+  --muted: 28 38 56;
+  --muted-foreground: 230 234 240;
+
+  --accent: 242 246 250;
+  --accent-foreground: 28 27 35;
+
+  --destructive: 248 113 113;
+  --destructive-foreground: 14 15 20;
+
+  --success: 52 211 153;
+  --success-foreground: 14 15 20;
+
+  --warning: 251 191 36;
+  --warning-foreground: 14 15 20;
+
+  --border: 47 59 78;
+  --input: 28 38 56;
+  --ring: 70 124 220;
+}
+
+
+
+
+
+
+
+
+
+/* New user-provided palettes */
+[data-palette="obsidian"] {
+  /* softened blue palette */
+  --background: 251 251 253; /* #FBFBFD */
+  --card: 245 247 251; /* #F5F7FB */
+  --foreground: 28 27 35; /* slightly warmer near-black */
+  --muted: 245 247 251;
+  --primary: 30 99 216; /* #1E63D8, slightly more muted */
+  --primary-foreground: 255 255 255;
+  --secondary: 75 85 99;
+  --success: 16 185 129;
+  --warning: 245 158 11;
+  --destructive: 239 68 68;
+  --border: 224 229 240;
+  --input: 242 246 250;
+  --ring: 37 99 235;
+}
+
+.dark[data-palette="obsidian"] {
+  --background: 14 15 20;
+  --card: 22 23 29;
+  --foreground: 230 234 240;
+  --muted: 28 38 56;
+  --primary: 51 94 217; /* #335ED9 */
+  --primary-foreground: 255 255 255;
+  --secondary: 98 108 128;
+  --success: 52 211 153;
+  --warning: 251 191 36;
+  --destructive: 248 113 113;
+  --border: 47 59 78;
+  --input: 28 38 56;
+  --ring: 70 124 220;
+}
+
+[data-palette="slateforge"] {
+  /* refined purple slate */
+  --background: 254 254 255; /* #FEFEFF */
+  --card: 250 250 252; /* #FAFAFC */
+  --foreground: 15 23 36; /* deeper near-black */
+  --muted: 245 247 251;
+  --primary: 107 59 214; /* #6B3BD6 - slightly warmer, less neon */
+  --primary-foreground: 255 255 255;
+  --secondary: 55 65 81;
+  --success: 5 150 105;
+  --warning: 217 119 6;
+  --destructive: 220 38 38;
+  --border: 230 232 238;
+  --input: 245 246 250;
+  --ring: 111 63 214;
+}
+
+.dark[data-palette="slateforge"] {
+  --background: 9 9 14;
+  --card: 18 18 28;
+  --foreground: 243 244 246;
+  --muted: 28 38 56;
+  --primary: 122 76 230; /* #7A4CE6 */
+  --primary-foreground: 255 255 255;
+  --secondary: 70 78 97;
+  --success: 52 211 153;
+  --warning: 245 230 120;
+  --destructive: 248 113 113;
+  --border: 50 60 80;
+  --input: 26 32 50;
+  --ring: 138 103 235;
+}
+
+[data-palette="embercore"] {
+  /* warmer ember tones, less saturated */
+  --background: 255 250 248; /* #FFFAF8 */
+  --card: 255 252 250;
+  --foreground: 41 18 12;
+  --muted: 245 247 251;
+  --primary: 212 70 46; /* #D4482E slightly darker */
+  --primary-foreground: 255 255 255;
+  --secondary: 95 62 51;
+  --success: 46 139 87;
+  --warning: 224 139 45;
+  --destructive: 193 39 45;
+  --border: 243 236 231;
+  --input: 254 246 243;
+  --ring: 224 79 57;
+}
+
+.dark[data-palette="embercore"] {
+  --background: 13 6 4;
+  --card: 26 16 11;
+  --foreground: 250 238 233;
+  --muted: 28 38 56;
+  --primary: 225 74 55; /* #E14A37 */
+  --primary-foreground: 255 255 255;
+  --secondary: 138 96 79;
+  --success: 60 179 113;
+  --warning: 245 166 90;
+  --destructive: 217 75 75;
+  --border: 60 43 36;
+  --input: 38 25 19;
+  --ring: 227 82 64;
+}
+
+[data-palette="nebula"] {
+  /* softened cosmic purple */
+  --background: 250 251 255;
+  --card: 246 247 254;
+  --foreground: 27 26 44;
+  --muted: 245 247 251;
+  --primary: 88 88 230; /* #5858EA - softer than before */
+  --primary-foreground: 255 255 255;
+  --secondary: 76 79 113;
+  --success: 59 130 97;
+  --warning: 217 112 62;
+  --destructive: 185 56 82;
+  --border: 220 222 248;
+  --input: 238 240 255;
+  --ring: 124 130 248;
+}
+
+.dark[data-palette="nebula"] {
+  --background: 11 10 22;
+  --card: 18 17 32;
+  --foreground: 232 231 255;
+  --muted: 28 38 56;
+  --primary: 110 112 244; /* #6E70F4 */
+  --primary-foreground: 255 255 255;
+  --secondary: 107 110 146;
+  --success: 74 222 128;
+  --warning: 249 168 107;
+  --destructive: 248 133 154;
+  --border: 45 46 69;
+  --input: 28 29 48;
+  --ring: 160 172 252;
+}
+
+* {
+  border-color: rgb(var(--border));
+}
+
+body {
+  background-color: rgb(var(--background));
+  color: rgb(var(--foreground));
+  font-family: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  font-feature-settings: "rlig" 1, "calt" 1;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-family: var(--font-newsreader), ui-serif, Georgia, Cambria, "Times New Roman", Times, serif;
+  font-weight: 500;
+  letter-spacing: -0.02em;
+}
+
+::selection {
+  background: rgb(var(--primary) / 0.25);
+}
+
+/* Subtle elevation tokens */
+.elevation-1 { box-shadow: 0 1px 2px rgb(0 0 0 / 0.05), 0 1px 1px rgb(0 0 0 / 0.03); }
+.elevation-2 { box-shadow: 0 4px 12px rgb(0 0 0 / 0.06), 0 2px 6px rgb(0 0 0 / 0.04); }
+
+/* Glass header backdrop */
+.header-glass {
+  background-color: rgb(var(--card) / 0.85);
+  backdrop-filter: saturate(1.2) blur(8px);
+}
+
+/* Sidebar rail gradient */
+.sidebar-rail {
+  background-image: linear-gradient(180deg, rgb(var(--card)) 0%, rgb(var(--card)) 60%, rgb(var(--accent)) 100%);
+}
+
+/* Micro-animations */
+@keyframes fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slide-up-fade {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-fade-in { animation: fade-in 220ms ease-out both; }
+.animate-slide-up-fade { animation: slide-up-fade 260ms cubic-bezier(0.22, 1, 0.36, 1) both; }
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-fade-in, .animate-slide-up-fade { animation: none; }
+}

@@ -1,0 +1,50 @@
+[
+  {
+    "id": "INT-001",
+    "internId": "INT-001",
+    "firstName": "Abebe",
+    "lastName": "Kebede",
+    "email": "abebe.k@example.com",
+    "status": "ACTIVE",
+    "startDate": "2025-07-01",
+    "endDate": "2025-09-30",
+    "department": { "id": "DEPT-01", "name": "Software Development" },
+    "supervisor": { "id": "USR-02", "firstName": "John", "lastName": "Doe" },
+    "university": { "id": "UNI-001", "name": "Addis Ababa University" },
+    "submissionCount": 5,
+    "progress": 60,
+    "createdAt": "2025-07-01T09:00:00Z"
+  },
+  {
+    "id": "INT-002",
+    "internId": "INT-002",
+    "firstName": "Sara",
+    "lastName": "Tesfaye",
+    "email": "sara.t@example.com",
+    "status": "ACTIVE",
+    "startDate": "2025-07-01",
+    "endDate": "2025-09-30",
+    "department": { "id": "DEPT-02", "name": "Cybersecurity" },
+    "supervisor": { "id": "USR-03", "firstName": "Jane", "lastName": "Smith" },
+    "university": { "id": "UNI-006", "name": "Adama Science and Technology University" },
+    "submissionCount": 4,
+    "progress": 50,
+    "createdAt": "2025-07-01T09:00:00Z"
+  },
+  {
+    "id": "INT-003",
+    "internId": "INT-003",
+    "firstName": "Yonas",
+    "lastName": "Alemu",
+    "email": "yonas.a@example.com",
+    "status": "COMPLETED",
+    "startDate": "2024-11-01",
+    "endDate": "2025-01-31",
+    "department": { "id": "DEPT-03", "name": "Data Science" },
+    "supervisor": { "id": "USR-04", "firstName": "Emily", "lastName": "Jones" },
+    "university": { "id": "UNI-002", "name": "Jimma University" },
+    "submissionCount": 12,
+    "progress": 100,
+    "createdAt": "2024-11-01T09:00:00Z"
+  }
+]

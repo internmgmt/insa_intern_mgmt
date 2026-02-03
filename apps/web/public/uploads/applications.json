@@ -1,0 +1,18 @@
+[
+  {
+    "id": "1",
+    "studentName": "Abebe Kebede",
+    "university": "AAU",
+    "field": "Software Engineering",
+    "status": "Pending",
+    "appliedDate": "2023-10-01"
+  },
+  {
+    "id": "2",
+    "studentName": "Sara Tesfaye",
+    "university": "ASTU",
+    "field": "Computer Science",
+    "status": "Approved",
+    "appliedDate": "2023-09-25"
+  }
+]

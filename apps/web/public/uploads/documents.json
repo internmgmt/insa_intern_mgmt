@@ -1,0 +1,26 @@
+[
+	{
+		"id": "DOC-001",
+		"name": "INSA Internship Policy 2025.pdf",
+		"type": "POLICY",
+		"scope": "GLOBAL",
+		"uploadedBy": "Admin",
+		"uploadedAt": "2025-01-01"
+	},
+	{
+		"id": "DOC-002",
+		"name": "Weekly Report Template.docx",
+		"type": "TEMPLATE",
+		"scope": "INTERN",
+		"uploadedBy": "Admin",
+		"uploadedAt": "2025-01-15"
+	},
+	{
+		"id": "DOC-003",
+		"name": "Final Report Template.docx",
+		"type": "TEMPLATE",
+		"scope": "INTERN",
+		"uploadedBy": "Admin",
+		"uploadedAt": "2025-02-01"
+	}
+]

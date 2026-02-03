@@ -1,0 +1,45 @@
+[
+  {
+    "id": "1",
+    "name": "Dr. Sarah Wilson",
+    "email": "sarah.wilson@university.edu",
+    "role": "University",
+    "status": "Active",
+    "lastActive": "2 mins ago"
+  },
+  {
+    "id": "2",
+    "name": "John Doe",
+    "email": "john.doe@company.com",
+    "role": "Supervisor",
+    "status": "Active",
+    "lastActive": "1 hour ago"
+  },
+  {
+    "id": "3",
+    "name": "Alice Smith",
+    "email": "alice.smith@student.edu",
+    "role": "Intern",
+    "status": "Pending",
+    "lastActive": "Never"
+  },
+  {
+    "email": "glitchme144@gmail.com",
+    "firstName": "glitch",
+    "lastName": "144",
+    "role": "UNIVERSITY",
+    "id": "7oyi9qzsm",
+    "status": "Active",
+    "lastActive": "Just now"
+  },
+  {
+    "email": "glitchme144@gmail.com",
+    "firstName": "glitch",
+    "lastName": "144",
+    "role": "UNIVERSITY",
+    "universityId": "UNI-002",
+    "id": "dg2etfxyq",
+    "status": "Active",
+    "lastActive": "Just now"
+  }
+]
