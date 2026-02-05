@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Search, Plus, Briefcase, Users, Edit, Trash2 } from "lucide-react";
+import { Search, Plus, Briefcase, Users, Edit, Trash2, Building2, LayoutGrid, Info } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { listDepartments, createDepartment, updateDepartment } from "@/lib/services/departments";
@@ -31,7 +31,22 @@ export default function DepartmentsPage() {
             setLoading(true);
             const res = await listDepartments({ page: 1, limit: 100 }, token || undefined);
             const items = (res as any)?.data?.items ?? (res as any)?.data ?? [];
-            setDepartments(items.map((d: any) => ({ id: d.id, name: d.name, head: (d as any).head || '', interns: (d as any).internCount || 0, status: (d as any).isActive !== false ? 'active' : 'inactive' })));
+            setDepartments(items.filter((d: any) => d && d.id).map((d: any) => {
+                const typeMap: any = {
+                    'SOFTWARE_DEVELOPMENT': 'Software Engineering',
+                    'CYBERSECURITY': 'Cyber Operations',
+                    'NETWORKING': 'Networking & Infra'
+                };
+                return { 
+                    id: d.id, 
+                    name: d.name || "Unnamed Unit", 
+                    type: typeMap[d.type] || d.type || "General",
+                    description: d.description || "",
+                    head: d.head || 'Not Assigned', 
+                    internCount: Number(d.internCount || 0), 
+                    isActive: d.isActive !== false 
+                };
+            }));
         } catch (err) {
             setDepartments([]);
         } finally {
@@ -45,14 +60,15 @@ export default function DepartmentsPage() {
             await createDepartment({ name: newDept.name.trim(), type: newDept.type, description: newDept.description.trim() || undefined }, token || undefined);
             setShowForm(false);
             setNewDept({ name: "", type: "SOFTWARE_DEVELOPMENT", description: "" });
+            toast.success("Department created successfully");
             void fetchDepartments();
-        } catch (err) {
-            // non-blocking toast optional
+        } catch (err: any) {
+            toast.error(err?.message || "Failed to create department");
         }
     }
 
     function openEdit(dept: any) {
-        setEditingDept({ id: dept.id, name: dept.name || "", description: (dept as any).description || "" });
+        setEditingDept({ id: dept.id, name: dept.name || "", description: dept.description || "" });
         setShowEditDialog(true);
     }
 
@@ -74,131 +90,139 @@ export default function DepartmentsPage() {
 
     return (
         <div className="space-y-6">
-            {/* Header */}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
                     <h1 className="text-2xl font-bold">Departments</h1>
-                    <p className="text-muted-foreground text-sm mt-1">
-                        Manage departments and their configurations
-                    </p>
+                    <p className="text-muted-foreground text-sm">Manage institutional departments and scientific domains</p>
                 </div>
-                <Button onClick={() => setShowForm((prev) => !prev)}>
-                    <Plus className="mr-2 h-4 w-4" />
-                    {showForm ? "Cancel" : "Add Department"}
+                <Button onClick={() => setShowForm((prev) => !prev)} variant={showForm ? "outline" : "default"}>
+                    {showForm ? "Cancel" : <><Plus className="mr-2 h-4 w-4" /> Add Department</>}
                 </Button>
             </div>
 
             {showForm && (
-                <Card>
-                    <CardHeader>
-                        <CardTitle className="text-sm">New department</CardTitle>
+                <Card className="border-primary/20 bg-primary/[0.01]">
+                    <CardHeader className="pb-4">
+                        <CardTitle className="text-base">Registration: New Department</CardTitle>
                     </CardHeader>
-                    <CardContent className="grid gap-3 md:grid-cols-3">
-                        <div className="space-y-1">
-                            <label className="text-xs font-medium">Name</label>
-                            <Input value={newDept.name} onChange={(e) => setNewDept({ ...newDept, name: e.target.value })} placeholder="e.g. Networking" />
+                    <CardContent className="space-y-4">
+                        <div className="grid gap-4 md:grid-cols-2">
+                            <div className="space-y-1.5">
+                                <label className="text-xs font-bold uppercase text-muted-foreground">Department Name</label>
+                                <Input value={newDept.name} onChange={(e) => setNewDept({ ...newDept, name: e.target.value })} placeholder="e.g. Network Infrastructure" />
+                            </div>
+                            <div className="space-y-1.5">
+                                <label className="text-xs font-bold uppercase text-muted-foreground">Scientific Domain</label>
+                                <select
+                                    className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
+                                    value={newDept.type}
+                                    onChange={(e) => setNewDept({ ...newDept, type: e.target.value as any })}
+                                >
+                                    <option value="NETWORKING">Networking & Infrastructure</option>
+                                    <option value="CYBERSECURITY">Cyber Operations</option>
+                                    <option value="SOFTWARE_DEVELOPMENT">Software Engineering</option>
+                                </select>
+                            </div>
                         </div>
-                        <div className="space-y-1">
-                            <label className="text-xs font-medium">Type</label>
-                            <select
-                                className="h-9 w-full rounded-md border border-input bg-background px-3 text-xs outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                                value={newDept.type}
-                                onChange={(e) => setNewDept({ ...newDept, type: e.target.value as typeof newDept.type })}
-                            >
-                                <option value="NETWORKING">NETWORKING</option>
-                                <option value="CYBERSECURITY">CYBERSECURITY</option>
-                                <option value="SOFTWARE_DEVELOPMENT">SOFTWARE_DEVELOPMENT</option>
-                            </select>
+                        <div className="space-y-1.5">
+                            <label className="text-xs font-bold uppercase text-muted-foreground">Mission & Objective</label>
+                            <Input value={newDept.description} onChange={(e) => setNewDept({ ...newDept, description: e.target.value })} placeholder="Describe the department's primary focus..." />
                         </div>
-                        <div className="space-y-1 md:col-span-3">
-                            <label className="text-xs font-medium">Description (optional)</label>
-                            <Input value={newDept.description} onChange={(e) => setNewDept({ ...newDept, description: e.target.value })} placeholder="Short description" />
-                        </div>
-                        <div className="md:col-span-3 flex justify-end pt-1">
-                            <Button size="sm" onClick={handleAddDepartment}>Save</Button>
+                        <div className="flex justify-end pt-2">
+                            <Button onClick={handleAddDepartment}>Register Department</Button>
                         </div>
                     </CardContent>
                 </Card>
             )}
 
-            {/* Search */}
-            <Card>
-                <CardContent className="p-4">
-                    <div className="relative">
-                        <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
-                        <Input placeholder="Search departments..." className="pl-10" />
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {loading ? (
+                    <div className="col-span-full text-center py-20 text-muted-foreground flex flex-col items-center gap-2">
+                        <div className="h-6 w-6 animate-spin border-2 border-primary border-t-transparent rounded-full" />
+                        Loading organizational data...
                     </div>
-                </CardContent>
-            </Card>
-
-            {/* Departments Grid */}
-            {loading ? (
-                <div className="text-center py-12 text-muted-foreground">Loading departments...</div>
-            ) : departments.length === 0 ? (
-                <div className="text-center py-12 text-muted-foreground">No departments found.</div>
-            ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {departments.map((dept: any) => (
-                    <Card key={dept.id}>
-                        <CardHeader className="pb-3">
-                            <div className="flex items-start justify-between">
-                                <div className="p-2 rounded-lg bg-primary/10 text-primary">
-                                    <Briefcase className="h-5 w-5" />
+                ) : departments.length === 0 ? (
+                    <div className="col-span-full text-center py-20 text-muted-foreground bg-muted/20 rounded-xl border border-dashed">
+                        No departments found.
+                    </div>
+                ) : (
+                    departments.map((dept) => (
+                        <Card key={dept.id} className="group hover:shadow-md transition-all duration-300 border-none bg-muted/40">
+                            <CardHeader className="pb-4">
+                                <div className="flex items-start justify-between">
+                                    <div className="p-2.5 rounded-xl bg-background border group-hover:border-primary/30 transition-colors">
+                                        <Briefcase className="h-5 w-5 text-primary" />
+                                    </div>
+                                    <Badge variant={dept.isActive ? "success" : "secondary"} className="uppercase text-[10px] font-bold">
+                                        {dept.isActive ? 'Active' : 'Offline'}
+                                    </Badge>
                                 </div>
-                                <Badge variant={dept.status === 'active' ? 'success' : 'secondary'}>
-                                    {dept.status}
-                                </Badge>
-                            </div>
-                            <CardTitle className="mt-3 text-lg">{dept.name}</CardTitle>
-                            <CardDescription>Head: {dept.head}</CardDescription>
-                        </CardHeader>
-                        <CardContent>
-                            <div className="flex items-center justify-between pt-3 border-t">
-                                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                                    <Users className="h-4 w-4" />
-                                    <span>{dept.interns} Interns</span>
+                                <CardTitle className="mt-4 text-lg font-bold">{dept.name}</CardTitle>
+                                <CardDescription className="line-clamp-2 text-xs min-h-[32px]">
+                                    {dept.description || "No mission statement provided."}
+                                </CardDescription>
+                            </CardHeader>
+                            <CardContent className="space-y-4">
+                                <div className="grid grid-cols-2 gap-2">
+                                    <div className="p-2 rounded-lg bg-background/60 border border-transparent group-hover:border-primary/10 transition-colors">
+                                        <p className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider leading-none mb-1">Domain</p>
+                                        <p className="text-xs font-semibold truncate uppercase">{dept.type}</p>
+                                    </div>
+                                    <div className="p-2 rounded-lg bg-background/60 border border-transparent group-hover:border-primary/10 transition-colors">
+                                        <p className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider leading-none mb-1">Intern Capacity</p>
+                                        <div className="flex items-center gap-1.5 font-bold text-xs uppercase">
+                                            <Users className="h-3 w-3 text-primary" /> {dept.internCount} Interns
+                                        </div>
+                                    </div>
                                 </div>
-                                <div className="flex items-center gap-2">
-                                    <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={() => openEdit(dept)} title="Edit department">
-                                        <Edit className="h-4 w-4" />
-                                    </Button>
-                                    <div className="text-[11px] text-muted-foreground">Delete not supported</div>
+                                
+                                <div className="pt-4 border-t flex items-center justify-between">
+                                    <div className="flex items-center gap-2 text-xs text-muted-foreground italic">
+                                        <Info className="h-3 w-3" /> Dept. Head: {dept.head}
+                                    </div>
+                                    <div className="flex items-center gap-1">
+                                        <Button 
+                                            variant="ghost" 
+                                            size="icon" 
+                                            className="h-8 w-8 hover:bg-primary/10 hover:text-primary transition-colors" 
+                                            onClick={() => openEdit(dept)}
+                                        >
+                                            <Edit className="h-4 w-4" />
+                                        </Button>
+                                    </div>
                                 </div>
-                            </div>
-                        </CardContent>
-                    </Card>
-                ))}
+                            </CardContent>
+                        </Card>
+                    ))
+                )}
             </div>
-            )}
 
-            {/* Edit Department Dialog */}
+            {/* Edit Dialog - Kept simple but functional */}
             <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
-                <DialogContent className="sm:max-w-[560px]">
+                <DialogContent className="sm:max-w-[425px]">
                     <DialogHeader>
                         <DialogTitle>Edit Department</DialogTitle>
-                        <DialogDescription>Update department name or description. Type cannot be changed.</DialogDescription>
+                        <DialogDescription>Modify metadata for {editingDept?.name}</DialogDescription>
                     </DialogHeader>
-                    <div className="grid gap-3">
-                        <div className="space-y-1">
-                            <label className="text-xs font-medium">Name</label>
+                    <div className="grid gap-4 py-4">
+                        <div className="space-y-1.5">
+                            <label className="text-xs font-bold uppercase text-muted-foreground">Label</label>
                             <Input
                                 value={editingDept?.name || ""}
                                 onChange={(e) => setEditingDept((prev) => prev ? { ...prev, name: e.target.value } : prev)}
-                                placeholder="e.g. Networking"
                             />
                         </div>
-                        <div className="space-y-1">
-                            <label className="text-xs font-medium">Description (optional)</label>
+                        <div className="space-y-1.5">
+                            <label className="text-xs font-bold uppercase text-muted-foreground">Mission Description</label>
                             <Input
                                 value={editingDept?.description || ""}
                                 onChange={(e) => setEditingDept((prev) => prev ? { ...prev, description: e.target.value } : prev)}
-                                placeholder="Short description"
                             />
                         </div>
                     </div>
                     <DialogFooter>
-                        <Button variant="outline" size="sm" type="button" onClick={() => { setShowEditDialog(false); setEditingDept(null); }}>Cancel</Button>
-                        <Button size="sm" type="button" onClick={saveEditDialog} disabled={!editingDept || !editingDept.name.trim()}>Save</Button>
+                        <Button variant="outline" onClick={() => { setShowEditDialog(false); setEditingDept(null); }}>Cancel</Button>
+                        <Button onClick={saveEditDialog}>Save Changes</Button>
                     </DialogFooter>
                 </DialogContent>
             </Dialog>

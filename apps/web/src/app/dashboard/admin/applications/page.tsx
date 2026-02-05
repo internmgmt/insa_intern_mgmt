@@ -373,7 +373,7 @@ export default function AdminApplicationsPage() {
                                                 </Badge>
                                             </TableCell>
                                             <TableCell className="text-[10px] text-muted-foreground whitespace-nowrap">
-                                                {app.submittedAt?.split('T')[0] || app.createdAt?.split('T')[0]}
+                                                {app.submittedAt ? String(app.submittedAt).split('T')[0] : (app.createdAt ? String(app.createdAt).split('T')[0] : "—")}
                                             </TableCell>
                                             <TableCell>{getStatusBadge(app.status)}</TableCell>
                                             <TableCell className="text-right">

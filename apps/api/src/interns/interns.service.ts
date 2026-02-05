@@ -20,6 +20,7 @@ import { TerminateInternDto } from './dto/terminate-intern.dto';
 import { IssueCertificateDto } from './dto/issue-certificate.dto';
 import { SuspendInternDto } from './dto/suspend-intern.dto';
 import { InternMapper } from './intern.mapper';
+import { MailService } from '../global/services/mail/mail.service';
 import {
   AUTH_INSUFFICIENT_PERMISSIONS,
   INTERN_NOT_ACTIVE,
@@ -38,6 +39,7 @@ export class InternsService {
     private readonly studentRepository: Repository<StudentEntity>,
     @InjectRepository(InternEntity)
     private readonly internRepository: Repository<InternEntity>,
+    private readonly mailService: MailService,
   ) { }
 
   async list(query: QueryInternsDto, currentUser: any) {
@@ -500,7 +502,16 @@ export class InternsService {
     };
   }
 
-  async createInternFromStudent(studentId: string, supervisorId?: string) {
+  async createInternFromStudent(
+    studentId: string,
+    options: {
+      supervisorId?: string;
+      departmentId?: string;
+      startDate?: Date;
+      endDate?: Date;
+    } = {},
+  ) {
+    const { supervisorId, departmentId, startDate, endDate } = options;
     const student = await this.studentRepository.findOne({
       where: { id: studentId },
       relations: ['application'],
@@ -544,7 +555,10 @@ export class InternsService {
       role: UserRole.INTERN,
       isActive: true,
       isFirstLogin: true,
+      departmentId: departmentId ?? null,
     };
+
+    let supervisorName: string | undefined;
 
     if (supervisorId) {
       const supervisor = await this.userRepository.findOne({
@@ -557,8 +571,9 @@ export class InternsService {
           error: { code: 'INVALID_SUPERVISOR', details: null },
         });
       }
-      userPayload.departmentId = supervisor.departmentId ?? null;
+      userPayload.departmentId = supervisor.departmentId ?? userPayload.departmentId;
       (userPayload as any).supervisorId = supervisor.id;
+      supervisorName = `${supervisor.firstName} ${supervisor.lastName}`;
     }
 
     const user = this.userRepository.create(userPayload as any);
@@ -574,6 +589,8 @@ export class InternsService {
       isActive: true,
       departmentId: (userPayload as any).departmentId ?? null,
       assignedSupervisorId: (userPayload as any).supervisorId ?? null,
+      startDate: startDate ?? null,
+      endDate: endDate ?? null,
     };
     const intern = this.internRepository.create(internPayload as any);
     const savedIntern = (await this.internRepository.save(
@@ -582,6 +599,22 @@ export class InternsService {
 
     student.status = StudentStatus.ACCOUNT_CREATED;
     await this.studentRepository.save(student);
+
+    // Send email to the intern
+    try {
+      await this.mailService.sendInternCreatedEmail({
+        firstName: student.firstName,
+        lastName: student.lastName,
+        email: student.email,
+        internId,
+        temporaryPassword,
+        startDate: startDate ? startDate.toLocaleDateString() : undefined,
+        supervisorName,
+      });
+    } catch (error) {
+      // Log error but don't fail the whole process
+      console.error('Failed to send intern welcome email:', error);
+    }
 
     return {
       success: true,

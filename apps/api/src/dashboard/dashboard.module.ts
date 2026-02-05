@@ -8,6 +8,7 @@ import { ApplicationEntity } from '../entities/application.entity';
 import { StudentEntity } from '../entities/student.entity';
 import { InternEntity } from '../entities/intern.entity';
 import { SubmissionEntity } from '../entities/submission.entity';
+import { DepartmentEntity } from '../entities/department.entity';
 
 @Module({
   imports: [
@@ -18,6 +19,7 @@ import { SubmissionEntity } from '../entities/submission.entity';
       StudentEntity,
       InternEntity,
       SubmissionEntity,
+      DepartmentEntity,
     ]),
   ],
   controllers: [DashboardController],

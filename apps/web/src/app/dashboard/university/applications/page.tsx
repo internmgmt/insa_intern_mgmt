@@ -401,7 +401,22 @@ export default function ApplicationsPage() {
                             )}
                         </div>
                     )}
-                    <DialogFooter><Button variant="outline" onClick={() => setShowViewDialog(false)}>Close</Button></DialogFooter>
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => setShowViewDialog(false)}>Close</Button>
+                        {selectedApp?.status === 'PENDING' && (
+                            <Button
+                                className="gap-2"
+                                onClick={() => {
+                                    setShowViewDialog(false);
+                                    handleSubmitForReview(selectedApp);
+                                }}
+                                disabled={!selectedApp.officialLetterUrl || selectedApp.studentCount === 0}
+                            >
+                                <Send className="h-4 w-4" />
+                                Submit for Review
+                            </Button>
+                        )}
+                    </DialogFooter>
                 </DialogContent>
             </Dialog>
 

@@ -8,8 +8,13 @@ export type AdminDashboardResponse = ApiSuccess<{
     students: { status: string; count: string }[];
     submissions: { status: string; count: string }[];
   };
-  internsByDept: { departmentId: string | null; count: string }[];
-  submissionsTrend: { day: string; count: string }[];
+  internsByDept: { departmentName: string | null; count: string }[];
+  submissionsTrend: { month: string; count: string }[];
+  metrics: {
+    placementRate: number;
+    activeProjects: number;
+    averageSubmissionScore: number;
+  };
 }>;
 
 export async function getAdminDashboard(token?: string) {

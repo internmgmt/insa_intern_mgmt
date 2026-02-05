@@ -3,14 +3,28 @@
 import { useTheme } from "next-themes";
 import { Button } from "./ui/button";
 import { Moon, Sun } from "lucide-react";
+import { useEffect, useState } from "react";
 
 export function ThemeToggle() {
   const { setTheme } = useTheme();
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const toggle = () => {
     const isDark = document.documentElement.classList.contains("dark");
     setTheme(isDark ? "light" : "dark");
   };
+
+  if (!mounted) {
+    return (
+      <Button variant="ghost" size="icon" className="rounded-full w-9 h-9 opacity-0">
+        <Sun className="h-[1.2rem] w-[1.2rem]" />
+      </Button>
+    );
+  }
 
   return (
     <Button

@@ -7,7 +7,9 @@ import { getApplication, updateApplication } from "@/lib/services/applications";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { AlertCircle } from "lucide-react";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge";
+import { AlertCircle, FileText, CheckCircle, XCircle, Clock } from "lucide-react";
 import Link from "next/link";
 
 export default function AdminApplicationDetailPage() {
@@ -110,6 +112,56 @@ export default function AdminApplicationDetailPage() {
               <Input id="academicYear" value={academicYear} onChange={(e) => setAcademicYear(e.target.value)} />
             </div>
             <Button onClick={save}>Save Changes</Button>
+          </CardContent>
+        </Card>
+
+        <Card className="md:col-span-2">
+          <CardHeader>
+            <CardTitle>Student Roster</CardTitle>
+            <CardDescription>Qualified students included in this application batch ({app.students?.length || 0})</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {app.students && Array.isArray(app.students) && app.students.length > 0 ? (
+              <div className="rounded-md border">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Full Name</TableHead>
+                      <TableHead>ID Number</TableHead>
+                      <TableHead>Field Of Study</TableHead>
+                      <TableHead>Year</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead className="text-right">Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {app.students.map((student: any) => (
+                      <TableRow key={student.id}>
+                        <TableCell className="font-medium text-sm">{student.firstName} {student.lastName}</TableCell>
+                        <TableCell className="font-mono text-[10px] text-muted-foreground">{student.studentId || "N/A"}</TableCell>
+                        <TableCell className="text-sm">{student.fieldOfStudy}</TableCell>
+                        <TableCell className="text-sm">{student.academicYear}</TableCell>
+                        <TableCell>
+                          <Badge variant={student.status === "ACCOUNT_CREATED" || student.status === "ACCEPTED" ? "success" : "outline"} className="text-[10px]">
+                            {student.status.replace("_", " ")}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <Button asChild variant="ghost" size="sm" className="h-8 text-xs">
+                            <Link href="/dashboard/admin/students">Manage</Link>
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            ) : (
+              <div className="flex flex-col items-center justify-center py-12 text-center text-muted-foreground bg-muted/5 rounded-lg border border-dashed text-sm">
+                <FileText className="h-8 w-8 mb-2 opacity-20" />
+                <p>No student records found for this application.</p>
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>

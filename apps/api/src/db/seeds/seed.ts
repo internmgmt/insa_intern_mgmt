@@ -9,6 +9,7 @@ import { applicationsSeed } from './applications.seed';
 import { studentsSeed } from './students.seed';
 import { internsSeed } from './interns.seed';
 import { documentsSeed } from './documents.seed';
+import { supervisorsSeed } from './supervisors.seed';
 
 dotenv.config();
 
@@ -58,8 +59,9 @@ async function runSeeds() {
 
     console.log('🌱 Starting database seeding...');
 
-    // Order: departments → universities → coordinators → applications → students → interns → documents → admin
+    // Order: departments → supervisors → universities → coordinators → applications → students → interns → documents → admin
     if (!(await runSeedStep('departments', departmentsSeed))) anyFailed = true;
+    if (!(await runSeedStep('supervisors', supervisorsSeed))) anyFailed = true;
     if (!(await runSeedStep('universities', universitiesSeed)))
       anyFailed = true;
     if (

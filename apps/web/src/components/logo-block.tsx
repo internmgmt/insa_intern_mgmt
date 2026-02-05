@@ -8,23 +8,26 @@ export function LogoBlock() {
 
   return (
     <div className="flex items-center gap-3">
-      <Avatar className="h-10 w-10">
-        {!imageError && (
-          <AvatarImage
+      <div className="relative flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-white border shadow-sm">
+        {!imageError ? (
+          <img
             src="/logo.png"
             alt="INSA Logo"
-            className="object-contain p-1"
+            className="h-full w-full object-contain p-0.5"
             onError={() => setImageError(true)}
           />
+        ) : (
+          <div className="bg-primary text-primary-foreground font-bold text-sm w-full h-full flex items-center justify-center">
+            INSA
+          </div>
         )}
-        <AvatarFallback className="bg-primary text-primary-foreground font-semibold">
-          IN
-        </AvatarFallback>
-      </Avatar>
+      </div>
 
-      <div>
-        <div className="font-semibold text-lg leading-tight">INSA</div>
-        <div className="text-xs text-muted-foreground">Portal</div>
+      <div className="flex flex-col">
+        <div className="font-bold text-base leading-none tracking-tight text-foreground">INSA</div>
+        <div className="text-[10px] uppercase font-bold text-muted-foreground/80 tracking-widest mt-0.5">
+          Admin Portal
+        </div>
       </div>
     </div>
   );

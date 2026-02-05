@@ -33,15 +33,43 @@ export class DepartmentsService {
 
   async findAll() {
     const departments = await this.departmentRepository.find({
-      select: ['id', 'name'],
       order: { name: 'ASC' },
     });
+
+    const items = await Promise.all(
+      departments.map(async (dept) => {
+        // Get intern count
+        const internCount = await this.internRepository.count({
+          where: { departmentId: dept.id },
+        });
+
+        // Get supervisors to find a "Head"
+        const supervisors = await this.userRepository.find({
+          where: {
+            departmentId: dept.id,
+            role: UserRole.SUPERVISOR,
+          },
+          order: { createdAt: 'ASC' },
+          take: 1,
+        });
+
+        const head = supervisors.length > 0 
+          ? `${supervisors[0].firstName} ${supervisors[0].lastName}`
+          : 'Not Assigned';
+
+        return {
+          ...dept,
+          internCount,
+          head,
+        };
+      }),
+    );
 
     return {
       success: true,
       message: 'Departments retrieved successfully',
       data: {
-        items: departments,
+        items,
       },
     };
   }

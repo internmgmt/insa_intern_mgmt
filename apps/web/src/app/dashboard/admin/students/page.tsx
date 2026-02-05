@@ -58,6 +58,9 @@ import {
 } from "@/lib/services/students";
 import { listApplications, type ApplicationListItem as Application } from "@/lib/services/applications";
 import { listUniversities } from "@/lib/services/universities";
+import { listDepartments } from "@/lib/services/departments";
+import { listUsers } from "@/lib/services/users";
+import { createIntern } from "@/lib/services/interns";
 import { uploadDocument, listDocuments } from "@/lib/services/documents";
 import { downloadFile } from "@/lib/download";
 import { toast } from "sonner";
@@ -82,8 +85,17 @@ export default function AdminStudentsPage() {
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [showViewDialog, setShowViewDialog] = useState(false);
+  const [showAssignDialog, setShowAssignDialog] = useState(false);
   const [selectedStudent, setSelectedStudent] = useState<any | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Assignment State
+  const [departments, setDepartments] = useState<any[]>([]);
+  const [assignmentData, setAssignmentData] = useState({
+    departmentId: "",
+    startDate: "",
+    endDate: "",
+  });
 
   // Form State
   const [formData, setFormData] = useState({
@@ -142,6 +154,15 @@ export default function AdminStudentsPage() {
     const years = new Set(applications.map(a => a.academicYear));
     return Array.from(years).sort();
   }, [applications]);
+
+  useEffect(() => {
+    if (showAssignDialog && token) {
+      listDepartments(token).then(res => {
+        const items = (res as any)?.data?.items ?? (res as any)?.data ?? [];
+        setDepartments(Array.isArray(items) ? items : []);
+      });
+    }
+  }, [showAssignDialog, token]);
 
   // Fetch students
   const fetchStudentsData = useCallback(async () => {
@@ -295,13 +316,42 @@ export default function AdminStudentsPage() {
     }
   };
 
-  const handleApprove = async (id: string) => {
+  const handleApprove = (s: any) => {
+    setSelectedStudent(s);
+    setAssignmentData({
+      departmentId: "",
+      startDate: "",
+      endDate: "",
+    });
+    setShowAssignDialog(true);
+  };
+
+  const handleAssignAndApprove = async () => {
+    if (!selectedStudent || !token) return;
+    if (!assignmentData.departmentId) {
+      toast.error("Please select a department");
+      return;
+    }
     try {
-      await reviewStudent(id, { decision: "ACCEPT" }, token || undefined);
-      toast.success("Student approved (AWAITING_ARRIVAL)");
+      setIsSubmitting(true);
+      // 1. Approve the student
+      await reviewStudent(selectedStudent.id, { decision: "ACCEPT" }, token);
+
+      // 2. Create intern account
+      await createIntern({
+        studentId: selectedStudent.id,
+        departmentId: assignmentData.departmentId,
+        startDate: assignmentData.startDate || undefined,
+        endDate: assignmentData.endDate || undefined,
+      }, token);
+
+      toast.success("Student approved and intern account created");
+      setShowAssignDialog(false);
       fetchStudentsData();
     } catch (error: any) {
-      toast.error(error?.message || 'Failed to approve student');
+      toast.error(error?.message || "Failed to process approval");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -474,6 +524,7 @@ export default function AdminStudentsPage() {
                   <SelectItem value="PENDING_REVIEW">Pending Review</SelectItem>
                   <SelectItem value="AWAITING_ARRIVAL">Awaiting Arrival</SelectItem>
                   <SelectItem value="ARRIVED">Arrived</SelectItem>
+                  <SelectItem value="ACCOUNT_CREATED">Account Created</SelectItem>
                   <SelectItem value="REJECTED">Rejected</SelectItem>
                 </SelectContent>
               </Select>
@@ -541,7 +592,7 @@ export default function AdminStudentsPage() {
                                 variant="ghost"
                                 size="icon"
                                 className="h-8 w-8 text-success hover:bg-success/10"
-                                onClick={() => handleApprove(student.id)}
+                                onClick={() => handleApprove(student)}
                                 title="Approve"
                               >
                                 <CheckCircle2 className="h-4 w-4" />
@@ -567,7 +618,7 @@ export default function AdminStudentsPage() {
                               Mark Arrived
                             </Button>
                           )}
-                          {student.status === "ARRIVED" && (
+                          {(student.status === "ARRIVED" || student.status === "ACCOUNT_CREATED") && (
                             <Button
                               asChild
                               variant="ghost"
@@ -768,6 +819,63 @@ export default function AdminStudentsPage() {
           )}
           <DialogFooter>
             <Button variant="outline" size="sm" onClick={() => setShowViewDialog(false)}>Close</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Assign Department & Create Intern Dialog */}
+      <Dialog open={showAssignDialog} onOpenChange={setShowAssignDialog}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle>Assign Department & Activate Intern</DialogTitle>
+            <DialogDescription>
+              Assign <strong>{selectedStudent?.firstName} {selectedStudent?.lastName}</strong> to a department and supervisor. An email will be sent with their login credentials.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-6 py-4">
+            <div className="grid gap-2">
+              <Label htmlFor="dept">Department</Label>
+              <Select
+                value={assignmentData.departmentId}
+                onValueChange={(val) => setAssignmentData(prev => ({ ...prev, departmentId: val }))}
+              >
+                <SelectTrigger id="dept">
+                  <SelectValue placeholder="Select Department" />
+                </SelectTrigger>
+                <SelectContent>
+                  {Array.isArray(departments) && departments.map(d => (
+                    <SelectItem key={d.id} value={d.id}>{d.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="grid gap-2">
+                <Label htmlFor="startDate">Start Date</Label>
+                <Input
+                  id="startDate"
+                  type="date"
+                  value={assignmentData.startDate}
+                  onChange={(e) => setAssignmentData(prev => ({ ...prev, startDate: e.target.value }))}
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="endDate">End Date</Label>
+                <Input
+                  id="endDate"
+                  type="date"
+                  value={assignmentData.endDate}
+                  onChange={(e) => setAssignmentData(prev => ({ ...prev, endDate: e.target.value }))}
+                />
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" size="sm" onClick={() => setShowAssignDialog(false)}>Cancel</Button>
+            <Button size="sm" disabled={isSubmitting || !assignmentData.departmentId} onClick={handleAssignAndApprove}>
+              {isSubmitting ? "Processing..." : "Approve & Create Account"}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

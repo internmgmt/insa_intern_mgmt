@@ -2,235 +2,234 @@
 
 import { useEffect, useState } from "react";
 import { PageHeader } from "@/components/ui/page-header";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Badge } from "@/components/ui/badge";
-import { ArrowRight } from "lucide-react";
+import { Users, School, FileText, GraduationCap, TrendingUp, CheckCircle2, Clock } from "lucide-react";
 import Link from "next/link";
 import { useAuth } from "@/components/auth-provider";
-import { DonutChart, BarChart, LineChart } from "@/components/ui/charts";
+import { ProgressRing, AreaTrendChart, ModernBarChart, DonutChart } from "@/components/ui/charts";
 import { getAdminDashboard } from "@/lib/services/dashboard";
 
-type Counts = Record<string, number>;
-
 export default function AdminDashboardPage() {
-  const { user, token } = useAuth();
-  const [counts, setCounts] = useState<Counts>({ users: 0, universities: 0, applications: 0, students: 0, interns: 0, documents: 0, submissions: 0 });
-  const [applications, setApplications] = useState<any[]>([]);
-  const [students, setStudents] = useState<any[]>([]);
-  const [interns, setInterns] = useState<any[]>([]);
-  const [documents, setDocuments] = useState<any[]>([]);
-  const [universities, setUniversities] = useState<any[]>([]);
-  const [submissions, setSubmissions] = useState<any[]>([]);
+  const { token } = useAuth();
+  const [data, setData] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    let cancelled = false;
-
     async function load() {
       if (!token) return;
-
       try {
-        const dashboard = await getAdminDashboard(token || undefined);
-
-        if (cancelled) return;
-
-        const d = dashboard.data;
-        setCounts(d.counts);
-        // Build synthetic arrays for charts based on distributions
-        setApplications(
-          d.distributions.applications.map((x) => ({ status: x.status, count: Number(x.count) }))
-        );
-        setStudents(
-          d.distributions.students.map((x) => ({ status: x.status, count: Number(x.count) }))
-        );
-        setSubmissions(
-          d.distributions.submissions.map((x) => ({ status: x.status, count: Number(x.count), createdAt: null }))
-        );
-        setInterns(
-          d.internsByDept.map((x) => ({ department: x.departmentId ?? 'Unknown', count: Number(x.count) }))
-        );
+        const res = await getAdminDashboard(token);
+        setData(res.data);
       } catch (err) {
-        // Non-blocking: dashboard falls back to zeros/empty lists
         console.error("Failed to load admin dashboard data", err);
+      } finally {
+        setLoading(false);
       }
     }
-
-    void load();
-
-    return () => {
-      cancelled = true;
-    };
+    load();
   }, [token]);
+
+  if (loading || !data) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
+
+  const {
+    counts = { universities: 0, students: 0, interns: 0, applications: 0 },
+    distributions = { applications: [], students: [], submissions: [], fields: [] },
+    internsByDept = [],
+    topUniversities = [],
+    applicationsTrend = [],
+    submissionsTrend = [],
+    metrics = { placementRate: 0 }
+  } = data || {};
 
   return (
     <div className="space-y-6">
-      <PageHeader title="Admin Dashboard" description="Visual overview of system activity" />
+      <PageHeader title="Executive Overview" description="Strategic institutional intelligence and performance metrics" />
 
+      {/* KPI Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card>
-          <CardHeader>
-            <CardTitle>Users</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{counts.users}</div>
-            <div className="text-xs text-muted-foreground mt-1">Total registered users</div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>Universities</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{counts.universities}</div>
-            <div className="text-xs text-muted-foreground mt-1">Active partner universities</div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>Applications</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{counts.applications}</div>
-            <div className="text-xs text-muted-foreground mt-1">Submitted application batches</div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>Students</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{counts.students}</div>
-            <div className="text-xs text-muted-foreground mt-1">Students in intake / review</div>
-          </CardContent>
-        </Card>
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        <Card>
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <CardTitle>Applications Status</CardTitle>
-              <Link href="/dashboard/admin/applications">
-                <Button variant="ghost" size="sm">View <ArrowRight className="ml-2 h-4 w-4" /></Button>
-              </Link>
-            </div>
-          </CardHeader>
-          <CardContent>
-            {(() => {
-              const dist: Record<string, number> = {};
-              applications.forEach((a) => { const st = a.status; dist[st] = (dist[st] || 0) + (a.count ?? 1); });
-              const data = [
-                { label: "Pending", value: dist.PENDING ?? 0 },
-                { label: "Under Review", value: dist.UNDER_REVIEW ?? 0 },
-                { label: "Approved", value: dist.APPROVED ?? 0 },
-                { label: "Rejected", value: dist.REJECTED ?? 0 },
-              ];
-              return <DonutChart data={data} />;
-            })()}
-          </CardContent>
-        </Card>
-
-        <div className="space-y-4 lg:col-span-2">
-          <Card>
-            <CardHeader>
+        {[
+          { title: "Network", label: "Universities", value: counts.universities, icon: School, color: "text-blue-500", bg: "bg-blue-500/10" },
+          { title: "Intake", label: "Students", value: counts.students, icon: GraduationCap, color: "text-emerald-500", bg: "bg-emerald-500/10" },
+          { title: "Operations", label: "Active Interns", value: counts.interns, icon: Users, color: "text-purple-500", bg: "bg-purple-500/10" },
+          { title: "Flow", label: "Applications", value: counts.applications, icon: FileText, color: "text-amber-500", bg: "bg-amber-500/10" },
+        ].map((kpi, i) => (
+          <Card key={i} className="overflow-hidden border shadow-sm hover:shadow-md transition-shadow">
+            <CardContent className="p-6">
               <div className="flex items-center justify-between">
-                <CardTitle>Students Status Distribution</CardTitle>
-                <Link href="/dashboard/admin/students">
-                  <Button variant="ghost" size="sm">Manage <ArrowRight className="ml-2 h-4 w-4" /></Button>
-                </Link>
+                <div>
+                  <p className="text-[10px] uppercase font-bold tracking-wider text-muted-foreground">{kpi.title}</p>
+                  <h3 className="text-3xl font-bold mt-1">{kpi.value.toLocaleString()}</h3>
+                  <p className="text-xs text-muted-foreground mt-0.5">{kpi.label}</p>
+                </div>
+                <div className={`p-3 rounded-xl ${kpi.bg} ${kpi.color}`}>
+                  <kpi.icon className="h-6 w-6" />
+                </div>
               </div>
-            </CardHeader>
-            <CardContent>
-              {(() => {
-                const dist: Record<string, number> = {};
-                students.forEach((s) => { const st = s.status; dist[st] = (dist[st] || 0) + (s.count ?? 1); });
-                const data = Object.entries(dist).map(([label, value]) => ({ label, value }));
-                return data.length ? <BarChart data={data} /> : <div className="text-sm text-muted-foreground">No student data</div>;
-              })()}
             </CardContent>
           </Card>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <Card>
-              <CardHeader>
-                <CardTitle>Interns by Department</CardTitle>
-              </CardHeader>
-              <CardContent>
-                {(() => {
-                  const dist: Record<string, number> = {};
-                  interns.forEach((i) => { const d = typeof i.department === 'string' ? i.department : (i.department?.name ?? 'Unknown'); dist[d] = (dist[d] || 0) + (i.count ?? 1); });
-                  const data = Object.entries(dist).map(([label, value]) => ({ label, value }));
-                  return data.length ? <BarChart data={data} /> : <div className="text-sm text-muted-foreground">No intern data</div>;
-                })()}
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle>Submissions Trend</CardTitle>
-              </CardHeader>
-              <CardContent>
-                {(() => {
-                  const byDay: Record<string, number> = {};
-                  submissions.forEach((s) => {
-                    const d = (s.createdAt || '').slice(0, 10);
-                    if (!d) return;
-                    byDay[d] = (byDay[d] || 0) + 1;
-                  });
-                  const days = Object.keys(byDay).sort();
-                  const points = days.map((d) => byDay[d]);
-                  return points.length ? <LineChart points={points} /> : <div className="text-sm text-muted-foreground">No submission data</div>;
-                })()}
-              </CardContent>
-            </Card>
-          </div>
-        </div>
+        ))}
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        <Card>
-          <CardHeader>
-            <CardTitle>Submissions Status</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {(() => {
-              const dist: Record<string, number> = {};
-              submissions.forEach((s) => { const st = s.status; dist[st] = (dist[st] || 0) + (s.count ?? 1); });
-              const data = Object.entries(dist).map(([label, value]) => ({ label, value }));
-              return data.length ? <DonutChart data={data} /> : <div className="text-sm text-muted-foreground">No submission data</div>;
-            })()}
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>Applications vs Students</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <BarChart
-              data={[
-                { label: "Applications", value: counts.applications },
-                { label: "Students", value: counts.students },
-                { label: "Interns", value: counts.interns },
-              ]}
-            />
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>Quick Actions</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-2">
-            <div className="flex flex-col sm:flex-row sm:items-center gap-2">
-              <Link href="/dashboard/admin/users"><Button size="sm">Create User</Button></Link>
-              <Link href="/dashboard/admin/universities"><Button variant="outline" size="sm">Add University</Button></Link>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Reporting Pulse - Replacing Intake Velocity */}
+        <Card className="lg:col-span-2">
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <div>
+              <CardTitle>System Activity</CardTitle>
+              <CardDescription>Monthly volume of intern submissions & reporting</CardDescription>
             </div>
-            <div className="text-xs text-muted-foreground mt-2">Use the full admin pages for management actions.</div>
+            <div className="flex items-center gap-1 text-[10px] font-bold text-emerald-600 bg-emerald-500/10 px-2 py-0.5 rounded-full">
+              <TrendingUp className="h-3 w-3" />
+              LIVE
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="h-[300px] w-full mt-4">
+              <AreaTrendChart
+                data={submissionsTrend.map((t: any) => ({ label: t.month, value: Number(t.count) }))}
+                height={300}
+              />
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Placement Velocity */}
+        <Card className="lg:col-span-1">
+          <CardHeader>
+            <CardTitle>Placement Intensity</CardTitle>
+            <CardDescription>Conversion of candidates to active roles</CardDescription>
+          </CardHeader>
+          <CardContent className="flex flex-col items-center pb-8 pt-4">
+            <ProgressRing
+              value={metrics.placementRate}
+              label="Placement Rate"
+              size={180}
+              stroke={14}
+            />
+            <div className="mt-8 w-full grid grid-cols-2 gap-4">
+              <div className="text-center p-3 rounded-xl bg-muted/50 border border-border/50">
+                <p className="text-[10px] uppercase font-bold text-muted-foreground">Students</p>
+                <p className="text-xl font-bold mt-1">{counts.students}</p>
+              </div>
+              <div className="text-center p-3 rounded-xl bg-emerald-500/5 border border-emerald-500/20">
+                <p className="text-[10px] uppercase font-bold text-emerald-600">Active</p>
+                <p className="text-xl font-bold text-emerald-700 mt-1">{counts.interns}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Top Universities - Now a Pie Chart */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Partner Distribution</CardTitle>
+            <CardDescription>Top universities by application volume</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="h-[240px] w-full flex items-center justify-center">
+              <DonutChart
+                size={180}
+                thickness={22}
+                data={topUniversities.map((u: any) => ({
+                  label: u.name || "University",
+                  value: Number(u.count)
+                }))}
+              />
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Field of Study Saturation */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Talent Pool</CardTitle>
+            <CardDescription>Top academic fields in current batch</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="h-[240px] w-full pt-2 overflow-y-auto custom-scrollbar pr-2">
+              <ModernBarChart
+                data={distributions.fields.map((f: any) => ({
+                  label: f.field || "General",
+                  value: Number(f.count)
+                }))}
+              />
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Department Saturation */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Department Deployment</CardTitle>
+            <CardDescription>Allocation across organizational departments</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="h-[240px] w-full flex items-center justify-center">
+              <DonutChart
+                size={180}
+                thickness={22}
+                data={internsByDept.slice(0, 5).map((d: any) => ({
+                  label: d.departmentName || "General",
+                  value: Number(d.count)
+                }))}
+              />
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Application Pipeline */}
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <div>
+              <CardTitle>Processing Pipeline</CardTitle>
+              <CardDescription>Current status of all application batches</CardDescription>
+            </div>
+            <Link href="/dashboard/admin/applications">
+              <Button variant="ghost" size="sm" className="h-8 text-primary font-bold">Manage All</Button>
+            </Link>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-2 gap-4">
+              {distributions.applications.map((app: any) => {
+                const total = counts.applications || 1;
+                const percentage = (Number(app.count) / total) * 100;
+                const statusTheme: any = {
+                  PENDING: { color: "text-amber-600", bg: "bg-amber-500/10", border: "border-amber-200" },
+                  UNDER_REVIEW: { color: "text-blue-600", bg: "bg-blue-500/10", border: "border-blue-200" },
+                  APPROVED: { color: "text-emerald-600", bg: "bg-emerald-500/10", border: "border-emerald-200" },
+                  REJECTED: { color: "text-rose-600", bg: "bg-rose-500/10", border: "border-rose-200" },
+                };
+                const theme = statusTheme[app.status] || { color: "text-slate-600", bg: "bg-slate-100", border: "border-slate-200" };
+                
+                return (
+                  <div key={app.status} className={`p-4 rounded-2xl border ${theme.bg} ${theme.border} space-y-2`}>
+                    <div className="flex justify-between items-start">
+                      <span className={`text-[10px] font-bold uppercase tracking-wider ${theme.color}`}>
+                        {app.status.replace('_', ' ')}
+                      </span>
+                      <span className="text-xl font-black">{app.count}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="h-1 flex-1 bg-black/5 rounded-full overflow-hidden">
+                        <div className={`h-full ${theme.color.replace('text', 'bg')}`} style={{ width: `${percentage}%` }}></div>
+                      </div>
+                      <span className="text-[10px] font-mono font-bold opacity-60">{Math.round(percentage)}%</span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
           </CardContent>
         </Card>
       </div>

@@ -9,6 +9,7 @@ import {
   resetPasswordConfirmationTemplate,
   userCreatedTemplate,
   studentRejectedTemplate,
+  internCreatedTemplate,
 } from 'src/templates';
 
 type MailOptions = Mail.Options;
@@ -122,6 +123,37 @@ export class MailService {
     return this.send({
       from: this.from(),
       to: email,
+      subject,
+      html,
+      text,
+    });
+  }
+
+  public async sendInternCreatedEmail(payload: {
+    firstName: string;
+    lastName: string;
+    email: string;
+    internId: string;
+    temporaryPassword: string;
+    startDate?: string;
+    supervisorName?: string;
+  }): Promise<string> {
+    const loginUrl = `${this.frontendUrl}/login`;
+
+    const { subject, html, text } = internCreatedTemplate({
+      firstName: payload.firstName,
+      lastName: payload.lastName,
+      email: payload.email,
+      internId: payload.internId,
+      temporaryPassword: payload.temporaryPassword,
+      loginUrl,
+      startDate: payload.startDate,
+      supervisorName: payload.supervisorName,
+    });
+
+    return this.send({
+      from: this.from(),
+      to: payload.email,
       subject,
       html,
       text,

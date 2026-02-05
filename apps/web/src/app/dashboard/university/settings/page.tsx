@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { PageHeader } from "@/components/ui/page-header";
 import { CheckCircle, Key, Moon, Sun } from "lucide-react";
@@ -108,8 +109,8 @@ export default function UniversitySettingsPage() {
                 <div className="space-y-2">
                   <Label htmlFor="current-password">Change Password</Label>
                   <div className="flex gap-2">
-                    <input id="current-password" type="password" placeholder="Current password" className="input" />
-                    <input id="new-password" type="password" placeholder="New password" className="input" />
+                    <Input id="current-password" type="password" placeholder="Current password" />
+                    <Input id="new-password" type="password" placeholder="New password" />
                   </div>
                 </div>
                 <Button variant="outline" className="gap-2" size="sm"><Key className="h-4 w-4" /> Update Password</Button>

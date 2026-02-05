@@ -17,9 +17,9 @@ import {
     FolderOpen,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
-import { useAuth } from "@/components/auth-provider";
 import { LogoBlock } from "@/components/logo-block";
-import { Card, CardContent } from "@/components/ui/card";
+import { useAuth } from "@/components/auth-provider";
+import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 
 type NavItem = {
@@ -74,22 +74,29 @@ export function Sidebar() {
                 <LogoBlock />
             </div>
             {/* Navigation */}
-            <nav className="flex-1 p-3 space-y-1 overflow-y-hidden">
+            <nav className="flex-1 p-3 space-y-1 overflow-y-auto custom-scrollbar">
                 {navItems.map((item) => {
                     const isActive = pathname === item.href;
                     return (
-                        <Link key={item.href} href={item.href}>
-                            <div className={cn(
-                                "flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200",
-                                isActive
-                                    ? "bg-primary/10 text-primary"
-                                    : "text-muted-foreground hover:bg-muted hover:text-foreground hover:translate-x-0.5"
+                        <Button
+                            key={item.href}
+                            asChild
+                            variant={isActive ? "secondary" : "ghost"}
+                            className={cn(
+                                "w-full justify-start gap-3 px-3 h-10 transition-all duration-200",
+                                isActive 
+                                    ? "bg-primary/10 text-primary hover:bg-primary/15" 
+                                    : "text-muted-foreground hover:translate-x-1"
                             )}
-                            >
-                                <item.icon className="h-4 w-4 transition-transform duration-200 group-hover:scale-105" />
+                        >
+                            <Link href={item.href}>
+                                <item.icon className={cn(
+                                    "h-4 w-4 transition-transform duration-200",
+                                    isActive && "scale-110"
+                                )} />
                                 <span>{item.title}</span>
-                            </div>
-                        </Link>
+                            </Link>
+                        </Button>
                     );
                 })}
             </nav>

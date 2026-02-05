@@ -56,10 +56,21 @@ export class InternsController {
   @HttpCode(HttpStatus.CREATED)
   @ApiOperation({ summary: 'Create intern from student' })
   @ApiResponse({ status: 201, description: 'Intern created successfully' })
-  async create(@Body() body: { studentId: string; supervisorId?: string }) {
+  async create(@Body() body: {
+    studentId: string;
+    supervisorId?: string;
+    departmentId?: string;
+    startDate?: string;
+    endDate?: string;
+  }) {
     return this.internsService.createInternFromStudent(
       body.studentId,
-      body.supervisorId,
+      {
+        supervisorId: body.supervisorId,
+        departmentId: body.departmentId,
+        startDate: body.startDate ? new Date(body.startDate) : undefined,
+        endDate: body.endDate ? new Date(body.endDate) : undefined,
+      }
     );
   }
 

@@ -29,7 +29,13 @@ export async function listInterns(params: ListInternsParams = {}, token?: string
   return apiFetch<ApiSuccess<Paginated<InternListItem>>>(`/interns${query ? `?${query}` : ""}`, { method: "GET", token });
 }
 
-export async function createIntern(body: { studentId: string }, token?: string) {
+export async function createIntern(body: {
+  studentId: string;
+  departmentId?: string;
+  supervisorId?: string;
+  startDate?: string;
+  endDate?: string;
+}, token?: string) {
   return apiFetch<ApiSuccess<InternListItem>>(`/interns`, { method: "POST", body, token });
 }
 
