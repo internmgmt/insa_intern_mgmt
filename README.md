@@ -73,7 +73,11 @@ After seeding the database:
 ```
 Admin Account:
 Email: admin@insa.gov.et
-Password: Admin@123
+Password: (displayed in seed console output)
+
+Supervisor Account:
+Email: supervisor@insa.gov.et
+Password: (displayed in seed console output)
 ```
 
 University coordinators are created automatically during seeding.

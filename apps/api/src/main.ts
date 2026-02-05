@@ -4,16 +4,14 @@ import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { AppModule } from './app.module';
 import { HttpExceptionFilter } from './common/filters/http-exception.filter';
 import { ResponseInterceptor } from './common/interceptors/response.interceptor';
-import helmet from 'helmet';
+import * as helmet from 'helmet';
 
 async function bootstrap() {
   const logger = new Logger('Bootstrap');
   const app = await NestFactory.create(AppModule);
 
-  // Security headers
   app.use(helmet());
 
-  // Global validation pipe
   app.useGlobalPipes(
     new ValidationPipe({
       whitelist: true,
@@ -25,22 +23,27 @@ async function bootstrap() {
     }),
   );
 
-  // Global exception filter
   app.useGlobalFilters(new HttpExceptionFilter());
-
-  // Global response interceptor
   app.useGlobalInterceptors(new ResponseInterceptor());
 
-  // CORS configuration
+  const allowedOrigins = getAllowedOrigins();
   app.enableCors({
     origin: (origin: string, callback: (err: Error | null, allow?: boolean) => void) => {
-      callback(null, true);
+      if (!origin) {
+        return callback(null, true);
+      }
+
+      if (allowedOrigins.includes(origin)) {
+        return callback(null, true);
+      }
+
+      logger.warn(`CORS: Blocked request from unauthorized origin: ${origin}`);
+      return callback(new Error('Not allowed by CORS'), false);
     },
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
     credentials: true,
   });
 
-  // Swagger configuration
   const config = new DocumentBuilder()
     .setTitle('INSA Intern Management API')
     .setDescription('API for managing internship applications and interns')
@@ -51,12 +54,30 @@ async function bootstrap() {
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('api/docs', app, document);
 
-  // Use PORT from environment or default to 5005
   const port = process.env.PORT || 5005;
   await app.listen(port);
 
   logger.log(`Application is running on: http://localhost:${port}`);
   logger.log(`Swagger docs available at: http://localhost:${port}/api/docs`);
+  logger.log(`CORS enabled for origins: ${allowedOrigins.join(', ')}`);
+}
+
+function getAllowedOrigins(): string[] {
+  const envOrigins = process.env.ALLOWED_ORIGINS;
+  
+  if (envOrigins) {
+    return envOrigins.split(',').map(origin => origin.trim());
+  }
+
+  const defaultOrigins = [
+    'http://localhost:3000',
+    'http://127.0.0.1:3000',
+  ];
+
+  console.warn('⚠️  SECURITY WARNING: Using default CORS origins for development.');
+  console.warn('   Set ALLOWED_ORIGINS environment variable for production!');
+  
+  return defaultOrigins;
 }
 
 bootstrap();

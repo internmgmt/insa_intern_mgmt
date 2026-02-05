@@ -17,6 +17,7 @@ import {
   validatePasswordStrength,
 } from '../common/validators/password.validators';
 import * as bcrypt from 'bcryptjs';
+import * as crypto from 'crypto';
 
 @Injectable()
 export class AuthService {
@@ -27,7 +28,7 @@ export class AuthService {
     private readonly userRepository: Repository<UserEntity>,
     private readonly jwtService: JwtService,
     private readonly mailService: MailService,
-  ) { }
+  ) {}
 
   async login(loginDto: LoginDto) {
     const { email, password } = loginDto;
@@ -92,16 +93,16 @@ export class AuthService {
           isActive: user.isActive,
           university: user.university
             ? {
-              id: user.university.id,
-              name: user.university.name,
-            }
+                id: user.university.id,
+                name: user.university.name,
+              }
             : null,
           department: user.department
             ? {
-              id: user.department.id,
-              name: user.department.name,
-              type: user.department.type,
-            }
+                id: user.department.id,
+                name: user.department.name,
+                type: user.department.type,
+              }
             : null,
         },
         token,
@@ -149,16 +150,16 @@ export class AuthService {
         createdAt: currentUser.createdAt,
         university: currentUser.university
           ? {
-            id: currentUser.university.id,
-            name: currentUser.university.name,
-          }
+              id: currentUser.university.id,
+              name: currentUser.university.name,
+            }
           : null,
         department: currentUser.department
           ? {
-            id: currentUser.department.id,
-            name: currentUser.department.name,
-            type: currentUser.department.type,
-          }
+              id: currentUser.department.id,
+              name: currentUser.department.name,
+              type: currentUser.department.type,
+            }
           : null,
       },
     };
@@ -168,6 +169,7 @@ export class AuthService {
     const { currentPassword, newPassword, confirmPassword } = changePasswordDto;
 
     validatePasswordMatch(newPassword, confirmPassword);
+    validatePasswordStrength(newPassword);
 
     const user = await this.userRepository.findOne({
       where: { id: userId },
@@ -244,17 +246,13 @@ export class AuthService {
     return user;
   }
 
-  /**
-   * Initiate password reset flow.
-   * SECURITY: Always returns generic success to prevent user enumeration.
-   */
   async forgotPassword(email: string) {
     const user = await this.userRepository.findOne({
       where: { email: email.toLowerCase() },
     });
 
-    // SECURITY: Always return generic success regardless of user existence
     if (!user) {
+      await this.artificialDelay();
       return {
         success: true,
         message:
@@ -263,22 +261,16 @@ export class AuthService {
       };
     }
 
-    // Generate reset token (random string)
     const rawToken = this.generateResetToken();
-
-    // Hash the token before storing (security best practice)
     const hashedToken = await bcrypt.hash(rawToken, 10);
 
-    // Set token expiry to 1 hour from now
     const tokenExpiry = new Date();
     tokenExpiry.setHours(tokenExpiry.getHours() + 1);
 
-    // Store hashed token and expiry
     user.resetToken = hashedToken;
     user.resetTokenExpiry = tokenExpiry;
     await this.userRepository.save(user);
 
-    // Send forgot password email with reset link
     try {
       await this.mailService.sendForgotPasswordEmail(
         user.email,
@@ -287,7 +279,6 @@ export class AuthService {
       );
     } catch (error) {
       this.logger.error('Failed to send forgot password email', error);
-      // Don't throw - email failure shouldn't block the response
     }
 
     return {
@@ -298,40 +289,38 @@ export class AuthService {
     };
   }
 
-  /**
-   * Reset password using a valid reset token.
-   */
   async resetPassword(
     token: string,
     newPassword: string,
     confirmPassword: string,
   ) {
-    // Validate password match first
     validatePasswordMatch(newPassword, confirmPassword);
-
-    // Validate password strength
     validatePasswordStrength(newPassword);
 
-    // Find users with non-null reset tokens
     const users = await this.userRepository.find({
       where: {
         resetToken: Not(IsNull()),
+        resetTokenExpiry: Not(IsNull()),
       },
     });
 
-    // Find the user whose hashed token matches the provided token
     let matchedUser: UserEntity | null = null;
+
     for (const user of users) {
-      if (user.resetToken) {
-        const isMatch = await bcrypt.compare(token, user.resetToken);
-        if (isMatch) {
-          matchedUser = user;
-          break;
-        }
+      if (!user.resetTokenExpiry || user.resetTokenExpiry < new Date()) {
+        continue;
+      }
+
+      const isMatch = await bcrypt.compare(token, user.resetToken!);
+      
+      if (isMatch) {
+        matchedUser = user;
+        break;
       }
     }
 
     if (!matchedUser) {
+      await this.artificialDelay();
       throw new BadRequestException({
         success: false,
         message: 'Invalid or expired reset token',
@@ -342,39 +331,14 @@ export class AuthService {
       });
     }
 
-    // Check if token has expired
-    if (
-      !matchedUser.resetTokenExpiry ||
-      new Date() > matchedUser.resetTokenExpiry
-    ) {
-      // Clear expired token
-      matchedUser.resetToken = null;
-      matchedUser.resetTokenExpiry = null;
-      await this.userRepository.save(matchedUser);
-
-      throw new BadRequestException({
-        success: false,
-        message:
-          'Reset token has expired. Please request a new password reset.',
-        error: {
-          code: 'TOKEN_EXPIRED',
-          details: null,
-        },
-      });
-    }
-
-    // Hash the new password
     const hashedPassword = await bcrypt.hash(newPassword, 10);
-
-    // Update user
     matchedUser.passwordHash = hashedPassword;
+    matchedUser.isFirstLogin = false;
     matchedUser.resetToken = null;
     matchedUser.resetTokenExpiry = null;
-    matchedUser.isFirstLogin = false;
 
     await this.userRepository.save(matchedUser);
 
-    // Send password reset confirmation email
     try {
       await this.mailService.sendPasswordResetConfirmation(
         matchedUser.email,
@@ -386,8 +350,9 @@ export class AuthService {
         'Failed to send password reset confirmation email',
         error,
       );
-      // Don't throw - email failure shouldn't block the response
     }
+
+    this.logger.log(`Password reset successful for user ${matchedUser.email}`);
 
     return {
       success: true,
@@ -396,11 +361,12 @@ export class AuthService {
     };
   }
 
-  /**
-   * Generate a secure random token for password reset
-   */
   private generateResetToken(): string {
-    const crypto = require('crypto');
     return crypto.randomBytes(32).toString('hex');
+  }
+
+  private async artificialDelay(): Promise<void> {
+    const delay = 100 + Math.random() * 200;
+    return new Promise(resolve => setTimeout(resolve, delay));
   }
 }
