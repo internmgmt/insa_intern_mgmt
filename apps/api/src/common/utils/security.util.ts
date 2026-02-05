@@ -1,6 +1,3 @@
-/**
- * Masks sensitive fields in an object (recursively)
- */
 export function maskSensitiveData(data: any): any {
   if (!data || typeof data !== 'object') {
     return data;
@@ -16,6 +13,9 @@ export function maskSensitiveData(data: any): any {
     'newPassword',
     'confirmPassword',
     'credentials',
+    'secret',
+    'apiKey',
+    'authorization',
   ];
 
   if (Array.isArray(data)) {
@@ -25,9 +25,12 @@ export function maskSensitiveData(data: any): any {
   const result = { ...data };
 
   for (const key in result) {
-    if (sensitiveFields.includes(key)) {
+    const lowerKey = key.toLowerCase();
+    const isSensitive = sensitiveFields.some(field => lowerKey.includes(field.toLowerCase()));
+    
+    if (isSensitive) {
       result[key] = '********';
-    } else if (typeof result[key] === 'object') {
+    } else if (typeof result[key] === 'object' && result[key] !== null) {
       result[key] = maskSensitiveData(result[key]);
     }
   }

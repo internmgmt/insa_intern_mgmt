@@ -3,6 +3,7 @@ import {
   NotFoundException,
   BadRequestException,
   ForbiddenException,
+  Logger,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -10,9 +11,14 @@ import { DocumentEntity } from '../entities/document.entity';
 import { StudentEntity } from '../entities/student.entity';
 import { ApplicationEntity } from '../entities/application.entity';
 import { UserRole } from '../common/enums/user-role.enum';
+import * as path from 'path';
+import * as fs from 'fs';
 
 @Injectable()
 export class DocumentsService {
+  private readonly logger = new Logger(DocumentsService.name);
+  private readonly uploadDir: string;
+
   constructor(
     @InjectRepository(DocumentEntity)
     private readonly documentRepository: Repository<DocumentEntity>,
@@ -20,7 +26,9 @@ export class DocumentsService {
     private readonly studentRepository: Repository<StudentEntity>,
     @InjectRepository(ApplicationEntity)
     private readonly applicationRepository: Repository<ApplicationEntity>,
-  ) {}
+  ) {
+    this.uploadDir = path.resolve(process.cwd(), 'uploads');
+  }
 
   async create(
     createDocumentDto: any,
@@ -50,7 +58,6 @@ export class DocumentsService {
     }
     this.validateUrl(url);
 
-    // Role-based type restrictions
     if (currentUser?.role === UserRole.UNIVERSITY) {
       const allowed = ['OFFICIAL_LETTER', 'CV', 'TRANSCRIPT'];
       if (!allowed.includes(docType)) {
@@ -75,7 +82,6 @@ export class DocumentsService {
 
     let student = null;
 
-    // Ownership validation for universities
     if (currentUser?.role === UserRole.UNIVERSITY) {
       if (docType === 'OFFICIAL_LETTER') {
         if (applicationId) {
@@ -121,7 +127,6 @@ export class DocumentsService {
       }
     }
 
-    // Try to find student if ID provided and not already found
     if (studentId && !student) {
       student = await this.studentRepository.findOne({
         where: { id: studentId },
@@ -144,7 +149,6 @@ export class DocumentsService {
       documentType: docType,
     };
 
-    // Always try to include applicationId in metadata for filtering
     let applicationIdForMetadata = applicationId;
     if (!applicationIdForMetadata && student?.application?.id) {
       applicationIdForMetadata = student.application.id;
@@ -196,7 +200,6 @@ export class DocumentsService {
       this.validateUrl(updateDocumentDto.url);
     }
 
-    // Handle metadata and tags serialization
     if (updateDocumentDto.metadata !== undefined) {
       updateDocumentDto.metadata = updateDocumentDto.metadata
         ? JSON.stringify(updateDocumentDto.metadata)
@@ -257,11 +260,9 @@ export class DocumentsService {
       });
     }
 
-    // Permission Check
     if (currentUser?.role === UserRole.UNIVERSITY) {
       let isAllowed = false;
 
-      // 1. Check if the university coordinator uploaded this document themselves
       try {
         const meta = document.metadata ? JSON.parse(document.metadata) : {};
         if (meta.uploadedBy === currentUser.id) {
@@ -270,11 +271,8 @@ export class DocumentsService {
             `DEBUG: Document ${id} access granted - uploaded by current user`,
           );
         }
-      } catch (e) {
-        // ignore metadata parsing errors
-      }
+      } catch (e) {}
 
-      // 2. Check via Student relation (student belongs to their university's application)
       if (
         !isAllowed &&
         document.student?.application?.universityId === currentUser.universityId
@@ -283,7 +281,6 @@ export class DocumentsService {
         console.log(`DEBUG: Document ${id} access granted - via student link`);
       }
 
-      // 3. Check via Metadata Application ID (for Application-level documents like OFFICIAL_LETTER)
       if (!isAllowed && document.metadata) {
         try {
           const meta = JSON.parse(document.metadata);
@@ -298,7 +295,6 @@ export class DocumentsService {
               );
             }
           }
-          // Also check via applicationId in metadata (fallback)
           if (!isAllowed && meta.applicationId) {
             const app = await this.applicationRepository.findOne({
               where: { id: meta.applicationId },
@@ -327,64 +323,115 @@ export class DocumentsService {
       }
     }
 
-    // Generate Filename
-    let filename = document.title; // Default fallback
-    const ext = document.url.split('.').pop() || 'pdf';
-    let docType = 'Document';
-
-    // Parse metadata for docType
-    try {
-      const meta = document.metadata ? JSON.parse(document.metadata) : {};
-      docType = meta.documentType || 'Document';
-    } catch (e) {}
-
-    // Sanitize docType for filename (remove spaces, etc if needed, though spec implies simple types)
-    docType = docType.replace(/\s+/g, '_');
-
-    // Force PDF extension for specific document types
-    let finalExt = ext;
-    if (
-      ['CV', 'TRANSCRIPT', 'OFFICIAL_LETTER'].includes(docType.toUpperCase())
-    ) {
-      finalExt = 'pdf';
-    }
-
-    if (document.student) {
-      // <University>_<Batch>_<FirstName>_<LastName>_<StudentID>_<DocumentType>.<ext>
-      const s = document.student;
-      const universityName =
-        s.application?.university?.name?.replace(/\s+/g, '_') || 'University';
-      const batch =
-        s.application?.academicYear?.replace('/', '-') ||
-        s.academicYear?.replace('/', '-') ||
-        'Batch';
-      filename = `${universityName}_${batch}_${s.firstName}_${s.lastName}_${s.studentId}_${docType}.${finalExt}`;
-    } else {
-      // Try to find Application context from metadata if it's an Application doc
-      try {
-        const meta = document.metadata ? JSON.parse(document.metadata) : {};
-        if (meta.entityType === 'APPLICATION' && meta.entityId) {
-          const app = await this.applicationRepository.findOne({
-            where: { id: meta.entityId },
-            relations: ['university'],
-          });
-          if (app) {
-            // Convention for Application docs: <University>_<Batch>_<DocumentType>.<ext>
-            const universityName =
-              app.university?.name?.replace(/\s+/g, '_') || 'University';
-            filename = `${universityName}_${app.academicYear.replace('/', '-')}_${docType}.${finalExt}`;
-          }
-        }
-      } catch (e) {}
-    }
-
-    // Clean filename of any potential path traversal or illegal chars just in case (though we constructed it)
-    filename = filename.replace(/[^a-zA-Z0-9_\-\.]/g, '');
+    const { filePath, fileName } = this.validateAndSanitizePath(document);
 
     return {
-      filePath: document.url, // Assuming url is relative path 'uploads/...'
-      fileName: filename,
+      filePath,
+      fileName,
     };
+  }
+
+  private validateAndSanitizePath(document: DocumentEntity): {
+    filePath: string;
+    fileName: string;
+  } {
+    const documentUrl = document.url;
+
+    if (
+      documentUrl.includes('..') ||
+      documentUrl.includes('\\..') ||
+      documentUrl.includes('/..')
+    ) {
+      this.logger.error(
+        `Path traversal attempt detected: ${documentUrl} (document ID: ${document.id})`,
+      );
+      throw new ForbiddenException({
+        success: false,
+        message: 'Invalid file path',
+        error: { code: 'INVALID_FILE_PATH', details: null },
+      });
+    }
+
+    if (path.isAbsolute(documentUrl)) {
+      this.logger.error(
+        `Absolute path attempt detected: ${documentUrl} (document ID: ${document.id})`,
+      );
+      throw new ForbiddenException({
+        success: false,
+        message: 'Invalid file path',
+        error: { code: 'INVALID_FILE_PATH', details: null },
+      });
+    }
+
+    const resolvedPath = path.resolve(this.uploadDir, documentUrl);
+
+    if (!resolvedPath.startsWith(this.uploadDir)) {
+      this.logger.error(
+        `Path traversal detected after resolution: ${documentUrl} resolved to ${resolvedPath} (document ID: ${document.id})`,
+      );
+      throw new ForbiddenException({
+        success: false,
+        message: 'Invalid file path',
+        error: { code: 'INVALID_FILE_PATH', details: null },
+      });
+    }
+
+    if (!fs.existsSync(resolvedPath)) {
+      this.logger.warn(
+        `File not found: ${resolvedPath} (document ID: ${document.id})`,
+      );
+      throw new NotFoundException({
+        success: false,
+        message: 'File not found',
+        error: { code: 'FILE_NOT_FOUND', details: null },
+      });
+    }
+
+    const fileName = this.generateSafeFileName(document);
+
+    return {
+      filePath: resolvedPath,
+      fileName,
+    };
+  }
+
+  private generateSafeFileName(document: DocumentEntity): string {
+    let filename = document.title || 'document';
+    const ext = path.extname(document.url) || '.pdf';
+
+    let docType = 'Document';
+    try {
+      if (document.metadata) {
+        const meta =
+          typeof document.metadata === 'string'
+            ? JSON.parse(document.metadata)
+            : document.metadata;
+        docType = meta.documentType || 'Document';
+      }
+    } catch (e) {
+      this.logger.warn(`Failed to parse metadata for document ${document.id}`);
+    }
+
+    filename = `${docType}_${filename}`;
+
+    filename = filename
+      .replace(/[^a-zA-Z0-9_\-\.]/g, '_')
+      .replace(/_{2,}/g, '_')
+      .replace(/^_+|_+$/g, '');
+
+    if (!filename.endsWith(ext)) {
+      filename += ext;
+    }
+
+    if (filename.length > 200) {
+      const nameWithoutExt = filename.substring(
+        0,
+        filename.length - ext.length,
+      );
+      filename = nameWithoutExt.substring(0, 200 - ext.length) + ext;
+    }
+
+    return filename;
   }
 
   async list(
@@ -392,9 +439,8 @@ export class DocumentsService {
     currentUser?: { role?: UserRole; id?: string; universityId?: string },
   ) {
     const page = query?.page && Number(query.page) > 0 ? Number(query.page) : 1;
-    const limit = 100; // Enforce strict 100 limit as requested
+    const limit = 100;
 
-    // Load documents with relations needed for filtering
     const [items, totalItems] = await this.documentRepository.findAndCount({
       relations: ['student', 'student.application'],
       order: { createdAt: 'DESC' },
@@ -405,7 +451,6 @@ export class DocumentsService {
     console.log(`DEBUG: Loaded ${items.length} documents from DB`);
     console.log('DEBUG: Current User:', JSON.stringify(currentUser, null, 2));
 
-    // Non-university roles see all documents
     if (currentUser?.role !== UserRole.UNIVERSITY) {
       return {
         success: true,
@@ -422,10 +467,8 @@ export class DocumentsService {
       };
     }
 
-    // Filter documents for University role (async to check application ownership)
     const filterResults = await Promise.all(
       items.map(async (doc: any) => {
-        // Check 1: Student-linked document (via student -> application -> university)
         if (
           doc.student?.application?.universityId === currentUser.universityId
         ) {
@@ -433,17 +476,14 @@ export class DocumentsService {
           return doc;
         }
 
-        // Check 2: Application-linked document (via metadata)
         try {
           const meta = doc.metadata ? JSON.parse(doc.metadata) : {};
 
-          // Check if uploaded by this university user
           if (meta.uploadedBy === currentUser.id) {
             console.log(`DEBUG: Document ${doc.id} included via uploadedBy`);
             return doc;
           }
 
-          // Check if linked to an application owned by this university
           if (meta.entityType === 'APPLICATION' && meta.applicationId) {
             const app = await this.applicationRepository.findOne({
               where: { id: meta.applicationId },
@@ -499,26 +539,21 @@ export class DocumentsService {
       });
     }
 
-    // Restrict university users to their own documents/applications
     if (currentUser?.role === UserRole.UNIVERSITY) {
       let isAllowed = false;
 
-      // 1) Student-linked document (via student -> application -> university)
       if (
         document.student?.application?.universityId === currentUser.universityId
       ) {
         isAllowed = true;
       }
 
-      // 2) Application-linked document (via metadata)
       if (!isAllowed && document.metadata) {
         try {
           const meta = JSON.parse(document.metadata);
-          // If this university user originally uploaded it
           if (meta.uploadedBy === currentUser.id) {
             isAllowed = true;
           }
-          // Or if linked to an application owned by this university
           if (
             !isAllowed &&
             meta.entityType === 'APPLICATION' &&
@@ -531,9 +566,7 @@ export class DocumentsService {
               isAllowed = true;
             }
           }
-        } catch {
-          // ignore parse errors
-        }
+        } catch {}
       }
 
       if (!isAllowed) {
