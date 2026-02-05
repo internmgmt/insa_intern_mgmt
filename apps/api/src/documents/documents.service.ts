@@ -20,7 +20,7 @@ export class DocumentsService {
     private readonly studentRepository: Repository<StudentEntity>,
     @InjectRepository(ApplicationEntity)
     private readonly applicationRepository: Repository<ApplicationEntity>,
-  ) { }
+  ) {}
 
   async create(
     createDocumentDto: any,
@@ -154,7 +154,10 @@ export class DocumentsService {
       finalMetadata.applicationId = applicationIdForMetadata;
     }
 
-    console.log('DEBUG: Creating document with metadata:', JSON.stringify(finalMetadata, null, 2));
+    console.log(
+      'DEBUG: Creating document with metadata:',
+      JSON.stringify(finalMetadata, null, 2),
+    );
     console.log('DEBUG: Setting studentId:', student ? student.id : null);
 
     const document = this.documentRepository.create({
@@ -233,10 +236,17 @@ export class DocumentsService {
     };
   }
 
-  async download(id: string, currentUser?: { role?: UserRole; id?: string; universityId?: string }) {
+  async download(
+    id: string,
+    currentUser?: { role?: UserRole; id?: string; universityId?: string },
+  ) {
     const document = await this.documentRepository.findOne({
       where: { id },
-      relations: ['student', 'student.application', 'student.application.university'],
+      relations: [
+        'student',
+        'student.application',
+        'student.application.university',
+      ],
     });
 
     if (!document) {
@@ -250,27 +260,65 @@ export class DocumentsService {
     // Permission Check
     if (currentUser?.role === UserRole.UNIVERSITY) {
       let isAllowed = false;
-      // 1. Check via Student relation
-      if (document.student?.application?.universityId === currentUser.universityId) {
-        isAllowed = true;
+
+      // 1. Check if the university coordinator uploaded this document themselves
+      try {
+        const meta = document.metadata ? JSON.parse(document.metadata) : {};
+        if (meta.uploadedBy === currentUser.id) {
+          isAllowed = true;
+          console.log(
+            `DEBUG: Document ${id} access granted - uploaded by current user`,
+          );
+        }
+      } catch (e) {
+        // ignore metadata parsing errors
       }
 
-      // 2. Check via Metadata Application ID (for Application docs)
+      // 2. Check via Student relation (student belongs to their university's application)
+      if (
+        !isAllowed &&
+        document.student?.application?.universityId === currentUser.universityId
+      ) {
+        isAllowed = true;
+        console.log(`DEBUG: Document ${id} access granted - via student link`);
+      }
+
+      // 3. Check via Metadata Application ID (for Application-level documents like OFFICIAL_LETTER)
       if (!isAllowed && document.metadata) {
         try {
           const meta = JSON.parse(document.metadata);
           if (meta.entityType === 'APPLICATION' && meta.entityId) {
-            const app = await this.applicationRepository.findOne({ where: { id: meta.entityId } });
+            const app = await this.applicationRepository.findOne({
+              where: { id: meta.entityId },
+            });
             if (app?.universityId === currentUser.universityId) {
               isAllowed = true;
+              console.log(
+                `DEBUG: Document ${id} access granted - via application link`,
+              );
+            }
+          }
+          // Also check via applicationId in metadata (fallback)
+          if (!isAllowed && meta.applicationId) {
+            const app = await this.applicationRepository.findOne({
+              where: { id: meta.applicationId },
+            });
+            if (app?.universityId === currentUser.universityId) {
+              isAllowed = true;
+              console.log(
+                `DEBUG: Document ${id} access granted - via metadata applicationId`,
+              );
             }
           }
         } catch (e) {
-          // ignore parsing error
+          console.error(`DEBUG: Error parsing metadata for document ${id}:`, e);
         }
       }
 
       if (!isAllowed) {
+        console.error(
+          `DEBUG: Access denied for document ${id} - universityId: ${currentUser.universityId}`,
+        );
         throw new ForbiddenException({
           success: false,
           message: 'Access denied',
@@ -288,22 +336,28 @@ export class DocumentsService {
     try {
       const meta = document.metadata ? JSON.parse(document.metadata) : {};
       docType = meta.documentType || 'Document';
-    } catch (e) { }
+    } catch (e) {}
 
     // Sanitize docType for filename (remove spaces, etc if needed, though spec implies simple types)
     docType = docType.replace(/\s+/g, '_');
 
     // Force PDF extension for specific document types
     let finalExt = ext;
-    if (['CV', 'TRANSCRIPT', 'OFFICIAL_LETTER'].includes(docType.toUpperCase())) {
+    if (
+      ['CV', 'TRANSCRIPT', 'OFFICIAL_LETTER'].includes(docType.toUpperCase())
+    ) {
       finalExt = 'pdf';
     }
 
     if (document.student) {
       // <University>_<Batch>_<FirstName>_<LastName>_<StudentID>_<DocumentType>.<ext>
       const s = document.student;
-      const universityName = s.application?.university?.name?.replace(/\s+/g, '_') || 'University';
-      const batch = s.application?.academicYear?.replace('/', '-') || s.academicYear?.replace('/', '-') || 'Batch';
+      const universityName =
+        s.application?.university?.name?.replace(/\s+/g, '_') || 'University';
+      const batch =
+        s.application?.academicYear?.replace('/', '-') ||
+        s.academicYear?.replace('/', '-') ||
+        'Batch';
       filename = `${universityName}_${batch}_${s.firstName}_${s.lastName}_${s.studentId}_${docType}.${finalExt}`;
     } else {
       // Try to find Application context from metadata if it's an Application doc
@@ -316,11 +370,12 @@ export class DocumentsService {
           });
           if (app) {
             // Convention for Application docs: <University>_<Batch>_<DocumentType>.<ext>
-            const universityName = app.university?.name?.replace(/\s+/g, '_') || 'University';
+            const universityName =
+              app.university?.name?.replace(/\s+/g, '_') || 'University';
             filename = `${universityName}_${app.academicYear.replace('/', '-')}_${docType}.${finalExt}`;
           }
         }
-      } catch (e) { }
+      } catch (e) {}
     }
 
     // Clean filename of any potential path traversal or illegal chars just in case (though we constructed it)
@@ -371,7 +426,9 @@ export class DocumentsService {
     const filterResults = await Promise.all(
       items.map(async (doc: any) => {
         // Check 1: Student-linked document (via student -> application -> university)
-        if (doc.student?.application?.universityId === currentUser.universityId) {
+        if (
+          doc.student?.application?.universityId === currentUser.universityId
+        ) {
           console.log(`DEBUG: Document ${doc.id} included via student link`);
           return doc;
         }
@@ -392,7 +449,9 @@ export class DocumentsService {
               where: { id: meta.applicationId },
             });
             if (app?.universityId === currentUser.universityId) {
-              console.log(`DEBUG: Document ${doc.id} included via application link`);
+              console.log(
+                `DEBUG: Document ${doc.id} included via application link`,
+              );
               return doc;
             }
           }
@@ -405,8 +464,9 @@ export class DocumentsService {
     );
 
     const filtered = filterResults.filter((doc) => doc !== null);
-    console.log(`DEBUG: Filtered to ${filtered.length} documents for university ${currentUser.universityId}`);
-
+    console.log(
+      `DEBUG: Filtered to ${filtered.length} documents for university ${currentUser.universityId}`,
+    );
 
     return {
       success: true,
@@ -444,7 +504,9 @@ export class DocumentsService {
       let isAllowed = false;
 
       // 1) Student-linked document (via student -> application -> university)
-      if (document.student?.application?.universityId === currentUser.universityId) {
+      if (
+        document.student?.application?.universityId === currentUser.universityId
+      ) {
         isAllowed = true;
       }
 
@@ -457,7 +519,11 @@ export class DocumentsService {
             isAllowed = true;
           }
           // Or if linked to an application owned by this university
-          if (!isAllowed && meta.entityType === 'APPLICATION' && meta.applicationId) {
+          if (
+            !isAllowed &&
+            meta.entityType === 'APPLICATION' &&
+            meta.applicationId
+          ) {
             const app = await this.applicationRepository.findOne({
               where: { id: meta.applicationId },
             });
