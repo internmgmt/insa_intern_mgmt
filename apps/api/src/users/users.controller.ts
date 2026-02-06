@@ -10,6 +10,7 @@ import {
   UseGuards,
   HttpCode,
   HttpStatus,
+  ParseUUIDPipe,
 } from '@nestjs/common';
 import {
   ApiBearerAuth,
@@ -111,7 +112,7 @@ export class UsersController {
       },
     },
   })
-  async findById(@Param('id') id: string) {
+  async findById(@Param('id', new ParseUUIDPipe()) id: string) {
     return this.usersService.findById(id);
   }
 
@@ -167,7 +168,10 @@ export class UsersController {
       },
     },
   })
-  async update(@Param('id') id: string, @Body() updateUserDto: UpdateUserDto) {
+  async update(
+    @Param('id', new ParseUUIDPipe()) id: string,
+    @Body() updateUserDto: UpdateUserDto,
+  ) {
     return this.usersService.update(id, updateUserDto);
   }
 
@@ -186,7 +190,7 @@ export class UsersController {
       },
     },
   })
-  async delete(@Param('id') id: string) {
+  async delete(@Param('id', new ParseUUIDPipe()) id: string) {
     return this.usersService.deactivate(id);
   }
 }

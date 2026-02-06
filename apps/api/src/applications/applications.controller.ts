@@ -12,6 +12,7 @@ import {
   HttpStatus,
   ForbiddenException,
   Req,
+  ParseUUIDPipe,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -28,7 +29,7 @@ import { UserRole } from '../common/enums/user-role.enum';
 @ApiTags('applications')
 @Controller('applications')
 export class ApplicationsController {
-  constructor(private readonly applicationsService: ApplicationsService) { }
+  constructor(private readonly applicationsService: ApplicationsService) {}
 
   @Get()
   @UseGuards(JwtAuthGuard, RolesGuard)
@@ -63,7 +64,10 @@ export class ApplicationsController {
     status: 403,
     description: 'Access denied - not your application',
   })
-  async findById(@Param('id') id: string, @Req() req: any) {
+  async findById(
+    @Param('id', new ParseUUIDPipe()) id: string,
+    @Req() req: any,
+  ) {
     const app = await this.applicationsService.findByIdWithoutResponse(id);
     if (
       req.user?.role === UserRole.UNIVERSITY &&
@@ -116,7 +120,7 @@ export class ApplicationsController {
     description: 'Access denied - not your application',
   })
   async update(
-    @Param('id') id: string,
+    @Param('id', new ParseUUIDPipe()) id: string,
     @Body() updateApplicationDto: any,
     @Req() req: any,
   ) {
@@ -128,7 +132,10 @@ export class ApplicationsController {
         error: { code: 'APPLICATION_NOT_FOUND', details: null },
       });
     }
-    if (req.user?.role === UserRole.UNIVERSITY && app.universityId !== req.user.universityId) {
+    if (
+      req.user?.role === UserRole.UNIVERSITY &&
+      app.universityId !== req.user.universityId
+    ) {
       throw new ForbiddenException({
         success: false,
         message: 'Access denied',
@@ -158,7 +165,10 @@ export class ApplicationsController {
     status: 403,
     description: 'Access denied - not your application',
   })
-  async delete(@Param('id') id: string, @Req() req: any) {
+  async delete(
+    @Param('id', new ParseUUIDPipe()) id: string,
+    @Req() req: any,
+  ) {
     const app = await this.applicationsService.findByIdWithoutResponse(id);
     if (!app) {
       throw new ForbiddenException({
@@ -195,7 +205,10 @@ export class ApplicationsController {
     status: 403,
     description: 'Access denied - not your application',
   })
-  async submit(@Param('id') id: string, @Req() req: any) {
+  async submit(
+    @Param('id', new ParseUUIDPipe()) id: string,
+    @Req() req: any,
+  ) {
     const app = await this.applicationsService.findByIdWithoutResponse(id);
     if (!app) {
       throw new ForbiddenException({
@@ -225,7 +238,7 @@ export class ApplicationsController {
     description: 'Application reviewed successfully',
   })
   async review(
-    @Param('id') id: string,
+    @Param('id', new ParseUUIDPipe()) id: string,
     @Body()
     reviewDto: { decision: 'APPROVE' | 'REJECT'; rejectionReason?: string },
     @Req() req: any,

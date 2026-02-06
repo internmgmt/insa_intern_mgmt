@@ -30,22 +30,36 @@ export class AppLoggerService implements LoggerService {
     this.pino = pino(loggerConfig);
   }
 
+  private sanitize(msg: any): string {
+    if (typeof msg !== 'string') return String(msg);
+    return msg.replace(/[\r\n\t]/g, ' ').replace(/[\x00-\x1F\x7F]/g, '');
+  }
+
   error(message: any, trace?: string, context?: string): any {
     const traceId = this.asyncStorage.getStore()?.get('traceId');
-    this.pino.error({ traceId }, this.getMessage(message, context));
+    this.pino.error(
+      { traceId, context },
+      this.sanitize(this.getMessage(message, context)),
+    );
     if (trace) {
-      this.pino.error(trace);
+      this.pino.error({ traceId, context }, this.sanitize(trace));
     }
   }
 
   log(message: any, context?: string): any {
     const traceId = this.asyncStorage.getStore()?.get('traceId');
-    this.pino.info({ traceId }, this.getMessage(message, context));
+    this.pino.info(
+      { traceId },
+      this.sanitize(this.getMessage(message, context)),
+    );
   }
 
   warn(message: any, context?: string): any {
     const traceId = this.asyncStorage.getStore()?.get('traceId');
-    this.pino.warn({ traceId }, this.getMessage(message, context));
+    this.pino.warn(
+      { traceId },
+      this.sanitize(this.getMessage(message, context)),
+    );
   }
 
   private getMessage(message: any, context?: string) {

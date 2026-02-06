@@ -158,11 +158,6 @@ export class DocumentsService {
       finalMetadata.applicationId = applicationIdForMetadata;
     }
 
-    console.log(
-      'DEBUG: Creating document with metadata:',
-      JSON.stringify(finalMetadata, null, 2),
-    );
-    console.log('DEBUG: Setting studentId:', student ? student.id : null);
 
     const document = this.documentRepository.create({
       title,
@@ -174,11 +169,6 @@ export class DocumentsService {
     });
     const saved = await this.documentRepository.save(document);
 
-    console.log('DEBUG: Document created:', {
-      id: saved.id,
-      studentId: saved.studentId,
-      metadata: saved.metadata,
-    });
 
     return {
       success: true,
@@ -267,9 +257,7 @@ export class DocumentsService {
         const meta = document.metadata ? JSON.parse(document.metadata) : {};
         if (meta.uploadedBy === currentUser.id) {
           isAllowed = true;
-          console.log(
-            `DEBUG: Document ${id} access granted - uploaded by current user`,
-          );
+      
         }
       } catch (e) {}
 
@@ -278,7 +266,7 @@ export class DocumentsService {
         document.student?.application?.universityId === currentUser.universityId
       ) {
         isAllowed = true;
-        console.log(`DEBUG: Document ${id} access granted - via student link`);
+     
       }
 
       if (!isAllowed && document.metadata) {
@@ -290,9 +278,7 @@ export class DocumentsService {
             });
             if (app?.universityId === currentUser.universityId) {
               isAllowed = true;
-              console.log(
-                `DEBUG: Document ${id} access granted - via application link`,
-              );
+          
             }
           }
           if (!isAllowed && meta.applicationId) {
@@ -301,9 +287,7 @@ export class DocumentsService {
             });
             if (app?.universityId === currentUser.universityId) {
               isAllowed = true;
-              console.log(
-                `DEBUG: Document ${id} access granted - via metadata applicationId`,
-              );
+            
             }
           }
         } catch (e) {
@@ -448,8 +432,6 @@ export class DocumentsService {
       take: limit,
     });
 
-    console.log(`DEBUG: Loaded ${items.length} documents from DB`);
-    console.log('DEBUG: Current User:', JSON.stringify(currentUser, null, 2));
 
     if (currentUser?.role !== UserRole.UNIVERSITY) {
       return {
@@ -472,7 +454,7 @@ export class DocumentsService {
         if (
           doc.student?.application?.universityId === currentUser.universityId
         ) {
-          console.log(`DEBUG: Document ${doc.id} included via student link`);
+         
           return doc;
         }
 
@@ -480,7 +462,7 @@ export class DocumentsService {
           const meta = doc.metadata ? JSON.parse(doc.metadata) : {};
 
           if (meta.uploadedBy === currentUser.id) {
-            console.log(`DEBUG: Document ${doc.id} included via uploadedBy`);
+          
             return doc;
           }
 
@@ -489,9 +471,7 @@ export class DocumentsService {
               where: { id: meta.applicationId },
             });
             if (app?.universityId === currentUser.universityId) {
-              console.log(
-                `DEBUG: Document ${doc.id} included via application link`,
-              );
+           
               return doc;
             }
           }
@@ -504,9 +484,7 @@ export class DocumentsService {
     );
 
     const filtered = filterResults.filter((doc) => doc !== null);
-    console.log(
-      `DEBUG: Filtered to ${filtered.length} documents for university ${currentUser.universityId}`,
-    );
+
 
     return {
       success: true,

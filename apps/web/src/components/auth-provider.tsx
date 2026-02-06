@@ -1,6 +1,7 @@
 "use client";
 
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import type { User, UserRole } from "@/lib/types";
 import { clearStoredToken, getStoredToken, setStoredToken } from "@/lib/auth-storage";
 import { loginApi, logoutApi, meApi } from "@/lib/auth-api";
@@ -23,6 +24,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [token, setToken] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const router = useRouter();
 
   const refresh = useCallback(async () => {
     const storedToken = getStoredToken();
@@ -43,6 +45,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
+  const checkSession = useCallback(() => {
+    const storedToken = getStoredToken();
+    if (!storedToken) {
+      clearStoredToken();
+      setUser(null);
+      setToken(null);
+      if (typeof window !== "undefined" && window.location.pathname.startsWith("/dashboard")) {
+        router.replace("/auth/login");
+      }
+    }
+  }, [router]);
+
   useEffect(() => {
     refresh().catch(() => {
       clearStoredToken();
@@ -52,6 +66,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     });
   }, [refresh]);
 
+  useEffect(() => {
+    checkSession();
+    const interval = setInterval(checkSession, 60000);
+    return () => clearInterval(interval);
+  }, [checkSession]);
+
   const login = useCallback(async (email: string, password: string) => {
     setLoading(true);
     try {
@@ -60,7 +80,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setToken(res.data.token);
       setUser(res.data.user);
     } catch (err) {
-      // SECURITY: Don't log the full error object as it might contain sensitive request context in some environments
       console.error("API Login failed");
       throw err;
     } finally {
@@ -85,7 +104,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       try {
         await logoutApi(storedToken);
       } catch {
-        // ignore
       }
     }
   }, []);

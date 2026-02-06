@@ -1,15 +1,23 @@
+function requireEnv(name: string): string {
+  const value = process.env[name];
+  if (!value) {
+    throw new Error(`Missing required environment variable: ${name}`);
+  }
+  return value;
+}
+
 export const getConfig = (): AppConfig => {
   return {
     port: parseInt(process.env.PORT as string, 10) || 3000,
-    appEnv: process.env.APP_ENV as AppEnv,
-    jwtSecret: process.env.JWT_SECRET as string,
+    appEnv: (process.env.APP_ENV as AppEnv) || AppEnv.DEV,
+    jwtSecret: requireEnv('JWT_SECRET'),
     logLevel: process.env.LOG_LEVEL || 'info',
     database: {
-      host: process.env.DB_HOST as string,
+      host: requireEnv('DB_HOST'),
       port: parseInt(process.env.DB_PORT as string, 10) || 54321,
-      user: process.env.DB_USER as string,
-      password: process.env.DB_PASSWORD as string,
-      dbName: process.env.DB_NAME as string,
+      user: requireEnv('DB_USER'),
+      password: requireEnv('DB_PASSWORD'),
+      dbName: requireEnv('DB_NAME'),
     },
     cache: {
       host: process.env.REDIS_HOST as string,

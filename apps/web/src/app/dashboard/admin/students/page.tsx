@@ -64,11 +64,11 @@ import { createIntern } from "@/lib/services/interns";
 import { uploadDocument, listDocuments } from "@/lib/services/documents";
 import { downloadFile } from "@/lib/download";
 import { toast } from "sonner";
+import { sanitizeFormData, sanitizeInput } from "@/lib/sanitize";
 
 export default function AdminStudentsPage() {
   const { token } = useAuth();
 
-  // State
   const [universities, setUniversities] = useState<{ id: string; name: string }[]>([]);
   const [selectedUniId, setSelectedUniId] = useState<string>("ALL");
   const [applications, setApplications] = useState<Application[]>([]);
@@ -80,7 +80,6 @@ export default function AdminStudentsPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("ALL");
 
-  // Dialog States
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
@@ -89,7 +88,6 @@ export default function AdminStudentsPage() {
   const [selectedStudent, setSelectedStudent] = useState<any | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Assignment State
   const [departments, setDepartments] = useState<any[]>([]);
   const [assignmentData, setAssignmentData] = useState({
     departmentId: "",
@@ -97,7 +95,6 @@ export default function AdminStudentsPage() {
     endDate: "",
   });
 
-  // Form State
   const [formData, setFormData] = useState({
     studentId: "",
     firstName: "",
@@ -110,7 +107,6 @@ export default function AdminStudentsPage() {
   const [cvFile, setCvFile] = useState<File | null>(null);
   const [transcriptFile, setTranscriptFile] = useState<File | null>(null);
 
-  // Fetch Universities
   useEffect(() => {
     const fetchUnis = async () => {
       if (!token) return;
@@ -129,7 +125,6 @@ export default function AdminStudentsPage() {
     fetchUnis();
   }, [token]);
 
-  // Fetch applications (always fetch all to support batch filter)
   useEffect(() => {
     const fetchApps = async () => {
       if (!token) return;
@@ -139,7 +134,6 @@ export default function AdminStudentsPage() {
         if (selectedUniId !== "ALL") params.universityId = selectedUniId;
         const res = await listApplications(params, token);
         setApplications(res.data.items || []);
-        // Reset batch if university changes (optional, but keep "ALL" as default)
       } catch (err: any) {
         console.error("Failed to fetch applications", err);
       } finally {
@@ -149,7 +143,6 @@ export default function AdminStudentsPage() {
     fetchApps();
   }, [token, selectedUniId]);
 
-  // Academic Years derived from apps
   const academicYears = useMemo(() => {
     const years = new Set(applications.map(a => a.academicYear));
     return Array.from(years).sort();
@@ -164,7 +157,6 @@ export default function AdminStudentsPage() {
     }
   }, [showAssignDialog, token]);
 
-  // Fetch students
   const fetchStudentsData = useCallback(async () => {
     if (!token) return;
     try {
@@ -173,7 +165,6 @@ export default function AdminStudentsPage() {
       if (selectedUniId !== "ALL") params.universityId = selectedUniId;
       if (selectedBatch !== "ALL") params.academicYear = selectedBatch;
       if (statusFilter !== "ALL") params.status = statusFilter;
-
       const res = await listStudents(params, token);
       setStudents((res as any).data.items || []);
     } catch (err: any) {
@@ -200,26 +191,46 @@ export default function AdminStudentsPage() {
     });
   }, [students, searchQuery]);
 
-  // Handlers
+  function validateFile(file: File | null, allowedMimes: string[] = ["application/pdf"], maxSize = 10 * 1024 * 1024) {
+    if (!file) return true;
+    const name = sanitizeInput(file.name || "");
+    const type = file.type || "";
+    if (file.size > maxSize) {
+      toast.error(`${name} exceeds maximum allowed size of ${Math.round(maxSize / 1024 / 1024)}MB`);
+      return false;
+    }
+    const lower = name.toLowerCase();
+    if (!lower.endsWith(".pdf")) {
+      toast.error(`${name} must be a PDF`);
+      return false;
+    }
+    if (name.split(".").length > 2) {
+      toast.error(`${name} has multiple extensions; upload a clean filename`);
+      return false;
+    }
+    if (allowedMimes.length && type && !allowedMimes.includes(type)) {
+      toast.error(`${name} has invalid MIME type`);
+      return false;
+    }
+    return true;
+  }
+
   const handleAddStudent = async () => {
     if (!token) return;
-
-    // Find a suitable application ID
     const targetApp = applications.find(a =>
       (selectedUniId === "ALL" ? true : a.university?.id === selectedUniId) &&
       (selectedBatch === "ALL" ? true : a.academicYear === selectedBatch)
     );
-
     if (!targetApp) {
       toast.error("Please select or ensure a specific University and Application Batch exists to add a student.");
       return;
     }
-
+    if (!validateFile(cvFile) || !validateFile(transcriptFile)) return;
     try {
       setIsSubmitting(true);
-      const res = await addStudentToApplication(targetApp.id, formData, token);
+      const cleanForm = sanitizeFormData(formData);
+      const res = await addStudentToApplication(targetApp.id, cleanForm, token);
       const newStudent = res.data;
-
       if (cvFile) {
         await uploadDocument(cvFile, {
           documentType: "CV",
@@ -227,7 +238,7 @@ export default function AdminStudentsPage() {
           applicationId: targetApp.id,
           entityType: "STUDENT",
           entityId: newStudent.id,
-          title: `CV - ${newStudent.firstName} ${newStudent.lastName}`
+          title: `CV - ${sanitizeInput(newStudent.firstName)} ${sanitizeInput(newStudent.lastName)}`
         }, token);
       }
       if (transcriptFile) {
@@ -237,10 +248,9 @@ export default function AdminStudentsPage() {
           applicationId: targetApp.id,
           entityType: "STUDENT",
           entityId: newStudent.id,
-          title: `Transcript - ${newStudent.firstName} ${newStudent.lastName}`
+          title: `Transcript - ${sanitizeInput(newStudent.firstName)} ${sanitizeInput(newStudent.lastName)}`
         }, token);
       }
-
       toast.success("Student added successfully");
       setShowAddDialog(false);
       resetForm();
@@ -259,11 +269,11 @@ export default function AdminStudentsPage() {
       toast.error("Cannot update student: missing application ID");
       return;
     }
-
+    if (!validateFile(cvFile) || !validateFile(transcriptFile)) return;
     try {
       setIsSubmitting(true);
-      await updateApplicationStudent(appId, selectedStudent.id, formData, token);
-
+      const cleanForm = sanitizeFormData(formData);
+      await updateApplicationStudent(appId, selectedStudent.id, cleanForm, token);
       if (cvFile) {
         await uploadDocument(cvFile, {
           documentType: "CV",
@@ -271,7 +281,7 @@ export default function AdminStudentsPage() {
           applicationId: appId,
           entityType: "STUDENT",
           entityId: selectedStudent.id,
-          title: `CV - ${formData.firstName} ${formData.lastName}`
+          title: `CV - ${sanitizeInput(cleanForm.firstName)} ${sanitizeInput(cleanForm.lastName)}`
         }, token);
       }
       if (transcriptFile) {
@@ -281,10 +291,9 @@ export default function AdminStudentsPage() {
           applicationId: appId,
           entityType: "STUDENT",
           entityId: selectedStudent.id,
-          title: `Transcript - ${formData.firstName} ${formData.lastName}`
+          title: `Transcript - ${sanitizeInput(cleanForm.firstName)} ${sanitizeInput(cleanForm.lastName)}`
         }, token);
       }
-
       toast.success("Student updated successfully");
       setShowEditDialog(false);
       resetForm();
@@ -334,17 +343,13 @@ export default function AdminStudentsPage() {
     }
     try {
       setIsSubmitting(true);
-      // 1. Approve the student
       await reviewStudent(selectedStudent.id, { decision: "ACCEPT" }, token);
-
-      // 2. Create intern account
       await createIntern({
         studentId: selectedStudent.id,
         departmentId: assignmentData.departmentId,
         startDate: assignmentData.startDate || undefined,
         endDate: assignmentData.endDate || undefined,
       }, token);
-
       toast.success("Student approved and intern account created");
       setShowAssignDialog(false);
       fetchStudentsData();
@@ -429,8 +434,6 @@ export default function AdminStudentsPage() {
     const normalizedType = type.toUpperCase();
     try {
       let finalDocId = docIdOrType;
-
-      // If we don't have a UUID but a type, try to find the document
       if (studentId && (docIdOrType.toLowerCase().includes('cv') || docIdOrType.toLowerCase().includes('transcript'))) {
         const res = await listDocuments({
           entityId: studentId,
@@ -446,7 +449,6 @@ export default function AdminStudentsPage() {
         if (found) {
           finalDocId = found.id;
         } else {
-          // Fallback: check if the input itself is a UUID
           if (!docIdOrType.includes('_') && docIdOrType.length > 30) {
             finalDocId = docIdOrType;
           } else {
@@ -455,7 +457,6 @@ export default function AdminStudentsPage() {
           }
         }
       }
-
       const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || "/api";
       await downloadFile(`${baseUrl}/documents/${finalDocId}/download`, token, `${studentName}_${type}.pdf`);
     } catch (error: any) {
@@ -650,7 +651,6 @@ export default function AdminStudentsPage() {
         </CardContent>
       </Card>
 
-      {/* Add/Edit Dialog */}
       <Dialog open={showAddDialog || showEditDialog} onOpenChange={(open) => { if (!open) { setShowAddDialog(false); setShowEditDialog(false); resetForm(); } }}>
         <DialogContent className="sm:max-w-[600px] overflow-y-auto max-h-[90vh]">
           <DialogHeader>
@@ -736,7 +736,6 @@ export default function AdminStudentsPage() {
         </DialogContent>
       </Dialog>
 
-      {/* View Dialog */}
       <Dialog open={showViewDialog} onOpenChange={setShowViewDialog}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
@@ -823,7 +822,6 @@ export default function AdminStudentsPage() {
         </DialogContent>
       </Dialog>
 
-      {/* Assign Department & Create Intern Dialog */}
       <Dialog open={showAssignDialog} onOpenChange={setShowAssignDialog}>
         <DialogContent className="sm:max-w-[500px]">
           <DialogHeader>
@@ -880,7 +878,6 @@ export default function AdminStudentsPage() {
         </DialogContent>
       </Dialog>
 
-      {/* Delete Dialog */}
       <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
         <DialogContent>
           <DialogHeader>

@@ -1,10 +1,9 @@
 import { MiddlewareConsumer, Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
-import { ThrottlerModule } from '@nestjs/throttler';
+import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
+import { APP_GUARD } from '@nestjs/core';
 import { DbModule } from './db/db.module';
 import { getConfig } from './services/app-config/configuration';
-// Cache module disabled in containerized dev mode to avoid optional runtime adapter issues
-// import { AppCacheModule } from './app-cache/app-cache.module';
 import { LoggerModule } from './logger/logger.module';
 import { AsyncStorageMiddleware } from './global/middleware/async-storage/async-storage.middleware';
 import { GlobalModule } from './global/global.module';
@@ -35,7 +34,6 @@ import { DashboardModule } from './dashboard/dashboard.module';
       },
     ]),
     DbModule,
-    // AppCacheModule,
     AuthModule,
     UsersModule,
     DepartmentsModule,
@@ -49,6 +47,12 @@ import { DashboardModule } from './dashboard/dashboard.module';
     DashboardModule,
     LoggerModule,
     HealthModule,
+  ],
+  providers: [
+    {
+      provide: APP_GUARD,
+      useClass: ThrottlerGuard,
+    },
   ],
 })
 export class AppModule {

@@ -15,6 +15,7 @@ import { useSearchParams } from "next/navigation";
 import { createApplicationFull, listApplications, submitApplication, updateApplication } from "@/lib/services/applications";
 import { uploadDocument } from "@/lib/services/documents";
 import { toast } from "sonner";
+import { sanitizeFormData, sanitizeInput } from "@/lib/sanitize";
 
 type ApplicationStatus = "PENDING" | "UNDER_REVIEW" | "APPROVED" | "REJECTED" | "ARCHIVED";
 
@@ -62,7 +63,6 @@ export default function ApplicationsPage() {
         if (!token) return;
         if (!(["ADMIN", "UNIVERSITY"].includes(user?.role || ""))) return;
         fetchApplications();
-        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [token, user?.role]);
 
     async function fetchApplications() {
@@ -99,18 +99,53 @@ export default function ApplicationsPage() {
         });
     };
 
+    function validateFile(
+        file: File | null,
+        allowedMimes: string[] = [
+            "application/pdf",
+            "application/msword",
+            "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        ],
+        allowedExts: string[] = [".pdf", ".doc", ".docx"],
+        maxSize = 10 * 1024 * 1024,
+    ) {
+        if (!file) return true;
+        const name = sanitizeInput(file.name || "");
+        const type = file.type || "";
+        if (file.size > maxSize) {
+            toast.error(`${name} exceeds maximum allowed size of ${Math.round(maxSize / 1024 / 1024)}MB`);
+            return false;
+        }
+        const lower = name.toLowerCase();
+        if (!allowedExts.some(ext => lower.endsWith(ext))) {
+            toast.error(`${name} must be one of: ${allowedExts.join(", ")}`);
+            return false;
+        }
+        if (name.split(".").length > 2) {
+            toast.error(`${name} has multiple extensions; upload a clean filename`);
+            return false;
+        }
+        if (allowedMimes.length && type && !allowedMimes.includes(type)) {
+            toast.error(`${name} has invalid MIME type`);
+            return false;
+        }
+        return true;
+    }
+
     const handleCreateApplication = async () => {
         if (!token) { toast.error("You must be logged in to create an application"); return; }
         if (user?.role !== "UNIVERSITY") { toast.error("Only university accounts can create applications"); return; }
         if (!user?.university?.id) { toast.error("Your account is not linked to a university. Please contact an admin."); return; }
         if (!formData.academicYear) { toast.error("Academic year is required"); return; }
-            if (!formData.name) { toast.error("Application name is required"); return; }
+        if (!formData.name) { toast.error("Application name is required"); return; }
         if (!officialLetterFile) { toast.error("Official letter file is required"); return; }
+        if (!validateFile(officialLetterFile)) return;
 
         try {
+            const cleanForm = sanitizeFormData(formData);
             let uploadRes;
             try {
-                uploadRes = await uploadDocument(officialLetterFile, { type: "OFFICIAL_LETTER", title: `Official Letter - ${formData.academicYear}` }, token || undefined);
+                uploadRes = await uploadDocument(officialLetterFile, { type: "OFFICIAL_LETTER", title: `Official Letter - ${sanitizeInput(cleanForm.academicYear || "")}` }, token || undefined);
             } catch (uploadErr: any) {
                 toast.error(`Upload failed: ${uploadErr?.message || "Unknown error"}`);
                 return;
@@ -118,7 +153,13 @@ export default function ApplicationsPage() {
             const fileUrl = uploadRes.data.fileUrl;
 
             try {
-                await createApplicationFull({ name: formData.name, academicYear: formData.academicYear, universityId: user.university.id, officialLetterUrl: fileUrl, students: [] }, token || undefined);
+                await createApplicationFull({
+                    name: sanitizeInput(cleanForm.name || ""),
+                    academicYear: sanitizeInput(cleanForm.academicYear || ""),
+                    universityId: user.university.id,
+                    officialLetterUrl: fileUrl,
+                    students: []
+                }, token || undefined);
             } catch (createErr: any) {
                 const status = createErr?.status ?? createErr?.code;
                 if (status === 400) { toast.error("Creation failed: Backend rejected the request. Please ensure all data is valid."); return; }
@@ -142,13 +183,15 @@ export default function ApplicationsPage() {
     const handleUpdateApplication = async () => {
         if (!selectedApp) return;
         if (!formData.name) { toast.error("Application name is required"); return; }
+        if (officialLetterFile && !validateFile(officialLetterFile)) return;
         try {
+            const cleanForm = sanitizeFormData(formData);
             let officialLetterUrl: string | undefined;
             if (officialLetterFile) {
-                const up = await uploadDocument(officialLetterFile, { documentType: "OFFICIAL_LETTER", entityType: "APPLICATION", entityId: selectedApp.id, applicationId: selectedApp.id, title: `Official Letter - ${formData.academicYear}` }, token || undefined);
+                const up = await uploadDocument(officialLetterFile, { documentType: "OFFICIAL_LETTER", entityType: "APPLICATION", entityId: selectedApp.id, applicationId: selectedApp.id, title: `Official Letter - ${sanitizeInput(cleanForm.academicYear || "")}` }, token || undefined);
                 officialLetterUrl = up.data.fileUrl;
             }
-            await updateApplication(selectedApp.id, { name: formData.name, academicYear: formData.academicYear, ...(officialLetterUrl ? { officialLetterUrl } : {}) }, token || undefined);
+            await updateApplication(selectedApp.id, { name: sanitizeInput(cleanForm.name || ""), academicYear: sanitizeInput(cleanForm.academicYear || ""), ...(officialLetterUrl ? { officialLetterUrl } : {}) }, token || undefined);
             toast.success("Application updated");
             fetchApplications();
             setShowEditDialog(false);
@@ -423,321 +466,6 @@ export default function ApplicationsPage() {
             <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
                 <DialogContent className="sm:max-w-[500px]">
                     <DialogHeader><DialogTitle>Archive Application</DialogTitle><DialogDescription>This will archive the application named "{selectedApp?.name}". You can restore it later by contacting an admin.</DialogDescription></DialogHeader>
-                    <div className="py-2"><p className="text-sm">Application ID: {selectedApp?.id}</p></div>
-                    <DialogFooter><Button variant="outline" onClick={() => setShowDeleteDialog(false)}>Cancel</Button><Button variant="destructive" onClick={handleDeleteApplication}>Archive</Button></DialogFooter>
-                </DialogContent>
-                </Dialog>
-            <Card>
-                <CardContent className="p-4">
-                    <div className="flex items-center gap-4">
-                        <Filter className="h-5 w-5 text-muted-foreground" />
-                        <Label htmlFor="status-filter" className="font-medium">Filter by Status:</Label>
-                        <Select value={selectedStatus} onValueChange={setSelectedStatus}>
-                            <SelectTrigger id="status-filter" className="w-[200px]">
-                                <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="ALL">All Applications</SelectItem>
-                                <SelectItem value="PENDING">Pending</SelectItem>
-                                <SelectItem value="UNDER_REVIEW">Under Review</SelectItem>
-                                <SelectItem value="APPROVED">Approved</SelectItem>
-                                <SelectItem value="REJECTED">Rejected</SelectItem>
-                                <SelectItem value="ARCHIVED">Archived</SelectItem>
-                            </SelectContent>
-                        </Select>
-                        {selectedStatus !== "ALL" && (
-                            <Button variant="ghost" size="sm" onClick={() => setSelectedStatus("ALL")}>
-                                Clear Filter
-                            </Button>
-                        )}
-                    </div>
-                </CardContent>
-            </Card>
-
-            {/* Applications List */}
-            <Card>
-                <CardHeader>
-                    <CardTitle>Applications ({filteredApplications.length})</CardTitle>
-                    <CardDescription>
-                        {selectedStatus === "ALL"
-                            ? "All your internship applications"
-                            : `Applications with status: ${getStatusConfig(selectedStatus as ApplicationStatus).label}`
-                        }
-                    </CardDescription>
-                </CardHeader>
-                <CardContent>
-                    <div className="space-y-3">
-                        {filteredApplications.length === 0 ? (
-                            <div className="text-center py-12">
-                                <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                                <p className="text-lg font-medium text-muted-foreground">No applications found</p>
-                                <p className="text-sm text-muted-foreground mt-1">
-                                    {selectedStatus === "ALL"
-                                        ? "Create your first application to get started"
-                                        : "No applications match the selected filter"}
-                                </p>
-                            </div>
-                        ) : (
-                            filteredApplications.map((app) => {
-                                const statusConfig = getStatusConfig(app.status);
-                                const StatusIcon = statusConfig.icon;
-                                const canEdit = app.status === "PENDING";
-                                const canSubmit = app.status === "PENDING" && app.officialLetterUrl;
-
-                                return (
-                                    <div
-                                        key={app.id}
-                                        className="flex items-center justify-between p-5 border rounded-lg hover:shadow-md transition-all group"
-                                    >
-                                        <div className="flex items-center gap-4 flex-1">
-                                            <div className={`p-4 rounded-lg bg-gradient-to-br from-${statusConfig.variant}/20 to-${statusConfig.variant}/10`}>
-                                                <StatusIcon className={`h-6 w-6 text-${statusConfig.variant}`} />
-                                            </div>
-                                            <div className="flex-1">
-                                                <div className="flex items-center gap-3 mb-2">
-                                                    <h3 className="text-lg font-bold">{app.id}</h3>
-                                                    <Badge variant={statusConfig.variant} className="gap-1.5">
-                                                        <StatusIcon className="h-3 w-3" />
-                                                        {statusConfig.label}
-                                                    </Badge>
-                                                </div>
-                                                <div className="grid grid-cols-2 gap-x-6 gap-y-1 text-sm">
-                                                    <div className="flex items-center gap-2 text-muted-foreground">
-                                                        <Calendar className="h-4 w-4" />
-                                                        <span>Academic Year: <span className="font-medium text-foreground">{app.academicYear}</span></span>
-                                                    </div>
-                                                    <div className="flex items-center gap-2 text-muted-foreground">
-                                                        <Users className="h-4 w-4" />
-                                                        <span>{app.studentCount} students</span>
-                                                    </div>
-                                                    <div className="text-muted-foreground">
-                                                        Created: {formatDate(app.createdAt)}
-                                                    </div>
-                                                    {app.submittedAt && (
-                                                        <div className="text-muted-foreground">
-                                                            Submitted: {formatDate(app.submittedAt)}
-                                                        </div>
-                                                    )}
-                                                </div>
-                                                {app.status === "REJECTED" && app.rejectionReason && (
-                                                    <Card className="mt-4 bg-destructive/5 border-destructive/20 shadow-none">
-                                                        <CardHeader className="p-3 pb-0 text-destructive">
-                                                            <CardTitle className="text-sm font-bold flex items-center gap-2">
-                                                                <XCircle className="h-4 w-4" />
-                                                                Rejection Reason
-                                                            </CardTitle>
-                                                        </CardHeader>
-                                                        <CardContent className="p-3 pt-1">
-                                                            <p className="text-sm text-destructive/80 italic">
-                                                                "{app.rejectionReason}"
-                                                            </p>
-                                                        </CardContent>
-                                                    </Card>
-                                                )}
-                                            </div>
-                                        </div>
-
-                                        <div className="flex items-center gap-2 ml-4">
-                                            {app.officialLetterUrl && (
-                                                <Button variant="ghost" size="sm" title="Download Official Letter">
-                                                    <Download className="h-4 w-4" />
-                                                </Button>
-                                            )}
-                                            <Button
-                                                variant="outline"
-                                                size="sm"
-                                                className="gap-2"
-                                                onClick={() => handleViewApplication(app)}
-                                            >
-                                                <Eye className="h-4 w-4" />
-                                                View
-                                            </Button>
-                                            {canEdit && (
-                                                <>
-                                                    <Button
-                                                        variant="outline"
-                                                        size="sm"
-                                                        className="gap-2"
-                                                        onClick={() => handleEditClick(app)}
-                                                    >
-                                                        <Edit className="h-4 w-4" />
-                                                        Edit
-                                                    </Button>
-                                                    {canSubmit && (
-                                                        <Button
-                                                            variant="default"
-                                                            size="sm"
-                                                            className="gap-2"
-                                                            onClick={() => handleSubmitForReview(app)}
-                                                        >
-                                                            <Send className="h-4 w-4" />
-                                                            Submit
-                                                        </Button>
-                                                    )}
-                                                    <Button
-                                                        variant="ghost"
-                                                        size="sm"
-                                                        className="text-destructive hover:text-destructive"
-                                                        onClick={() => handleDeleteClick(app)}
-                                                        title="Archive Application"
-                                                    >
-                                                        <Trash2 className="h-4 w-4" />
-                                                    </Button>
-                                                </>
-                                            )}
-                                        </div>
-                                    </div>
-                                );
-                            })
-                        )}
-                    </div>
-                </CardContent>
-            </Card>
-
-            
-
-            {/* Edit Application Dialog */}
-            <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
-                <DialogContent className="sm:max-w-[600px]">
-                    <DialogHeader>
-                        <DialogTitle>Edit Application</DialogTitle>
-                        <DialogDescription>
-                            Update application details. Application ID: {selectedApp?.id}
-                        </DialogDescription>
-                    </DialogHeader>
-                    <div className="space-y-4 py-4">
-                        <div className="space-y-2">
-                            <Label htmlFor="edit-academic-year">Academic Year *</Label>
-                            <Input
-                                id="edit-academic-year"
-                                placeholder="e.g., 2024/2025"
-                                value={formData.academicYear}
-                                onChange={(e) => setFormData({ ...formData, academicYear: e.target.value })}
-                            />
-                        </div>
-
-                        <div className="space-y-2">
-                            <Label htmlFor="edit-notes">Notes</Label>
-                            <Textarea
-                                id="edit-notes"
-                                placeholder="Add any notes or comments..."
-                                value={formData.notes}
-                                onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                                rows={4}
-                            />
-                        </div>
-
-                        <div className="space-y-2">
-                            <Label htmlFor="edit-letter">Update Official Letter</Label>
-                            <Card>
-                                <CardContent className="p-6 text-center">
-                                    <input
-                                        id="edit-letter"
-                                        type="file"
-                                        accept=".pdf,.doc,.docx"
-                                        className="hidden"
-                                        onChange={(e) => setOfficialLetterFile(e.target.files?.[0] || null)}
-                                    />
-                                    <label htmlFor="edit-letter" className="cursor-pointer">
-                                        <Upload className="h-8 w-8 mx-auto text-muted-foreground mb-2" />
-                                        {officialLetterFile ? (
-                                            <p className="text-sm font-medium">{officialLetterFile.name}</p>
-                                        ) : selectedApp?.officialLetterUrl ? (
-                                            <p className="text-sm text-muted-foreground">Current file: {selectedApp.officialLetterUrl.split('/').pop()}</p>
-                                        ) : (
-                                            <p className="text-sm text-muted-foreground">Click to upload</p>
-                                        )}
-                                    </label>
-                                </CardContent>
-                            </Card>
-                        </div>
-                    </div>
-                    <DialogFooter>
-                        <Button variant="outline" onClick={() => {
-                            setShowEditDialog(false);
-                            resetForm();
-                        }}>
-                            Cancel
-                        </Button>
-                        <Button onClick={handleUpdateApplication}>
-                            Save Changes
-                        </Button>
-                    </DialogFooter>
-                </DialogContent>
-            </Dialog>
-
-            {/* View Application Dialog */}
-            <Dialog open={showViewDialog} onOpenChange={setShowViewDialog}>
-                <DialogContent className="sm:max-w-[600px]">
-                    <DialogHeader>
-                        <DialogTitle>Application Details</DialogTitle>
-                        <DialogDescription>
-                            Complete information for {selectedApp?.id}
-                        </DialogDescription>
-                    </DialogHeader>
-                    {selectedApp && (
-                        <div className="space-y-4 py-4">
-                            <div className="grid grid-cols-2 gap-4">
-                                <div>
-                                    <Label className="text-muted-foreground">Application ID</Label>
-                                    <p className="font-medium mt-1">{selectedApp.id}</p>
-                                </div>
-                                <div>
-                                    <Label className="text-muted-foreground">Status</Label>
-                                    <div className="mt-1">
-                                        <Badge variant={getStatusConfig(selectedApp.status).variant}>
-                                            {getStatusConfig(selectedApp.status).label}
-                                        </Badge>
-                                    </div>
-                                </div>
-                                <div>
-                                    <Label className="text-muted-foreground">Academic Year</Label>
-                                    <p className="font-medium mt-1">{selectedApp.academicYear}</p>
-                                </div>
-                                <div>
-                                    <Label className="text-muted-foreground">Student Count</Label>
-                                    <p className="font-medium mt-1">{selectedApp.studentCount}</p>
-                                </div>
-                                <div>
-                                    <Label className="text-muted-foreground">Created At</Label>
-                                    <p className="font-medium mt-1">{formatDate(selectedApp.createdAt)}</p>
-                                </div>
-                                {selectedApp.submittedAt && (
-                                    <div>
-                                        <Label className="text-muted-foreground">Submitted At</Label>
-                                        <p className="font-medium mt-1">{formatDate(selectedApp.submittedAt)}</p>
-                                    </div>
-                                )}
-                                {selectedApp.reviewedAt && (
-                                    <div>
-                                        <Label className="text-muted-foreground">Reviewed At</Label>
-                                        <p className="font-medium mt-1">{formatDate(selectedApp.reviewedAt)}</p>
-                                    </div>
-                                )}
-                            </div>
-                            {selectedApp.officialLetterUrl && (
-                                <div>
-                                    <Label className="text-muted-foreground">Official Letter</Label>
-                                    <div className="mt-2">
-                                        <a href={selectedApp.officialLetterUrl} target="_blank" rel="noopener noreferrer" className="text-sm text-primary underline">View / Download</a>
-                                    </div>
-                                </div>
-                            )}
-                            {selectedApp.reviewNotes && (
-                                <div>
-                                    <Label className="text-muted-foreground">Review Notes</Label>
-                                    <p className="text-sm mt-1">{selectedApp.reviewNotes}</p>
-                                </div>
-                            )}
-                        </div>
-                    )}
-                    <DialogFooter><Button variant="outline" onClick={() => setShowViewDialog(false)}>Close</Button></DialogFooter>
-                </DialogContent>
-            </Dialog>
-
-            <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
-                <DialogContent className="sm:max-w-[500px]">
-                    <DialogHeader><DialogTitle>Archive Application</DialogTitle><DialogDescription>This will archive the application. You can restore it later by contacting an admin.</DialogDescription></DialogHeader>
                     <div className="py-2"><p className="text-sm">Application ID: {selectedApp?.id}</p></div>
                     <DialogFooter><Button variant="outline" onClick={() => setShowDeleteDialog(false)}>Cancel</Button><Button variant="destructive" onClick={handleDeleteApplication}>Archive</Button></DialogFooter>
                 </DialogContent>

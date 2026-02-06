@@ -58,11 +58,11 @@ import { listApplications, type ApplicationListItem as Application } from "@/lib
 import { uploadDocument } from "@/lib/services/documents";
 import { toast } from "sonner";
 import type { Student } from "@/lib/types";
+import { sanitizeFormData, sanitizeInput } from "@/lib/sanitize";
 
 export default function UniversityStudentsPage() {
     const { token, user } = useAuth();
 
-    // State
     const [applications, setApplications] = useState<Application[]>([]);
     const [selectedAppId, setSelectedAppId] = useState<string | null>(null);
     const [students, setStudents] = useState<Student[]>([]);
@@ -71,7 +71,6 @@ export default function UniversityStudentsPage() {
     const [searchQuery, setSearchQuery] = useState("");
     const [statusFilter, setStatusFilter] = useState<string>("ALL");
 
-    // Dialog States
     const [showAddDialog, setShowAddDialog] = useState(false);
     const [showEditDialog, setShowEditDialog] = useState(false);
     const [showDeleteDialog, setShowDeleteDialog] = useState(false);
@@ -79,7 +78,6 @@ export default function UniversityStudentsPage() {
     const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
     const [isSubmitting, setIsSubmitting] = useState(false);
 
-    // Form State
     const [formData, setFormData] = useState({
         studentId: "",
         firstName: "",
@@ -92,7 +90,6 @@ export default function UniversityStudentsPage() {
     const [cvFile, setCvFile] = useState<File | null>(null);
     const [transcriptFile, setTranscriptFile] = useState<File | null>(null);
 
-    // Initial load: Fetch applications
     useEffect(() => {
         const fetchApps = async () => {
             if (!token) return;
@@ -101,8 +98,6 @@ export default function UniversityStudentsPage() {
                 const res = await listApplications({ page: 1, limit: 100 }, token);
                 const apps = res.data.items || [];
                 setApplications(apps);
-
-                // Auto-select the most recent application if none selected
                 if (apps.length > 0 && !selectedAppId) {
                     setSelectedAppId(apps[0].id);
                 }
@@ -116,7 +111,6 @@ export default function UniversityStudentsPage() {
         fetchApps();
     }, [token]);
 
-    // Fetch students when selection changes
     const fetchStudents = useCallback(async () => {
         if (!token || !selectedAppId) return;
         try {
@@ -147,18 +141,43 @@ export default function UniversityStudentsPage() {
         });
     }, [students, searchQuery, statusFilter]);
 
-    // Handlers
+    function validateFile(
+        file: File | null,
+        allowedMimes: string[] = ["application/pdf"],
+        allowedExts: string[] = [".pdf"],
+        maxSize = 10 * 1024 * 1024,
+    ) {
+        if (!file) return true;
+        const name = sanitizeInput(file.name || "");
+        const type = file.type || "";
+        if (file.size > maxSize) {
+            toast.error(`${name} exceeds maximum allowed size of ${Math.round(maxSize / 1024 / 1024)}MB`);
+            return false;
+        }
+        const lower = name.toLowerCase();
+        if (!allowedExts.some(ext => lower.endsWith(ext))) {
+            toast.error(`${name} must be one of: ${allowedExts.join(", ")}`);
+            return false;
+        }
+        if (name.split(".").length > 2) {
+            toast.error(`${name} has multiple extensions; upload a clean filename`);
+            return false;
+        }
+        if (allowedMimes.length && type && !allowedMimes.includes(type)) {
+            toast.error(`${name} has invalid MIME type`);
+            return false;
+        }
+        return true;
+    }
+
     const handleAddStudent = async () => {
         if (!selectedAppId || !token) return;
-
+        if (!validateFile(cvFile) || !validateFile(transcriptFile)) return;
         try {
             setIsSubmitting(true);
-
-            // 1. Add student
-            const res = await addStudentToApplication(selectedAppId, formData, token);
+            const cleanForm = sanitizeFormData(formData);
+            const res = await addStudentToApplication(selectedAppId, cleanForm, token);
             const newStudent = res.data;
-
-            // 2. Upload files if present
             if (cvFile) {
                 await uploadDocument(cvFile, {
                     documentType: "CV",
@@ -166,7 +185,7 @@ export default function UniversityStudentsPage() {
                     studentId: newStudent.id,
                     applicationId: selectedAppId,
                     entityType: "STUDENT",
-                    title: `CV - ${newStudent.firstName} ${newStudent.lastName}`
+                    title: `CV - ${sanitizeInput(newStudent.firstName)} ${sanitizeInput(newStudent.lastName)}`
                 }, token);
             }
             if (transcriptFile) {
@@ -176,10 +195,9 @@ export default function UniversityStudentsPage() {
                     studentId: newStudent.id,
                     applicationId: selectedAppId,
                     entityType: "STUDENT",
-                    title: `Transcript - ${newStudent.firstName} ${newStudent.lastName}`
+                    title: `Transcript - ${sanitizeInput(newStudent.firstName)} ${sanitizeInput(newStudent.lastName)}`
                 }, token);
             }
-
             toast.success("Student added successfully");
             setShowAddDialog(false);
             resetForm();
@@ -193,14 +211,11 @@ export default function UniversityStudentsPage() {
 
     const handleUpdateStudent = async () => {
         if (!selectedAppId || !selectedStudent || !token) return;
-
+        if (!validateFile(cvFile) || !validateFile(transcriptFile)) return;
         try {
             setIsSubmitting(true);
-
-            // 1. Update info
-            await updateApplicationStudent(selectedAppId, selectedStudent.id, formData, token);
-
-            // 2. Upload files if new ones selected
+            const cleanForm = sanitizeFormData(formData);
+            await updateApplicationStudent(selectedAppId, selectedStudent.id, cleanForm, token);
             if (cvFile) {
                 await uploadDocument(cvFile, {
                     documentType: "CV",
@@ -208,7 +223,7 @@ export default function UniversityStudentsPage() {
                     studentId: selectedStudent.id,
                     applicationId: selectedAppId,
                     entityType: "STUDENT",
-                    title: `CV - ${formData.firstName} ${formData.lastName}`
+                    title: `CV - ${sanitizeInput(cleanForm.firstName)} ${sanitizeInput(cleanForm.lastName)}`
                 }, token);
             }
             if (transcriptFile) {
@@ -218,10 +233,9 @@ export default function UniversityStudentsPage() {
                     studentId: selectedStudent.id,
                     applicationId: selectedAppId,
                     entityType: "STUDENT",
-                    title: `Transcript - ${formData.firstName} ${formData.lastName}`
+                    title: `Transcript - ${sanitizeInput(cleanForm.firstName)} ${sanitizeInput(cleanForm.lastName)}`
                 }, token);
             }
-
             toast.success("Student updated successfully");
             setShowEditDialog(false);
             resetForm();
@@ -424,7 +438,6 @@ export default function UniversityStudentsPage() {
                 </CardContent>
             </Card>
 
-            {/* Add/Edit Dialog */}
             <Dialog open={showAddDialog || showEditDialog} onOpenChange={(open) => { if (!open) { setShowAddDialog(false); setShowEditDialog(false); resetForm(); } }}>
                 <DialogContent className="sm:max-w-[600px] overflow-y-auto max-h-[90vh]">
                     <DialogHeader>
@@ -519,7 +532,6 @@ export default function UniversityStudentsPage() {
                 </DialogContent>
             </Dialog>
 
-            {/* View Dialog */}
             <Dialog open={showViewDialog} onOpenChange={setShowViewDialog}>
                 <DialogContent className="sm:max-w-md">
                     <DialogHeader>
@@ -565,7 +577,6 @@ export default function UniversityStudentsPage() {
                 </DialogContent>
             </Dialog>
 
-            {/* Delete Dialog */}
             <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
                 <DialogContent>
                     <DialogHeader>

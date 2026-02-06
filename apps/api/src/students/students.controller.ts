@@ -9,6 +9,7 @@ import {
   Query,
   UseGuards,
   Req,
+  ParseUUIDPipe,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -32,7 +33,7 @@ import { UserRole } from '../common/enums/user-role.enum';
 @UseGuards(JwtAuthGuard, RolesGuard)
 @ApiBearerAuth()
 export class StudentsController {
-  constructor(private readonly studentsService: StudentsService) { }
+  constructor(private readonly studentsService: StudentsService) {}
 
   @Get('students')
   @Roles(UserRole.ADMIN)
@@ -41,10 +42,7 @@ export class StudentsController {
     status: 200,
     description: 'Students retrieved successfully',
   })
-  async listAll(
-    @Query() query: QueryStudentsDto,
-    @Req() req: any,
-  ) {
+  async listAll(@Query() query: QueryStudentsDto, @Req() req: any) {
     return this.studentsService.listAll(query, req.user);
   }
 
@@ -56,7 +54,7 @@ export class StudentsController {
     description: 'Students retrieved successfully',
   })
   async listByApplication(
-    @Param('appId') appId: string,
+    @Param('appId', new ParseUUIDPipe()) appId: string,
     @Query() query: QueryStudentsDto,
     @Req() req: any,
   ) {
@@ -71,7 +69,7 @@ export class StudentsController {
     description: 'Student added successfully',
   })
   async addStudent(
-    @Param('appId') appId: string,
+    @Param('appId', new ParseUUIDPipe()) appId: string,
     @Body() createStudentDto: CreateStudentDto,
     @Req() req: any,
   ) {
@@ -80,17 +78,20 @@ export class StudentsController {
 
   @Post('applications/students')
   @Roles(UserRole.UNIVERSITY)
-  @ApiOperation({ summary: 'Add a student to the latest editable application for your university' })
+  @ApiOperation({
+    summary:
+      'Add a student to the latest editable application for your university',
+  })
   @ApiResponse({
     status: 201,
     description: 'Student added successfully',
   })
-  async addStudentToLatest(
-    @Body() body: any,
-    @Req() req: any,
-  ) {
-    // body may include applicationId to explicitly target an application
-    return this.studentsService.addStudentFlexible(body.applicationId, body, req.user);
+  async addStudentToLatest(@Body() body: any, @Req() req: any) {
+    return this.studentsService.addStudentFlexible(
+      body.applicationId,
+      body,
+      req.user,
+    );
   }
 
   @Patch('applications/:appId/students/:id')
@@ -101,8 +102,8 @@ export class StudentsController {
     description: 'Student updated successfully',
   })
   async updateStudent(
-    @Param('appId') appId: string,
-    @Param('id') id: string,
+    @Param('appId', new ParseUUIDPipe()) appId: string,
+    @Param('id', new ParseUUIDPipe()) id: string,
     @Body() updateStudentDto: UpdateStudentDto,
     @Req() req: any,
   ) {
@@ -117,8 +118,8 @@ export class StudentsController {
     description: 'Student removed successfully',
   })
   async removeStudent(
-    @Param('appId') appId: string,
-    @Param('id') id: string,
+    @Param('appId', new ParseUUIDPipe()) appId: string,
+    @Param('id', new ParseUUIDPipe()) id: string,
     @Req() req: any,
   ) {
     return this.studentsService.removeStudent(appId, id, req.user);
@@ -131,7 +132,10 @@ export class StudentsController {
     status: 200,
     description: 'Student retrieved successfully',
   })
-  async getById(@Param('id') id: string, @Req() req: any) {
+  async getById(
+    @Param('id', new ParseUUIDPipe()) id: string,
+    @Req() req: any,
+  ) {
     return this.studentsService.getById(id, req.user);
   }
 
@@ -143,7 +147,7 @@ export class StudentsController {
     description: 'Student reviewed successfully',
   })
   async reviewStudent(
-    @Param('id') id: string,
+    @Param('id', new ParseUUIDPipe()) id: string,
     @Body() reviewDto: ReviewStudentDto,
   ) {
     return this.studentsService.reviewStudent(
@@ -153,8 +157,6 @@ export class StudentsController {
     );
   }
 
-  // Spec & web-app alignment: support POST /students/:id/review
-  // Mirrors PATCH behavior to allow coordinator→admin review flow via POST.
   @Post('students/:id/review')
   @Roles(UserRole.ADMIN)
   @ApiOperation({ summary: 'Review a student application (POST)' })
@@ -163,7 +165,7 @@ export class StudentsController {
     description: 'Student reviewed successfully',
   })
   async reviewStudentPost(
-    @Param('id') id: string,
+    @Param('id', new ParseUUIDPipe()) id: string,
     @Body() reviewDto: ReviewStudentDto,
   ) {
     return this.studentsService.reviewStudent(
@@ -189,7 +191,7 @@ export class StudentsController {
     description: 'Student not found',
   })
   async markArrived(
-    @Param('id') id: string,
+    @Param('id', new ParseUUIDPipe()) id: string,
     @Body() markArrivedDto: MarkArrivedDto,
   ) {
     return this.studentsService.markArrived(id, markArrivedDto.notes);

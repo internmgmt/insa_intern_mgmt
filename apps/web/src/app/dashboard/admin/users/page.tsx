@@ -14,6 +14,7 @@ import { listDepartments } from "@/lib/services/departments";
 import { useAuth } from "@/components/auth-provider";
 import type { User, UserRole } from "@/lib/types";
 import { toast } from "sonner";
+import { sanitizeFormData } from "@/lib/sanitize";
 
 type NewUser = {
   firstName: string;
@@ -55,7 +56,6 @@ export default function AdminUsersPage() {
   useEffect(() => {
     void fetchUsers();
     void fetchResources();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [page]);
 
   async function fetchUsers() {
@@ -82,17 +82,21 @@ export default function AdminUsersPage() {
       setUniversities(((uniRes as any)?.data?.items ?? (uniRes as any)?.data ?? []).map((u: any) => ({ id: u.id, name: u.name })));
       setDepartments(((deptRes as any)?.data?.items ?? (deptRes as any)?.data ?? []).map((d: any) => ({ id: d.id, name: d.name })));
     } catch (error) {
-      // Non-blocking
     }
   }
 
   async function handleAddUser() {
     if (!canCreate) return;
+    const cleanData = sanitizeFormData({
+      email: newUser.email.trim().toLowerCase(),
+      firstName: newUser.firstName.trim(),
+      lastName: newUser.lastName.trim(),
+    });
     try {
       await createUser({
-        email: newUser.email.trim().toLowerCase(),
-        firstName: newUser.firstName.trim(),
-        lastName: newUser.lastName.trim(),
+        email: cleanData.email,
+        firstName: cleanData.firstName,
+        lastName: cleanData.lastName,
         role: newUser.role,
         universityId: newUser.role === "UNIVERSITY" ? (newUser.universityId || undefined) : undefined,
         departmentId: newUser.role === "SUPERVISOR" ? (newUser.departmentId || undefined) : undefined,

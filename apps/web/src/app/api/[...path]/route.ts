@@ -2,10 +2,39 @@ import { NextRequest, NextResponse } from "next/server";
 
 export const dynamic = "force-dynamic";
 
+const ALLOWED_PATH_PREFIXES = [
+  "/auth",
+  "/users",
+  "/universities",
+  "/departments",
+  "/applications",
+  "/students",
+  "/interns",
+  "/submissions",
+  "/documents",
+  "/dashboard",
+];
+
+function isAllowedPath(path: string): boolean {
+  const normalized = "/" + path.replace(/^\/+/, "");
+  return ALLOWED_PATH_PREFIXES.some((prefix) => normalized.startsWith(prefix));
+}
+
 function getTargetBaseUrl() {
   const target = process.env.API_PROXY_TARGET;
   if (!target) return null;
   return target.endsWith("/") ? target.slice(0, -1) : target;
+}
+
+function sanitizeHeaders(headers: Headers): Record<string, string> {
+  const safe: Record<string, string> = {};
+  const BLOCKED = new Set(["host", "cookie", "x-forwarded-for", "x-real-ip"]);
+  headers.forEach((value, key) => {
+    if (!BLOCKED.has(key.toLowerCase())) {
+      safe[key] = value;
+    }
+  });
+  return safe;
 }
 
 async function proxy(req: NextRequest) {
@@ -24,11 +53,15 @@ async function proxy(req: NextRequest) {
   }
 
   const upstreamPath = req.nextUrl.pathname.replace(/^\/api/, "") || "/";
+
+  if (!isAllowedPath(upstreamPath)) {
+    return NextResponse.json({ message: "Forbidden" }, { status: 403 });
+  }
+
   const upstreamUrl = new URL(`${targetBaseUrl}${upstreamPath}${req.nextUrl.search}`);
 
-  const headers = new Headers(req.headers);
-  // Avoid leaking the dev host header.
-  headers.delete("host");
+  const safeHeaders = sanitizeHeaders(req.headers);
+  const headers = new Headers(safeHeaders);
 
   const method = req.method.toUpperCase();
   const hasBody = !(method === "GET" || method === "HEAD");
@@ -41,7 +74,6 @@ async function proxy(req: NextRequest) {
   });
 
   const responseHeaders = new Headers(res.headers);
-  // Let Next handle encoding/length.
   responseHeaders.delete("content-encoding");
   responseHeaders.delete("content-length");
 

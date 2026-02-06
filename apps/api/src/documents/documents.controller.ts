@@ -16,6 +16,8 @@ import {
   Res,
   ForbiddenException,
   NotFoundException,
+  BadRequestException,
+  ParseUUIDPipe,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import {
@@ -30,11 +32,21 @@ import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { UserRole } from '../common/enums/user-role.enum';
 import { UploadDocumentDto } from './dto/upload-document.dto';
+import { resolve, normalize } from 'path';
+
+const UPLOADS_DIR = resolve(process.cwd(), 'uploads');
 
 @ApiTags('documents')
 @Controller('documents')
 export class DocumentsController {
-  constructor(private readonly documentsService: DocumentsService) { }
+  constructor(private readonly documentsService: DocumentsService) {}
+
+  private assertSafePath(filePath: string): void {
+    const resolved = resolve(UPLOADS_DIR, normalize(filePath));
+    if (!resolved.startsWith(UPLOADS_DIR)) {
+      throw new BadRequestException('Invalid file path');
+    }
+  }
 
   @Post('upload')
   @UseGuards(JwtAuthGuard, RolesGuard)
@@ -108,7 +120,10 @@ export class DocumentsController {
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Get document by id (includes file and metadata)' })
   @ApiResponse({ status: 200, description: 'Document retrieved successfully' })
-  async findById(@Param('id') id: string, @Req() req: any) {
+  async findById(
+    @Param('id', new ParseUUIDPipe()) id: string,
+    @Req() req: any,
+  ) {
     const res: any = await this.documentsService.findById(id);
     const doc = res?.data;
     if (
@@ -141,7 +156,7 @@ export class DocumentsController {
   @ApiOperation({ summary: 'Download document with standardized filename' })
   @ApiResponse({ status: 200, description: 'File download' })
   async download(
-    @Param('id') id: string,
+    @Param('id', new ParseUUIDPipe()) id: string,
     @Req() req: any,
     @Res() res: any,
   ) {
@@ -152,8 +167,8 @@ export class DocumentsController {
     const path = require('path');
     const fs = require('fs');
 
-    // Create absolute path and ensure it's within uploads directory
     const absolutePath = path.resolve(process.cwd(), filePath);
+    this.assertSafePath(absolutePath);
 
     if (!fs.existsSync(absolutePath)) {
       throw new NotFoundException({
@@ -180,7 +195,10 @@ export class DocumentsController {
     status: 200,
     description: 'Document metadata retrieved successfully',
   })
-  async info(@Param('id') id: string, @Req() req: any) {
+  async info(
+    @Param('id', new ParseUUIDPipe()) id: string,
+    @Req() req: any,
+  ) {
     const res: any = await this.documentsService.findById(id);
     const doc = res?.data ?? null;
 
@@ -219,7 +237,10 @@ export class DocumentsController {
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Delete a document' })
   @ApiResponse({ status: 200, description: 'Document deleted successfully' })
-  async remove(@Param('id') id: string, @Req() req: any) {
+  async remove(
+    @Param('id', new ParseUUIDPipe()) id: string,
+    @Req() req: any,
+  ) {
     return this.documentsService.remove(id, req.user);
   }
 }

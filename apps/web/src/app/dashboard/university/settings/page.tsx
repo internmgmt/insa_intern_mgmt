@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { PageHeader } from "@/components/ui/page-header";
 import { CheckCircle, Key, Moon, Sun } from "lucide-react";
+import { sanitizeFormData } from "@/lib/sanitize";
 
 export default function UniversitySettingsPage() {
   const [preferences, setPreferences] = useState({ timezone: "America/New_York", dateFormat: "MM/DD/YYYY", resultsPerPage: "25" });
@@ -18,7 +19,8 @@ export default function UniversitySettingsPage() {
 
   const handleSaveSettings = () => {
     setSaveStatus("saving");
-    // Simulate save
+    const cleanPreferences = sanitizeFormData(preferences);
+    const cleanSecurity = { ...security, sessionTimeout: sanitizeFormData({ sessionTimeout: security.sessionTimeout }).sessionTimeout };
     setTimeout(() => {
       setSaveStatus("saved");
       setTimeout(() => setSaveStatus("idle"), 2000);
