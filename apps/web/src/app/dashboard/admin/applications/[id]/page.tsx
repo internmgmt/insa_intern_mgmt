@@ -9,8 +9,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { AlertCircle, FileText, CheckCircle, XCircle, Clock } from "lucide-react";
 import Link from "next/link";
+import { getAcademicYears } from "@/lib/utils";
 
 export default function AdminApplicationDetailPage() {
   const params = useParams<{ id: string }>();
@@ -109,7 +111,16 @@ export default function AdminApplicationDetailPage() {
             </div>
             <div className="space-y-1">
               <label htmlFor="academicYear" className="text-sm font-medium">Academic Year</label>
-              <Input id="academicYear" value={academicYear} onChange={(e) => setAcademicYear(e.target.value)} />
+              <Select value={academicYear} onValueChange={setAcademicYear}>
+                <SelectTrigger id="academicYear">
+                  <SelectValue placeholder="Select year" />
+                </SelectTrigger>
+                <SelectContent>
+                  {getAcademicYears().map(year => (
+                    <SelectItem key={year} value={year}>{year}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
             <Button onClick={save}>Save Changes</Button>
           </CardContent>

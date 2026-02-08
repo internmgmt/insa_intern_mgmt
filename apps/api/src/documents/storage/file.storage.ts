@@ -1,5 +1,5 @@
 import { promises as fs } from 'fs';
-import path from 'path';
+import * as path from 'path';
 import { diskStorage } from 'multer';
 import type { Request } from 'express';
 import type { Express } from 'express';

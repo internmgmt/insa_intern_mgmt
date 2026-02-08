@@ -1,6 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { IsOptional, IsString, MaxLength, IsEmail } from 'class-validator';
 import { Exclude } from 'class-transformer';
+import { IsAcademicYear } from '../../common/validators/student.validators';
 
 export class UpdateStudentDto {
   @ApiProperty({
@@ -43,8 +44,7 @@ export class UpdateStudentDto {
     required: false,
   })
   @IsOptional()
-  @IsString()
-  @MaxLength(20)
+  @IsAcademicYear()
   academicYear?: string;
 
   @ApiProperty({

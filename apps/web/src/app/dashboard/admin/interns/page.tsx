@@ -52,15 +52,7 @@ import {
 
 import { Trash2 } from "lucide-react";
 import { useSearchParams } from "next/navigation";
-import {
-    createIntern,
-    completeInternship,
-    terminateInternship,
-    suspendIntern,
-    unsuspendIntern,
-    listInterns
-} from "@/lib/services/interns";
-import { deleteIntern } from "@/lib/services/interns";
+import * as InternService from "@/lib/services/interns";
 import { listStudents } from "@/lib/services/students";
 import { listUniversities } from "@/lib/services/universities";
 import { listApplications } from "@/lib/services/applications";
@@ -129,15 +121,8 @@ export default function AdminInternsPage() {
         try {
             setLoading(true);
 
-            // Defensive: sometimes bundling or a hot-reload can leave imports undefined at runtime.
-            // Attempt to use the static import if available; otherwise dynamically import the service.
-            const getListInterns = async () => {
-                if (typeof listInterns === 'function') return listInterns;
-                const mod = await import('@/lib/services/interns');
-                return mod.listInterns;
-            };
-
-            const listInternsFn = await getListInterns();
+            // Use the statically imported service directly from the namespaced import
+            const listInternsFn = InternService.listInterns;
 
             const promises: Promise<any>[] = [
                 listInternsFn({ limit: 50 }, token || undefined),
@@ -184,7 +169,7 @@ export default function AdminInternsPage() {
         if (!newInternData.studentId) return;
         try {
             setIsSubmitting(true);
-            await createIntern({ studentId: newInternData.studentId }, token || undefined);
+            await InternService.createIntern({ studentId: newInternData.studentId }, token || undefined);
             toast.success('Intern record created');
             setShowAddDialog(false);
             setNewInternData({ studentId: "", supervisor: "", startDate: new Date().toISOString().split('T')[0], endDate: "" });
@@ -201,18 +186,18 @@ export default function AdminInternsPage() {
         try {
             setIsSubmitting(true);
             if (statusAction === "COMPLETE") {
-                await completeInternship(selectedIntern.id, {
+                await InternService.completeInternship(selectedIntern.id, {
                     finalEvaluation: statusData.finalEvaluation,
                     completionNotes: statusData.notes
                 }, token || undefined);
                 toast.success("Internship marked as COMPLETED");
             } else if (statusAction === "SUSPEND") {
-                await suspendIntern(selectedIntern.id, {
+                await InternService.suspendIntern(selectedIntern.id, {
                     reason: statusData.reason
                 }, token || undefined);
                 toast.warning("Internship SUSPENDED");
             } else {
-                await terminateInternship(selectedIntern.id, {
+                await InternService.terminateInternship(selectedIntern.id, {
                     reason: statusData.reason
                 }, token || undefined);
                 toast.error("Internship TERMINATED");
@@ -228,7 +213,7 @@ export default function AdminInternsPage() {
 
     const handleUnsuspend = async (id: string) => {
         try {
-            await unsuspendIntern(id, token || undefined);
+            await InternService.unsuspendIntern(id, token || undefined);
             toast.success("Internship UNSUSPENDED");
             fetchData();
         } catch (error: any) {
@@ -241,7 +226,7 @@ export default function AdminInternsPage() {
         if (deleteConfirmText.trim() !== "DELETE") return toast.error("Type DELETE to confirm");
         try {
             setIsSubmitting(true);
-            await deleteIntern(selectedIntern.id, token || undefined);
+            await InternService.deleteIntern(selectedIntern.id, token || undefined);
             toast.success("Intern deleted");
             setShowDeleteDialog(false);
             setDeleteConfirmText("");

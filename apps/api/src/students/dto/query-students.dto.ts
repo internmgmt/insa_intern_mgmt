@@ -10,6 +10,7 @@ import {
 } from 'class-validator';
 import { Type, Transform } from 'class-transformer';
 import { StudentStatus } from '../../common/enums/student-status.enum';
+import { IsAcademicYear } from '../../common/validators/student.validators';
 
 export class QueryStudentsDto {
   @ApiPropertyOptional({ example: 1, description: 'Page number' })
@@ -69,6 +70,6 @@ export class QueryStudentsDto {
     description: 'Filter by academic year (Admin only)',
   })
   @IsOptional()
-  @IsString()
+  @IsAcademicYear()
   academicYear?: string;
 }

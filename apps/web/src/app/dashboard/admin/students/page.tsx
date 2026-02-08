@@ -65,6 +65,7 @@ import { uploadDocument, listDocuments } from "@/lib/services/documents";
 import { downloadFile } from "@/lib/download";
 import { toast } from "sonner";
 import { sanitizeFormData, sanitizeInput } from "@/lib/sanitize";
+import { getAcademicYears } from "@/lib/utils";
 
 export default function AdminStudentsPage() {
   const { token } = useAuth();
@@ -102,7 +103,7 @@ export default function AdminStudentsPage() {
     email: "",
     phone: "",
     fieldOfStudy: "",
-    academicYear: "",
+    academicYear: getAcademicYears()[0],
   });
   const [cvFile, setCvFile] = useState<File | null>(null);
   const [transcriptFile, setTranscriptFile] = useState<File | null>(null);
@@ -390,7 +391,7 @@ export default function AdminStudentsPage() {
       email: "",
       phone: "",
       fieldOfStudy: "",
-      academicYear: "",
+      academicYear: getAcademicYears()[0],
     });
     setCvFile(null);
     setTranscriptFile(null);
@@ -689,7 +690,19 @@ export default function AdminStudentsPage() {
               </div>
               <div className="space-y-1">
                 <Label htmlFor="academicYear" className="text-xs">Academic Year *</Label>
-                <Input id="academicYear" placeholder="e.g. 2026/2027" className="h-8 text-sm" value={formData.academicYear} onChange={(e) => setFormData({ ...formData, academicYear: e.target.value })} />
+                <Select 
+                  value={formData.academicYear} 
+                  onValueChange={(val) => setFormData({ ...formData, academicYear: val })}
+                >
+                  <SelectTrigger id="academicYear" className="h-8 text-sm">
+                    <SelectValue placeholder="Select year" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {getAcademicYears().map(year => (
+                      <SelectItem key={year} value={year}>{year}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
             </div>
             <div className="space-y-1">

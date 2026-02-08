@@ -1,7 +1,6 @@
 "use client"
 
-// Use simple emoji placeholders here to avoid lucide-react import issues
-// Replace with lucide icons once the package resolution is fixed
+import { CheckCircle2, Info, AlertTriangle, XCircle, Loader2 } from "lucide-react"
 import { useTheme } from "next-themes"
 import { Toaster as Sonner, type ToasterProps } from "sonner"
 
@@ -13,11 +12,11 @@ const Toaster = ({ ...props }: ToasterProps) => {
       theme={theme as ToasterProps["theme"]}
       className="toaster group"
       icons={{
-        success: <span className="size-4">✅</span>,
-        info: <span className="size-4">ℹ️</span>,
-        warning: <span className="size-4">⚠️</span>,
-        error: <span className="size-4">⛔</span>,
-        loading: <span className="size-4 animate-spin">⏳</span>,
+        success: <CheckCircle2 className="size-4 text-emerald-500" />,
+        info: <Info className="size-4 text-blue-500" />,
+        warning: <AlertTriangle className="size-4 text-amber-500" />,
+        error: <XCircle className="size-4 text-destructive" />,
+        loading: <Loader2 className="size-4 animate-spin text-muted-foreground" />,
       }}
       style={
         {

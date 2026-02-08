@@ -10,6 +10,7 @@ import {
   IsOptional,
   IsEmail,
 } from 'class-validator';
+import { IsAcademicYear } from '../../common/validators/student.validators';
 
 export class CreateStudentDto {
   @ApiProperty({
@@ -52,9 +53,8 @@ export class CreateStudentDto {
     example: '2024/2025',
     description: 'Academic year',
   })
-  @IsString()
   @IsNotEmpty()
-  @MaxLength(9)
+  @IsAcademicYear()
   academicYear: string;
 
   @ApiProperty({
@@ -80,9 +80,8 @@ export class CreateApplicationDto {
     example: '2024/2025',
     description: 'Academic year for the application',
   })
-  @IsString()
   @IsNotEmpty()
-  @MaxLength(9)
+  @IsAcademicYear()
   academicYear: string;
 
   @ApiProperty({

@@ -24,7 +24,7 @@ export class ApplicationEntity {
   @Column({
     name: 'academic_year',
     type: 'varchar',
-    length: 9,
+    length: 20,
   })
   academicYear: string;
 

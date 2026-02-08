@@ -59,23 +59,16 @@ async function runSeeds() {
 
     console.log('🌱 Starting database seeding...');
 
-    // Order: departments → supervisors → universities → coordinators → applications → students → interns → documents → admin
-    if (!(await runSeedStep('departments', departmentsSeed))) anyFailed = true;
-    if (!(await runSeedStep('supervisors', supervisorsSeed))) anyFailed = true;
-    if (!(await runSeedStep('universities', universitiesSeed)))
-      anyFailed = true;
-    if (
-      !(await runSeedStep(
-        'university coordinators',
-        universityCoordinatorsSeed,
-      ))
-    )
-      anyFailed = true;
-    if (!(await runSeedStep('applications', applicationsSeed)))
-      anyFailed = true;
-    if (!(await runSeedStep('students', studentsSeed))) anyFailed = true;
-    if (!(await runSeedStep('interns', internsSeed))) anyFailed = true;
-    if (!(await runSeedStep('documents', documentsSeed))) anyFailed = true;
+    // Only run admin seed to avoid creating demo data. Other seeds intentionally skipped.
+    // To re-enable other seeds, uncomment the corresponding lines below.
+    // if (!(await runSeedStep('departments', departmentsSeed))) anyFailed = true;
+    // if (!(await runSeedStep('supervisors', supervisorsSeed))) anyFailed = true;
+    // if (!(await runSeedStep('universities', universitiesSeed))) anyFailed = true;
+    // if (!(await runSeedStep('university coordinators', universityCoordinatorsSeed))) anyFailed = true;
+    // if (!(await runSeedStep('applications', applicationsSeed))) anyFailed = true;
+    // if (!(await runSeedStep('students', studentsSeed))) anyFailed = true;
+    // if (!(await runSeedStep('interns', internsSeed))) anyFailed = true;
+    // if (!(await runSeedStep('documents', documentsSeed))) anyFailed = true;
     if (!(await runSeedStep('admin user', adminSeed))) anyFailed = true;
 
     if (anyFailed) {

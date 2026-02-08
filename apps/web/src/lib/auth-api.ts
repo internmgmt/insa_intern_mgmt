@@ -21,3 +21,11 @@ export async function meApi(token: string) {
     token,
   });
 }
+
+export async function changePasswordApi(data: any, token: string) {
+  return apiFetch<ApiSuccess<null>>("/auth/change-password", {
+    method: "POST",
+    body: data,
+    token,
+  });
+}

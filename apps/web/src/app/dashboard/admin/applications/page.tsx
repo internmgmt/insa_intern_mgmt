@@ -351,7 +351,6 @@ export default function AdminApplicationsPage() {
                                         <TableRow key={app.id} className="group hover:bg-muted/10 transition-colors">
                                             <TableCell>
                                                 <div className="font-semibold">{app.name || 'Untitled Application'}</div>
-                                                <div className="font-mono text-[10px] text-muted-foreground">{app.id.substring(0, 8)}...</div>
                                             </TableCell>
                                             <TableCell>
                                                 <div className="flex items-center gap-2">

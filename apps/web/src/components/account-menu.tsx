@@ -12,7 +12,8 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { LogOut, Moon, Sun } from "lucide-react";
+import { LogOut, Moon, Sun, Key, User } from "lucide-react";
+import Link from "next/link";
 
 export function AccountMenu() {
   const { user, logout } = useAuth();
@@ -114,6 +115,16 @@ export function AccountMenu() {
         )}
 
         <DropdownMenuSeparator />
+
+        <DropdownMenuItem asChild>
+          <Link
+            href="/dashboard/settings/password"
+            className="flex w-full items-center gap-2 px-2 py-1.5 text-sm font-medium transition-colors hover:bg-muted rounded-md mb-1"
+          >
+            <Key className="h-4 w-4" />
+            <span>Change Password</span>
+          </Link>
+        </DropdownMenuItem>
 
         <DropdownMenuItem asChild>
           <Button

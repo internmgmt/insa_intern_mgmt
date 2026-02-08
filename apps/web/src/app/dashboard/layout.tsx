@@ -28,6 +28,11 @@ export default function DashboardLayout({
       return;
     }
 
+    // Allow common dashboard paths like settings
+    if (pathname.startsWith("/dashboard/settings")) {
+      return;
+    }
+
     if (!pathname.startsWith(expectedHome)) {
       router.replace(expectedHome);
     }

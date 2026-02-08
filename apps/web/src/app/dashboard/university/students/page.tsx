@@ -59,6 +59,7 @@ import { uploadDocument } from "@/lib/services/documents";
 import { toast } from "sonner";
 import type { Student } from "@/lib/types";
 import { sanitizeFormData, sanitizeInput } from "@/lib/sanitize";
+import { getAcademicYears } from "@/lib/utils";
 
 export default function UniversityStudentsPage() {
     const { token, user } = useAuth();
@@ -85,7 +86,7 @@ export default function UniversityStudentsPage() {
         email: "",
         phone: "",
         fieldOfStudy: "",
-        academicYear: "",
+        academicYear: getAcademicYears()[0],
     });
     const [cvFile, setCvFile] = useState<File | null>(null);
     const [transcriptFile, setTranscriptFile] = useState<File | null>(null);
@@ -270,7 +271,7 @@ export default function UniversityStudentsPage() {
             email: "",
             phone: "",
             fieldOfStudy: "",
-            academicYear: "",
+            academicYear: getAcademicYears()[0],
         });
         setCvFile(null);
         setTranscriptFile(null);
@@ -476,8 +477,19 @@ export default function UniversityStudentsPage() {
                             </div>
                             <div className="space-y-2">
                                 <Label htmlFor="academicYear">Academic Year *</Label>
-                                <Input id="academicYear" placeholder="e.g. 3rd Year" value={formData.academicYear} onChange={(e) => setFormData({ ...formData, academicYear: e.target.value })} />
-                                <p className="text-xs text-muted-foreground">Example: "3rd Year" (use ordinal year format per spec)</p>
+                                <Select 
+                                    value={formData.academicYear} 
+                                    onValueChange={(val) => setFormData({ ...formData, academicYear: val })}
+                                >
+                                    <SelectTrigger id="academicYear">
+                                        <SelectValue placeholder="Select academic year" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {getAcademicYears().map(year => (
+                                            <SelectItem key={year} value={year}>{year}</SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
                             </div>
                         </div>
                         <div className="space-y-2">

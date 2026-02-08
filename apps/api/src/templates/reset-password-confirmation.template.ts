@@ -25,7 +25,7 @@ export function resetPasswordConfirmationTemplate({
         <p style="margin: 8px 0;"><strong>Changed At:</strong> ${changeTime}</p>
       </div>
       <p style="color: #d9534f; font-weight: 600; margin: 16px 0;">
-        ⚠️ Security Notice: If you did not make this change, your account may be compromised. Please contact support immediately at support@insa.gov.et.
+        Security Notice: If you did not make this change, your account may be compromised. Please contact support immediately at support@insa.gov.et.
       </p>
       <p style="margin: 16px 0;">
         You can now log in with your new password at:<br/>

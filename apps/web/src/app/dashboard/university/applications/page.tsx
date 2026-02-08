@@ -15,7 +15,7 @@ import { useSearchParams } from "next/navigation";
 import { createApplicationFull, listApplications, submitApplication, updateApplication } from "@/lib/services/applications";
 import { uploadDocument } from "@/lib/services/documents";
 import { toast } from "sonner";
-import { sanitizeFormData, sanitizeInput } from "@/lib/sanitize";
+import { getAcademicYears } from "@/lib/utils";
 
 type ApplicationStatus = "PENDING" | "UNDER_REVIEW" | "APPROVED" | "REJECTED" | "ARCHIVED";
 
@@ -51,8 +51,21 @@ export default function ApplicationsPage() {
         }
     }, [searchParams]);
 
+    // Avoid duplicate rendering in development (HMR/StrictMode) while keeping hooks consistent.
+    const [shouldRender, setShouldRender] = useState(true);
+    useEffect(() => {
+        if (typeof window === "undefined") return;
+        const KEY = "__INSA_UNIV_APPS_RENDERED__";
+        if ((window as any)[KEY]) {
+            setShouldRender(false);
+            return;
+        }
+        (window as any)[KEY] = true;
+        return () => { (window as any)[KEY] = false; };
+    }, []);
+
     const [formData, setFormData] = useState({
-        academicYear: "",
+        academicYear: getAcademicYears()[0],
         name: "",
         studentCount: 0,
         notes: "",
@@ -110,7 +123,7 @@ export default function ApplicationsPage() {
         maxSize = 10 * 1024 * 1024,
     ) {
         if (!file) return true;
-        const name = sanitizeInput(file.name || "");
+        const name = (file.name || "").trim();
         const type = file.type || "";
         if (file.size > maxSize) {
             toast.error(`${name} exceeds maximum allowed size of ${Math.round(maxSize / 1024 / 1024)}MB`);
@@ -142,10 +155,9 @@ export default function ApplicationsPage() {
         if (!validateFile(officialLetterFile)) return;
 
         try {
-            const cleanForm = sanitizeFormData(formData);
             let uploadRes;
             try {
-                uploadRes = await uploadDocument(officialLetterFile, { type: "OFFICIAL_LETTER", title: `Official Letter - ${sanitizeInput(cleanForm.academicYear || "")}` }, token || undefined);
+                uploadRes = await uploadDocument(officialLetterFile, { type: "OFFICIAL_LETTER", title: `Official Letter - ${formData.academicYear}` }, token || undefined);
             } catch (uploadErr: any) {
                 toast.error(`Upload failed: ${uploadErr?.message || "Unknown error"}`);
                 return;
@@ -154,11 +166,11 @@ export default function ApplicationsPage() {
 
             try {
                 await createApplicationFull({
-                    name: sanitizeInput(cleanForm.name || ""),
-                    academicYear: sanitizeInput(cleanForm.academicYear || ""),
+                    name: formData.name,
+                    academicYear: formData.academicYear,
                     universityId: user.university.id,
                     officialLetterUrl: fileUrl,
-                    students: []
+                    students: [],
                 }, token || undefined);
             } catch (createErr: any) {
                 const status = createErr?.status ?? createErr?.code;
@@ -185,13 +197,12 @@ export default function ApplicationsPage() {
         if (!formData.name) { toast.error("Application name is required"); return; }
         if (officialLetterFile && !validateFile(officialLetterFile)) return;
         try {
-            const cleanForm = sanitizeFormData(formData);
             let officialLetterUrl: string | undefined;
             if (officialLetterFile) {
-                const up = await uploadDocument(officialLetterFile, { documentType: "OFFICIAL_LETTER", entityType: "APPLICATION", entityId: selectedApp.id, applicationId: selectedApp.id, title: `Official Letter - ${sanitizeInput(cleanForm.academicYear || "")}` }, token || undefined);
+                const up = await uploadDocument(officialLetterFile, { documentType: "OFFICIAL_LETTER", entityType: "APPLICATION", entityId: selectedApp.id, applicationId: selectedApp.id, title: `Official Letter - ${formData.academicYear}` }, token || undefined);
                 officialLetterUrl = up.data.fileUrl;
             }
-            await updateApplication(selectedApp.id, { name: sanitizeInput(cleanForm.name || ""), academicYear: sanitizeInput(cleanForm.academicYear || ""), ...(officialLetterUrl ? { officialLetterUrl } : {}) }, token || undefined);
+            await updateApplication(selectedApp.id, { name: formData.name, academicYear: formData.academicYear, ...(officialLetterUrl ? { officialLetterUrl } : {}) }, token || undefined);
             toast.success("Application updated");
             fetchApplications();
             setShowEditDialog(false);
@@ -222,16 +233,17 @@ export default function ApplicationsPage() {
         catch (error: any) { toast.error(error?.message || "Failed to submit application"); }
     };
 
-    const resetForm = () => { setFormData({ academicYear: "", name: "", studentCount: 0, notes: "" }); setOfficialLetterFile(null); setSelectedApp(null); };
+    const resetForm = () => { setFormData({ academicYear: getAcademicYears()[0], name: "", studentCount: 0, notes: "" }); setOfficialLetterFile(null); setSelectedApp(null); };
 
-    const filteredApplications = applications.filter(app => selectedStatus === "ALL" || app.status === selectedStatus);
+    const uniqueApplications = Array.from(new Map(applications.map(app => [app.id, app])).values());
+    const filteredApplications = uniqueApplications.filter(app => selectedStatus === "ALL" || app.status === selectedStatus);
     const stats = {
-        total: applications.length,
-        pending: applications.filter(a => a.status === "PENDING").length,
-        underReview: applications.filter(a => a.status === "UNDER_REVIEW").length,
-        approved: applications.filter(a => a.status === "APPROVED").length,
-        rejected: applications.filter(a => a.status === "REJECTED").length,
-        archived: applications.filter(a => a.status === "ARCHIVED").length,
+        total: uniqueApplications.length,
+        pending: uniqueApplications.filter(a => a.status === "PENDING").length,
+        underReview: uniqueApplications.filter(a => a.status === "UNDER_REVIEW").length,
+        approved: uniqueApplications.filter(a => a.status === "APPROVED").length,
+        rejected: uniqueApplications.filter(a => a.status === "REJECTED").length,
+        archived: uniqueApplications.filter(a => a.status === "ARCHIVED").length,
     };
 
     return (
@@ -247,7 +259,7 @@ export default function ApplicationsPage() {
                         <p className="text-muted-foreground text-sm mt-1">Create, track, and modify batches of student internship requests</p>
                     </div>
                     <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-                        <Button onClick={() => setShowNewAppDialog(true)} size="lg" className="gap-2" disabled={!token || (user?.role !== "UNIVERSITY")}> 
+                        <Button onClick={() => setShowNewAppDialog(true)} size="lg" className="gap-2" disabled={!token || (user?.role !== "UNIVERSITY")}>
                             <Plus className="h-5 w-5" /> New Application
                         </Button>
                     </div>
@@ -318,7 +330,6 @@ export default function ApplicationsPage() {
                                                     <h3 className="text-lg font-bold">{(app as any).name || 'Untitled Application'}</h3>
                                                     <Badge variant={statusConfig.variant} className="gap-1.5 font-bold text-[10px] uppercase tracking-wider"><StatusIcon className="h-3 w-3" />{statusConfig.label}</Badge>
                                                 </div>
-                                                <p className="text-muted-foreground font-mono text-[10px] mb-3">{app.id}</p>
                                                 <div className="grid grid-cols-1 gap-x-6 gap-y-1 text-sm sm:grid-cols-2">
                                                     <div className="flex items-center gap-2 text-muted-foreground"><Calendar className="h-4 w-4" /><span>Academic Year: <span className="font-medium text-foreground">{app.academicYear}</span></span></div>
                                                     <div className="flex items-center gap-2 text-muted-foreground"><Users className="h-4 w-4" /><span>{app.studentCount} students</span></div>
@@ -349,7 +360,22 @@ export default function ApplicationsPage() {
                     <DialogHeader><DialogTitle>Create New Application</DialogTitle><DialogDescription>Start a new internship application batch. You'll be able to add students after creation.</DialogDescription></DialogHeader>
                         <div className="space-y-4 py-2">
                         <div className="space-y-2"><Label htmlFor="app-name" className="text-xs uppercase font-bold text-muted-foreground">Application Name *</Label><Input id="app-name" placeholder="e.g., Software Engineering Batch 2025" value={formData.name} onChange={(e) => { setFormData({ ...formData, name: e.target.value }); }} required /></div>
-                        <div className="space-y-2"><Label htmlFor="academic-year" className="text-xs uppercase font-bold text-muted-foreground">Academic Year *</Label><Input id="academic-year" placeholder="2025/2026" value={formData.academicYear} onChange={(e) => { setFormData({ ...formData, academicYear: e.target.value }); }} /></div>
+                        <div className="space-y-2">
+                            <Label htmlFor="academic-year" className="text-xs uppercase font-bold text-muted-foreground">Academic Year *</Label>
+                            <Select 
+                                value={formData.academicYear} 
+                                onValueChange={(val) => setFormData({ ...formData, academicYear: val })}
+                            >
+                                <SelectTrigger id="academic-year">
+                                    <SelectValue placeholder="Select academic year" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {getAcademicYears().map(year => (
+                                        <SelectItem key={year} value={year}>{year}</SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        </div>
                         <div className="space-y-2"><Label htmlFor="official-letter" className="text-xs uppercase font-bold text-muted-foreground">Official Letter</Label>
                             <div className="border-2 border-dashed rounded-xl p-4 text-center hover:bg-muted/30 transition-colors">
                                 <input id="official-letter" type="file" accept=".pdf,.doc,.docx" className="hidden" onChange={(e) => setOfficialLetterFile(e.target.files?.[0] || null)} />
@@ -376,34 +402,62 @@ export default function ApplicationsPage() {
 
             <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
                 <DialogContent className="sm:max-w-[600px]">
-                    <DialogHeader><DialogTitle>Edit: {selectedApp?.name}</DialogTitle><DialogDescription>Application ID: {selectedApp?.id}</DialogDescription></DialogHeader>
+                    <DialogHeader><DialogTitle>Edit Application</DialogTitle><DialogDescription>Update application: {selectedApp?.name || selectedApp?.id}</DialogDescription></DialogHeader>
                         <div className="space-y-4 py-4">
                         <div className="space-y-2"><Label htmlFor="edit-name">Name *</Label><Input id="edit-name" placeholder="e.g., Fall Internship Batch 2024" value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} required /><p className="text-xs text-muted-foreground">Short name to identify this application</p></div>
-                        <div className="space-y-2"><Label htmlFor="edit-academic-year">Academic Year *</Label><Input id="edit-academic-year" placeholder="e.g., 2024/2025" value={formData.academicYear} onChange={(e) => setFormData({ ...formData, academicYear: e.target.value })} /></div>
+                        <div className="space-y-2">
+                            <Label htmlFor="edit-academic-year">Academic Year *</Label>
+                            <Select 
+                                value={formData.academicYear} 
+                                onValueChange={(val) => setFormData({ ...formData, academicYear: val })}
+                            >
+                                <SelectTrigger id="edit-academic-year">
+                                    <SelectValue placeholder="Select academic year" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {getAcademicYears().map(year => (
+                                        <SelectItem key={year} value={year}>{year}</SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        </div>
                         <div className="space-y-2"><Label htmlFor="edit-notes">Notes</Label><Textarea id="edit-notes" placeholder="Add any notes or comments..." value={formData.notes} onChange={(e) => setFormData({ ...formData, notes: e.target.value })} rows={4} /></div>
                         <div className="space-y-2"><Label htmlFor="edit-letter">Update Official Letter</Label><Card><CardContent className="p-6 text-center"><input id="edit-letter" type="file" accept=".pdf,.doc,.docx" className="hidden" onChange={(e) => setOfficialLetterFile(e.target.files?.[0] || null)} /><label htmlFor="edit-letter" className="cursor-pointer"><Upload className="h-8 w-8 mx-auto text-muted-foreground mb-2" />{officialLetterFile ? (<p className="text-sm font-medium">{officialLetterFile.name}</p>) : selectedApp?.officialLetterUrl ? (<p className="text-sm text-muted-foreground">Current file: {selectedApp.officialLetterUrl.split('/').pop()}</p>) : (<p className="text-sm text-muted-foreground">Click to upload</p>)}</label></CardContent></Card></div>
                     </div>
-                    <DialogFooter><Button variant="outline" onClick={() => { setShowEditDialog(false); resetForm(); }}>Cancel</Button><Button onClick={handleUpdateApplication} disabled={!formData.name}>Save Changes</Button></DialogFooter>
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => {
+                            setShowEditDialog(false);
+                            resetForm();
+                        }}>
+                            Cancel
+                        </Button>
+                        <Button onClick={handleUpdateApplication}>
+                            Save Changes
+                        </Button>
+                    </DialogFooter>
                 </DialogContent>
             </Dialog>
 
             <Dialog open={showViewDialog} onOpenChange={setShowViewDialog}>
                 <DialogContent className="sm:max-w-[600px]">
-                    <DialogHeader><DialogTitle>{selectedApp?.name}</DialogTitle><DialogDescription>Application ID: {selectedApp?.id}</DialogDescription></DialogHeader>
+                    <DialogHeader>
+                        <DialogTitle>Application Details</DialogTitle>
+                        <DialogDescription>Complete information for {selectedApp?.name || selectedApp?.id}</DialogDescription>
+                    </DialogHeader>
                     {selectedApp && (
                         <div className="space-y-4 py-4">
                             <div className="grid grid-cols-2 gap-4">
                                 <div>
-                                    <Label className="text-muted-foreground">Name</Label>
-                                    <p className="font-medium mt-1">{selectedApp.name || '-'}</p>
+                                    <Label className="text-muted-foreground">Application Name</Label>
+                                    <p className="font-medium mt-1 uppercase">{selectedApp.name || 'Untitled Application'}</p>
                                 </div>
                                 <div>
                                     <Label className="text-muted-foreground">Status</Label>
-                                    <div className="mt-1"><Badge variant={getStatusConfig(selectedApp.status).variant}>{getStatusConfig(selectedApp.status).label}</Badge></div>
-                                </div>
-                                <div>
-                                    <Label className="text-muted-foreground">Application ID</Label>
-                                    <p className="font-medium mt-1 font-mono text-xs">{selectedApp.id}</p>
+                                    <div className="mt-1">
+                                        <Badge variant={getStatusConfig(selectedApp.status).variant}>
+                                            {getStatusConfig(selectedApp.status).label}
+                                        </Badge>
+                                    </div>
                                 </div>
                                 <div>
                                     <Label className="text-muted-foreground">Academic Year</Label>
@@ -433,7 +487,9 @@ export default function ApplicationsPage() {
                             {selectedApp.officialLetterUrl && (
                                 <div>
                                     <Label className="text-muted-foreground">Official Letter</Label>
-                                    <div className="mt-2"><a href={selectedApp.officialLetterUrl} target="_blank" rel="noopener noreferrer" className="text-sm text-primary underline">View / Download</a></div>
+                                    <div className="mt-2">
+                                        <a href={selectedApp.officialLetterUrl} target="_blank" rel="noopener noreferrer" className="text-sm text-primary underline">View / Download</a>
+                                    </div>
                                 </div>
                             )}
                             {selectedApp.reviewNotes && (
@@ -444,29 +500,14 @@ export default function ApplicationsPage() {
                             )}
                         </div>
                     )}
-                    <DialogFooter>
-                        <Button variant="outline" onClick={() => setShowViewDialog(false)}>Close</Button>
-                        {selectedApp?.status === 'PENDING' && (
-                            <Button
-                                className="gap-2"
-                                onClick={() => {
-                                    setShowViewDialog(false);
-                                    handleSubmitForReview(selectedApp);
-                                }}
-                                disabled={!selectedApp.officialLetterUrl || selectedApp.studentCount === 0}
-                            >
-                                <Send className="h-4 w-4" />
-                                Submit for Review
-                            </Button>
-                        )}
-                    </DialogFooter>
+                    <DialogFooter><Button variant="outline" onClick={() => setShowViewDialog(false)}>Close</Button></DialogFooter>
                 </DialogContent>
             </Dialog>
 
             <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
                 <DialogContent className="sm:max-w-[500px]">
-                    <DialogHeader><DialogTitle>Archive Application</DialogTitle><DialogDescription>This will archive the application named "{selectedApp?.name}". You can restore it later by contacting an admin.</DialogDescription></DialogHeader>
-                    <div className="py-2"><p className="text-sm">Application ID: {selectedApp?.id}</p></div>
+                    <DialogHeader><DialogTitle>Archive Application</DialogTitle><DialogDescription>This will archive the application. You can restore it later by contacting an admin.</DialogDescription></DialogHeader>
+                    <div className="py-2"><p className="text-sm">Application: {selectedApp?.name || selectedApp?.id}</p></div>
                     <DialogFooter><Button variant="outline" onClick={() => setShowDeleteDialog(false)}>Cancel</Button><Button variant="destructive" onClick={handleDeleteApplication}>Archive</Button></DialogFooter>
                 </DialogContent>
             </Dialog>
