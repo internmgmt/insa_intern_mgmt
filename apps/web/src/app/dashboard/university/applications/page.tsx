@@ -33,6 +33,23 @@ interface Application {
     rejectionReason?: string;
 }
 
+function isSafeHttpUrl(url: string | undefined | null): boolean {
+    if (!url) return false;
+    try {
+        const parsed = new URL(url, window.location.origin);
+        return parsed.protocol === "https:" || parsed.protocol === "http:";
+    } catch {
+        return false;
+    }
+}
+
+function sanitizeUrl(url: string | undefined | null): string {
+    if (!url) return "#";
+    if (isSafeHttpUrl(url)) return url;
+    if (url.startsWith("/")) return url;
+    return "#";
+}
+
 export default function ApplicationsPage() {
     const { token, user } = useAuth();
     const searchParams = useSearchParams();
@@ -51,17 +68,17 @@ export default function ApplicationsPage() {
         }
     }, [searchParams]);
 
-    // Avoid duplicate rendering in development (HMR/StrictMode) while keeping hooks consistent.
     const [shouldRender, setShouldRender] = useState(true);
     useEffect(() => {
         if (typeof window === "undefined") return;
-        const KEY = "__INSA_UNIV_APPS_RENDERED__";
-        if ((window as any)[KEY]) {
+        const KEY = "insa_univ_apps_rendered_" + Math.random().toString(36).slice(2);
+        const STORAGE_KEY = "__INSA_UNIV_APPS_RENDERED__";
+        if ((window as any)[STORAGE_KEY]) {
             setShouldRender(false);
             return;
         }
-        (window as any)[KEY] = true;
-        return () => { (window as any)[KEY] = false; };
+        (window as any)[STORAGE_KEY] = true;
+        return () => { (window as any)[STORAGE_KEY] = false; };
     }, []);
 
     const [formData, setFormData] = useState({
@@ -339,7 +356,7 @@ export default function ApplicationsPage() {
                                             </div>
                                         </div>
                                         <div className="flex flex-wrap items-center gap-2">
-                                            {app.officialLetterUrl && (<a href={app.officialLetterUrl} target="_blank" rel="noopener noreferrer" title="Download Official Letter"><Button variant="ghost" size="sm"><Download className="h-4 w-4" /></Button></a>)}
+                                            {app.officialLetterUrl && isSafeHttpUrl(app.officialLetterUrl) && (<a href={sanitizeUrl(app.officialLetterUrl)} target="_blank" rel="noopener noreferrer" title="Download Official Letter"><Button variant="ghost" size="sm"><Download className="h-4 w-4" /></Button></a>)}
                                             <Button variant="outline" size="sm" className="gap-2" onClick={() => handleViewApplication(app)}><Eye className="h-4 w-4" />View</Button>
                                             {canEdit && (<>
                                                 <Button variant="outline" size="sm" className="gap-2" onClick={() => handleEditClick(app)}><Edit className="h-4 w-4" />Edit</Button>
@@ -362,8 +379,8 @@ export default function ApplicationsPage() {
                         <div className="space-y-2"><Label htmlFor="app-name" className="text-xs uppercase font-bold text-muted-foreground">Application Name *</Label><Input id="app-name" placeholder="e.g., Software Engineering Batch 2025" value={formData.name} onChange={(e) => { setFormData({ ...formData, name: e.target.value }); }} required /></div>
                         <div className="space-y-2">
                             <Label htmlFor="academic-year" className="text-xs uppercase font-bold text-muted-foreground">Academic Year *</Label>
-                            <Select 
-                                value={formData.academicYear} 
+                            <Select
+                                value={formData.academicYear}
                                 onValueChange={(val) => setFormData({ ...formData, academicYear: val })}
                             >
                                 <SelectTrigger id="academic-year">
@@ -407,8 +424,8 @@ export default function ApplicationsPage() {
                         <div className="space-y-2"><Label htmlFor="edit-name">Name *</Label><Input id="edit-name" placeholder="e.g., Fall Internship Batch 2024" value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} required /><p className="text-xs text-muted-foreground">Short name to identify this application</p></div>
                         <div className="space-y-2">
                             <Label htmlFor="edit-academic-year">Academic Year *</Label>
-                            <Select 
-                                value={formData.academicYear} 
+                            <Select
+                                value={formData.academicYear}
                                 onValueChange={(val) => setFormData({ ...formData, academicYear: val })}
                             >
                                 <SelectTrigger id="edit-academic-year">
@@ -484,11 +501,11 @@ export default function ApplicationsPage() {
                                     </div>
                                 )}
                             </div>
-                            {selectedApp.officialLetterUrl && (
+                            {selectedApp.officialLetterUrl && isSafeHttpUrl(selectedApp.officialLetterUrl) && (
                                 <div>
                                     <Label className="text-muted-foreground">Official Letter</Label>
                                     <div className="mt-2">
-                                        <a href={selectedApp.officialLetterUrl} target="_blank" rel="noopener noreferrer" className="text-sm text-primary underline">View / Download</a>
+                                        <a href={sanitizeUrl(selectedApp.officialLetterUrl)} target="_blank" rel="noopener noreferrer" className="text-sm text-primary underline">View / Download</a>
                                     </div>
                                 </div>
                             )}

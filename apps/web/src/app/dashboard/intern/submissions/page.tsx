@@ -29,6 +29,23 @@ type SubmissionRow = {
     supervisorFeedback?: string | null;
 };
 
+function isSafeHttpUrl(url: string | undefined | null): boolean {
+    if (!url) return false;
+    try {
+        const parsed = new URL(url);
+        return parsed.protocol === "https:" || parsed.protocol === "http:";
+    } catch {
+        return false;
+    }
+}
+
+function sanitizeUrl(url: string | undefined | null): string {
+    if (!url) return "#";
+    if (isSafeHttpUrl(url)) return url;
+    if (url.startsWith("/")) return url;
+    return "#";
+}
+
 export default function SubmissionsPage() {
     const { token } = useAuth();
     const [submissions, setSubmissions] = useState<SubmissionRow[]>([]);
@@ -337,16 +354,18 @@ export default function SubmissionsPage() {
                                                     >
                                                         <Eye className="h-4 w-4" />
                                                     </Button>
-                                                    <Button
-                                                        variant="ghost"
-                                                        size="sm"
-                                                        type="button"
-                                                        asChild
-                                                    >
-                                                        <a href={sub.fileUrl} download target="_blank" rel="noopener noreferrer">
-                                                            <Download className="h-4 w-4" />
-                                                        </a>
-                                                    </Button>
+                                                    {isSafeHttpUrl(sub.fileUrl) && (
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="sm"
+                                                            type="button"
+                                                            asChild
+                                                        >
+                                                            <a href={sanitizeUrl(sub.fileUrl)} download target="_blank" rel="noopener noreferrer">
+                                                                <Download className="h-4 w-4" />
+                                                            </a>
+                                                        </Button>
+                                                    )}
                                                 </div>
                                             </div>
                                         </div>
@@ -373,9 +392,9 @@ export default function SubmissionsPage() {
                 </Card>
             )}
 
-            {selected && (
+            {selected && isSafeHttpUrl(selected.fileUrl) && (
                 <FilePreview
-                    url={selected.fileUrl}
+                    url={sanitizeUrl(selected.fileUrl)}
                     title={selected.title}
                     onClose={() => setSelected(null)}
                 />

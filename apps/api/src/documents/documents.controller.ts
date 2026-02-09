@@ -33,6 +33,7 @@ import { Roles } from '../auth/decorators/roles.decorator';
 import { UserRole } from '../common/enums/user-role.enum';
 import { UploadDocumentDto } from './dto/upload-document.dto';
 import { resolve, normalize } from 'path';
+import { Throttle, ThrottlerGuard } from '@nestjs/throttler';
 
 const UPLOADS_DIR = resolve(process.cwd(), 'uploads');
 
@@ -145,7 +146,8 @@ export class DocumentsController {
   }
 
   @Get(':id/download')
-  @UseGuards(JwtAuthGuard, RolesGuard)
+  @UseGuards(ThrottlerGuard, JwtAuthGuard, RolesGuard)
+  @Throttle({ default: { limit: 30, ttl: 60 } })
   @Roles(
     UserRole.ADMIN,
     UserRole.SUPERVISOR,
@@ -195,10 +197,7 @@ export class DocumentsController {
     status: 200,
     description: 'Document metadata retrieved successfully',
   })
-  async info(
-    @Param('id', new ParseUUIDPipe()) id: string,
-    @Req() req: any,
-  ) {
+  async info(@Param('id', new ParseUUIDPipe()) id: string, @Req() req: any) {
     const res: any = await this.documentsService.findById(id);
     const doc = res?.data ?? null;
 
@@ -237,10 +236,7 @@ export class DocumentsController {
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Delete a document' })
   @ApiResponse({ status: 200, description: 'Document deleted successfully' })
-  async remove(
-    @Param('id', new ParseUUIDPipe()) id: string,
-    @Req() req: any,
-  ) {
+  async remove(@Param('id', new ParseUUIDPipe()) id: string, @Req() req: any) {
     return this.documentsService.remove(id, req.user);
   }
 }

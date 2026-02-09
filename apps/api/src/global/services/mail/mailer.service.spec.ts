@@ -5,6 +5,12 @@ import { createTransport, Transporter } from 'nodemailer';
 
 jest.mock('nodemailer');
 
+const TEST_SMTP_USER = process.env.TEST_SMTP_USER || 'smtp-user';
+const TEST_SMTP_PASS = process.env.TEST_SMTP_PASS || 'smtp-pass';
+const TEST_SMTP_HOST = process.env.TEST_SMTP_HOST || 'smtp-host';
+const TEST_SMTP_PORT = Number(process.env.TEST_SMTP_PORT) || 123;
+const TEST_MAIL_FROM = process.env.TEST_MAIL_FROM || 'from-mail';
+
 describe('MailerService', () => {
   let service: MailService;
   const connectMock = jest.mocked(createTransport);
@@ -22,13 +28,13 @@ describe('MailerService', () => {
           provide: ConfigService,
           useValue: {
             get: jest.fn().mockReturnValue({
-              from: 'from-mail',
+              from: TEST_MAIL_FROM,
               transportOptions: {
-                host: 'smtp-host',
-                port: 123,
+                host: TEST_SMTP_HOST,
+                port: TEST_SMTP_PORT,
                 auth: {
-                  user: 'smtp-user',
-                  pass: 'smtp-pass',
+                  user: TEST_SMTP_USER,
+                  pass: TEST_SMTP_PASS,
                 },
               },
             }),
@@ -48,11 +54,11 @@ describe('MailerService', () => {
     const connectMock = jest.mocked(createTransport);
 
     expect(connectMock).toHaveBeenCalledWith({
-      host: 'smtp-host',
-      port: 123,
+      host: TEST_SMTP_HOST,
+      port: TEST_SMTP_PORT,
       auth: {
-        user: 'smtp-user',
-        pass: 'smtp-pass',
+        user: TEST_SMTP_USER,
+        pass: TEST_SMTP_PASS,
       },
     });
   });
@@ -70,6 +76,6 @@ describe('MailerService', () => {
   });
 
   it('should return from mail', () => {
-    expect(service.from()).toBe('from-mail');
+    expect(service.from()).toBe(TEST_MAIL_FROM);
   });
 });

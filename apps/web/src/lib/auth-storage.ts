@@ -1,4 +1,4 @@
-const TOKEN_KEY = "insa.token";
+const TOKEN_KEY = process.env.NEXT_PUBLIC_TOKEN_STORAGE_KEY || "insa.token";
 
 function isTokenExpired(token: string): boolean {
   try {
