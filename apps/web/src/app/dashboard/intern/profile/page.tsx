@@ -78,7 +78,7 @@ export default function ProfilePage() {
 
     function saveSkills() {
         // TODO: call update intern API to persist skills. For now, local-only.
-        window.alert("Skills updated (local only). Implement API call to persist.");
+        toast.info("Skills updated (local only). Implement API call to persist.");
     }
 
     const student = profile?.student ?? null;

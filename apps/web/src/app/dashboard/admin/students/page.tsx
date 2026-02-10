@@ -86,10 +86,12 @@ export default function AdminStudentsPage() {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [showViewDialog, setShowViewDialog] = useState(false);
   const [showAssignDialog, setShowAssignDialog] = useState(false);
+  const [showRejectDialog, setShowRejectDialog] = useState(false);
   const [selectedStudent, setSelectedStudent] = useState<any | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const [departments, setDepartments] = useState<any[]>([]);
+  const [rejectReason, setRejectReason] = useState("");
   const [assignmentData, setAssignmentData] = useState({
     departmentId: "",
     startDate: "",
@@ -134,7 +136,9 @@ export default function AdminStudentsPage() {
         const params: any = { page: 1, limit: 50 };
         if (selectedUniId !== "ALL") params.universityId = selectedUniId;
         const res = await listApplications(params, token);
-        setApplications(res.data.items || []);
+        const items = res.data.items || [];
+        // Only show APPROVED applications in the student section (per user requirements)
+        setApplications(items.filter((a: any) => a.status === "APPROVED"));
       } catch (err: any) {
         console.error("Failed to fetch applications", err);
       } finally {
@@ -151,7 +155,7 @@ export default function AdminStudentsPage() {
 
   useEffect(() => {
     if (showAssignDialog && token) {
-      listDepartments(token).then(res => {
+      listDepartments({}, token).then(res => {
         const items = (res as any)?.data?.items ?? (res as any)?.data ?? [];
         setDepartments(Array.isArray(items) ? items : []);
       });
@@ -361,15 +365,24 @@ export default function AdminStudentsPage() {
     }
   };
 
-  const handleReject = async (id: string) => {
-    const reason = window.prompt('Rejection reason (required):', '');
-    if (!reason || !reason.trim()) return;
+  const handleReject = async (student: any) => {
+    setSelectedStudent(student);
+    setRejectReason("");
+    setShowRejectDialog(true);
+  };
+
+  const confirmReject = async () => {
+    if (!selectedStudent || !rejectReason.trim()) return;
     try {
-      await reviewStudent(id, { decision: "REJECT", rejectionReason: reason.trim() }, token || undefined);
+      setIsSubmitting(true);
+      await reviewStudent(selectedStudent.id, { decision: "REJECT", rejectionReason: rejectReason.trim() }, token || undefined);
       toast.success("Student rejected");
+      setShowRejectDialog(false);
       fetchStudentsData();
     } catch (error: any) {
       toast.error(error?.message || 'Failed to reject student');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -603,7 +616,7 @@ export default function AdminStudentsPage() {
                                 variant="ghost"
                                 size="icon"
                                 className="h-8 w-8 text-destructive hover:bg-destructive/10"
-                                onClick={() => handleReject(student.id)}
+                                onClick={() => handleReject(student)}
                                 title="Reject"
                               >
                                 <XCircle className="h-4 w-4" />
@@ -903,6 +916,37 @@ export default function AdminStudentsPage() {
             <Button variant="outline" size="sm" onClick={() => setShowDeleteDialog(false)}>Cancel</Button>
             <Button variant="destructive" size="sm" disabled={isSubmitting} onClick={handleDeleteStudent}>
               {isSubmitting ? "Removing..." : "Delete Permanently"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Rejection Dialog */}
+      <Dialog open={showRejectDialog} onOpenChange={setShowRejectDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Reject Student</DialogTitle>
+            <DialogDescription>
+              Provide a reason for rejecting <strong>{selectedStudent?.firstName} {selectedStudent?.lastName}</strong>.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-2">
+            <Label htmlFor="reject-reason">Rejection Reason</Label>
+            <Input
+              id="reject-reason"
+              placeholder="e.g., Missing documents, invalid criteria..."
+              value={rejectReason}
+              onChange={(e) => setRejectReason(e.target.value)}
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowRejectDialog(false)}>Cancel</Button>
+            <Button
+              variant="destructive"
+              onClick={confirmReject}
+              disabled={isSubmitting || !rejectReason.trim()}
+            >
+              {isSubmitting ? "Processing..." : "Reject Student"}
             </Button>
           </DialogFooter>
         </DialogContent>

@@ -68,7 +68,7 @@ export function Sidebar() {
     const navItems = roleNavItems[user.role] || [];
 
     return (
-        <div className="fixed left-0 top-0 h-screen flex flex-col sidebar-rail border-r border-border w-72 shrink-0 elevation-2 z-40">
+    	    <div className="fixed left-0 top-0 h-screen hidden md:flex flex-col sidebar-rail border-r border-border w-72 shrink-0 elevation-2 z-40">
             {/* Logo */}
             <div className="px-5 py-4 border-b border-border">
                 <LogoBlock />
@@ -78,17 +78,17 @@ export function Sidebar() {
                 {navItems.map((item) => {
                     const isActive = pathname === item.href;
                     return (
-                        <Button
-                            key={item.href}
-                            asChild
-                            variant={isActive ? "secondary" : "ghost"}
-                            className={cn(
-                                "w-full justify-start gap-3 px-3 h-10 transition-all duration-200",
-                                isActive 
-                                    ? "bg-primary/10 text-primary hover:bg-primary/15" 
-                                    : "text-muted-foreground hover:translate-x-1"
-                            )}
-                        >
+                            <Button
+                                key={item.href}
+                                asChild
+                                variant={isActive ? "secondary" : "ghost"}
+                                className={cn(
+    	                            "w-full justify-start gap-3 px-3 h-10 text-sm transition-all duration-200",
+    	                            isActive
+    	                                ? "bg-primary/10 text-primary hover:bg-primary/20 hover:text-primary"
+    	                                : "text-muted-foreground hover:bg-muted/40 hover:text-foreground hover:translate-x-1"
+    	                        )}
+                            >
                             <Link href={item.href}>
                                 <item.icon className={cn(
                                     "h-4 w-4 transition-transform duration-200",

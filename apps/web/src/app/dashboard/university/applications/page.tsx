@@ -11,7 +11,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Plus, FileText, Upload, Calendar, Users, CheckCircle, XCircle, Clock, AlertCircle, Eye, Send, Edit, Trash2, Download, Filter } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useAuth } from "@/components/auth-provider";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 import { createApplicationFull, listApplications, submitApplication, updateApplication } from "@/lib/services/applications";
 import { uploadDocument } from "@/lib/services/documents";
 import { toast } from "sonner";
@@ -53,6 +53,7 @@ function sanitizeUrl(url: string | undefined | null): string {
 export default function ApplicationsPage() {
     const { token, user } = useAuth();
     const searchParams = useSearchParams();
+    const router = useRouter();
     const [applications, setApplications] = useState<Application[]>([]);
     const [loading, setLoading] = useState(true);
     const [showNewAppDialog, setShowNewAppDialog] = useState(false);
@@ -110,7 +111,7 @@ export default function ApplicationsPage() {
 
     const getStatusConfig = (status: ApplicationStatus) => {
         const configs = {
-            PENDING: { variant: "warning" as const, icon: Clock, label: "Pending", description: "Draft - Not yet submitted" },
+            PENDING: { variant: "warning" as const, icon: Clock, label: "Draft", description: "Draft - Not yet submitted" },
             UNDER_REVIEW: { variant: "secondary" as const, icon: AlertCircle, label: "Under Review", description: "Submitted for admin review" },
             APPROVED: { variant: "success" as const, icon: CheckCircle, label: "Approved", description: "Application accepted" },
             REJECTED: { variant: "destructive" as const, icon: XCircle, label: "Rejected", description: "Application declined" },
@@ -179,7 +180,9 @@ export default function ApplicationsPage() {
                 toast.error(`Upload failed: ${uploadErr?.message || "Unknown error"}`);
                 return;
             }
-            const fileUrl = uploadRes.data.fileUrl;
+            // Support both 'url' and 'fileUrl' backend response properties
+            const uploadData = uploadRes.data as any;
+            const fileUrl = uploadData.url || uploadData.fileUrl;
 
             try {
                 await createApplicationFull({
@@ -217,7 +220,8 @@ export default function ApplicationsPage() {
             let officialLetterUrl: string | undefined;
             if (officialLetterFile) {
                 const up = await uploadDocument(officialLetterFile, { documentType: "OFFICIAL_LETTER", entityType: "APPLICATION", entityId: selectedApp.id, applicationId: selectedApp.id, title: `Official Letter - ${formData.academicYear}` }, token || undefined);
-                officialLetterUrl = up.data.fileUrl;
+                const upData = up.data as any;
+                officialLetterUrl = upData.url || upData.fileUrl;
             }
             await updateApplication(selectedApp.id, { name: formData.name, academicYear: formData.academicYear, ...(officialLetterUrl ? { officialLetterUrl } : {}) }, token || undefined);
             toast.success("Application updated");
@@ -245,9 +249,9 @@ export default function ApplicationsPage() {
 
     const handleSubmitForReview = async (app: Application) => {
         const canSubmit = app.status === "PENDING" && !!app.officialLetterUrl && app.studentCount > 0;
-        if (!canSubmit) { toast.error("Cannot submit: ensure status PENDING, at least 1 student, and official letter uploaded."); return; }
-        try { await submitApplication(app.id, token || undefined); toast.success("Application submitted"); fetchApplications(); }
-        catch (error: any) { toast.error(error?.message || "Failed to submit application"); }
+        if (!canSubmit) { toast.error("Cannot send for review: ensure status PENDING, at least 1 student, and official letter uploaded."); return; }
+        try { await submitApplication(app.id, token || undefined); toast.success("Application sent for review"); fetchApplications(); }
+        catch (error: any) { toast.error(error?.message || "Failed to send application for review"); }
     };
 
     const resetForm = () => { setFormData({ academicYear: getAcademicYears()[0], name: "", studentCount: 0, notes: "" }); setOfficialLetterFile(null); setSelectedApp(null); };
@@ -284,7 +288,7 @@ export default function ApplicationsPage() {
 
                 <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
                     <Card className="border-l-4 border-l-foreground/70 bg-background/70 shadow-sm"><CardContent className="p-4"><div className="flex items-center justify-between"><div><p className="text-xs font-medium text-muted-foreground">Total</p><p className="text-2xl font-bold mt-1">{stats.total}</p></div><FileText className="h-8 w-8 text-muted-foreground" /></div></CardContent></Card>
-                    <Card className="border-l-4 border-l-warning cursor-pointer bg-background/70 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md" onClick={() => setSelectedStatus("PENDING")}><CardContent className="p-4"><div className="flex items-center justify-between"><div><p className="text-xs font-medium text-muted-foreground">Pending</p><p className="text-2xl font-bold mt-1">{stats.pending}</p></div><Clock className="h-8 w-8 text-warning" /></div></CardContent></Card>
+                    <Card className="border-l-4 border-l-warning cursor-pointer bg-background/70 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md" onClick={() => setSelectedStatus("PENDING")}><CardContent className="p-4"><div className="flex items-center justify-between"><div><p className="text-xs font-medium text-muted-foreground">Drafts</p><p className="text-2xl font-bold mt-1">{stats.pending}</p></div><Clock className="h-8 w-8 text-warning" /></div></CardContent></Card>
                     <Card className="border-l-4 border-l-secondary cursor-pointer bg-background/70 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md" onClick={() => setSelectedStatus("UNDER_REVIEW")}><CardContent className="p-4"><div className="flex items-center justify-between"><div><p className="text-xs font-medium text-muted-foreground">Under Review</p><p className="text-2xl font-bold mt-1">{stats.underReview}</p></div><AlertCircle className="h-8 w-8 text-secondary" /></div></CardContent></Card>
                     <Card className="border-l-4 border-l-success cursor-pointer bg-background/70 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md" onClick={() => setSelectedStatus("APPROVED")}><CardContent className="p-4"><div className="flex items-center justify-between"><div><p className="text-xs font-medium text-muted-foreground">Approved</p><p className="text-2xl font-bold mt-1">{stats.approved}</p></div><CheckCircle className="h-8 w-8 text-success" /></div></CardContent></Card>
                     <Card className="border-l-4 border-l-destructive cursor-pointer bg-background/70 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md" onClick={() => setSelectedStatus("REJECTED")}><CardContent className="p-4"><div className="flex items-center justify-between"><div><p className="text-xs font-medium text-muted-foreground">Rejected</p><p className="text-2xl font-bold mt-1">{stats.rejected}</p></div><XCircle className="h-8 w-8 text-destructive" /></div></CardContent></Card>
@@ -303,7 +307,7 @@ export default function ApplicationsPage() {
                                 </SelectTrigger>
                                 <SelectContent>
                                     <SelectItem value="ALL">All Applications</SelectItem>
-                                    <SelectItem value="PENDING">Pending</SelectItem>
+                                    <SelectItem value="PENDING">Drafts</SelectItem>
                                     <SelectItem value="UNDER_REVIEW">Under Review</SelectItem>
                                     <SelectItem value="APPROVED">Approved</SelectItem>
                                     <SelectItem value="REJECTED">Rejected</SelectItem>
@@ -335,7 +339,11 @@ export default function ApplicationsPage() {
                                 const statusConfig = getStatusConfig(app.status);
                                 const StatusIcon = statusConfig.icon;
                                 const canEdit = app.status === "PENDING";
-                                const canSubmit = app.status === "PENDING" && app.officialLetterUrl;
+                                
+                                // Support both camelCase and snake_case for the letter URL
+                                const letterUrl = app.officialLetterUrl || (app as any).official_letter_url;
+                                const canSubmit = app.status === "PENDING" && !!letterUrl && app.studentCount > 0;
+
                                 return (
                                     <div key={app.id} className="flex flex-col gap-4 rounded-xl border bg-background/60 p-5 transition hover:-translate-y-0.5 hover:shadow-md md:flex-row md:items-center md:justify-between">
                                         <div className="flex items-center gap-4 flex-1">
@@ -356,11 +364,27 @@ export default function ApplicationsPage() {
                                             </div>
                                         </div>
                                         <div className="flex flex-wrap items-center gap-2">
-                                            {app.officialLetterUrl && isSafeHttpUrl(app.officialLetterUrl) && (<a href={sanitizeUrl(app.officialLetterUrl)} target="_blank" rel="noopener noreferrer" title="Download Official Letter"><Button variant="ghost" size="sm"><Download className="h-4 w-4" /></Button></a>)}
+                                            {letterUrl && isSafeHttpUrl(letterUrl) && (<a href={sanitizeUrl(letterUrl)} target="_blank" rel="noopener noreferrer" title="Download Official Letter"><Button variant="ghost" size="sm"><Download className="h-4 w-4" /></Button></a>)}
                                             <Button variant="outline" size="sm" className="gap-2" onClick={() => handleViewApplication(app)}><Eye className="h-4 w-4" />View</Button>
+                                            {(app.status === "PENDING" || app.status === "APPROVED") && (
+                                                <Button variant="outline" size="sm" className="gap-2" onClick={() => router.push(`/dashboard/university/students?applicationId=${app.id}`)}>
+                                                    <Users className="h-4 w-4" />
+                                                    {app.status === "PENDING" ? "Manage Students" : "View Students"}
+                                                </Button>
+                                            )}
                                             {canEdit && (<>
                                                 <Button variant="outline" size="sm" className="gap-2" onClick={() => handleEditClick(app)}><Edit className="h-4 w-4" />Edit</Button>
-                                                {canSubmit && (<Button variant="default" size="sm" className="gap-2" onClick={() => handleSubmitForReview(app)}><Send className="h-4 w-4" />Submit</Button>)}
+                                                {canSubmit ? (
+                                                    <Button variant="default" size="sm" className="gap-2" onClick={() => handleSubmitForReview(app)}><Send className="h-4 w-4" />Send for Review</Button>
+                                                ) : (
+                                                    <Button variant="outline" size="sm" className="gap-2 opacity-50 cursor-not-allowed" disabled title={
+                                                        app.status !== "PENDING" ? `Status is ${app.status}, not Draft` :
+                                                        !letterUrl ? "Official letter missing" :
+                                                        app.studentCount === 0 ? "Add at least 1 student" : `Requirements not met (Count: ${app.studentCount}, Letter: ${!!letterUrl})`
+                                                    }>
+                                                        <Send className="h-4 w-4" /> Send for Review
+                                                    </Button>
+                                                )}
                                                 <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive" onClick={() => handleDeleteClick(app)} title="Archive Application"><Trash2 className="h-4 w-4" /></Button>
                                             </>)}
                                         </div>

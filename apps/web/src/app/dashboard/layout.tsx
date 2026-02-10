@@ -50,7 +50,7 @@ export default function DashboardLayout({
     <div className="flex min-h-screen bg-background">
       <Sidebar />
 
-      <div className="flex-1 flex flex-col overflow-hidden ml-72">
+      <div className="flex-1 flex flex-col overflow-hidden ml-0 md:ml-72">
         {/* Header */}
         <header className="sticky top-0 z-40 h-14 header-glass border-b border-border flex items-center px-6 shrink-0 elevation-1">
           <Topbar />

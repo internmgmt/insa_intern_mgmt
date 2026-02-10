@@ -347,7 +347,7 @@ export class DocumentsService {
       });
     }
 
-    const resolvedPath = path.resolve(this.uploadDir, documentUrl);
+    const resolvedPath = path.resolve(process.cwd(), documentUrl);
 
     if (!resolvedPath.startsWith(this.uploadDir)) {
       this.logger.error(

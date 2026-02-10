@@ -309,6 +309,13 @@ export class StudentsService {
       .leftJoinAndSelect('student.application', 'application')
       .leftJoinAndSelect('application.university', 'university');
 
+    // For Admin: only show students from APPROVED applications
+    if (currentUser.role === UserRole.ADMIN) {
+      qb.andWhere('application.status = :appStatus', {
+        appStatus: ApplicationStatus.APPROVED,
+      });
+    }
+
     // Filter by university
     if (query?.universityId) {
       qb.andWhere('application.universityId = :universityId', {

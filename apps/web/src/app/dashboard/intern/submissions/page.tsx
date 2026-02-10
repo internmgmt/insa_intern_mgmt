@@ -7,12 +7,20 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { FileText, Upload, Plus, Download, Eye, Loader2 } from "lucide-react";
+import { FileText, Upload, Plus, Download, Eye, Loader2, Edit, Trash2 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { FilePreview } from "@/components/file-preview";
 import { useAuth } from "@/components/auth-provider";
 import { uploadDocument } from "@/lib/services/documents";
 import { toast } from "sonner";
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from "@/components/ui/dialog";
 
 type SubmissionStatus = "PENDING" | "APPROVED" | "NEEDS_REVISION" | "REJECTED";
 type SubmissionType = "WEEKLY_REPORT" | "PROJECT_FILE" | "CODE";
@@ -59,6 +67,11 @@ export default function SubmissionsPage() {
         weekNumber: "",
         fileUrl: "",
     });
+
+    const [showEditDialog, setShowEditDialog] = useState(false);
+    const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+    const [selectedSub, setSelectedSub] = useState<SubmissionRow | null>(null);
+    const [editData, setEditData] = useState({ title: "", description: "" });
 
     useEffect(() => {
         fetchSubmissions();
@@ -122,9 +135,10 @@ export default function SubmissionsPage() {
 
             const json = await res.json();
             if (!res.ok || !json?.success) {
-                alert(json?.message || 'Submission failed');
+                toast.error(json?.message || 'Submission failed');
                 return;
             }
+            toast.success('Submission created successfully');
             fetchSubmissions();
             setForm({ title: "", description: "", type: "WEEKLY_REPORT", weekNumber: "", fileUrl: "" });
         } catch (error) {
@@ -142,31 +156,44 @@ export default function SubmissionsPage() {
 
     function editSubmission(sub: SubmissionRow) {
         if (!canEdit(sub)) return;
+        setSelectedSub(sub);
+        setEditData({ title: sub.title, description: sub.description || "" });
+        setShowEditDialog(true);
+    }
 
-        const newTitle = window.prompt("Update title", sub.title) ?? sub.title;
-        const newDescription = window.prompt("Update description", sub.description || "") ?? sub.description;
+    function confirmEdit() {
+        if (!selectedSub || !editData.title.trim()) return;
 
         setSubmissions((prev) =>
             prev.map((s) =>
-                s.id === sub.id
+                s.id === selectedSub.id
                     ? {
                         ...s,
-                        title: newTitle.trim() || s.title,
-                        description: newDescription?.trim() || s.description,
+                        title: editData.title.trim(),
+                        description: editData.description.trim(),
                     }
                     : s
             )
         );
+        setShowEditDialog(false);
+        toast.success("Submission updated");
     }
 
     function deleteSubmission(sub: SubmissionRow) {
         if (!canDelete(sub)) return;
-        if (!window.confirm("Delete this submission? This cannot be undone.")) return;
-        setSubmissions((prev) => prev.filter((s) => s.id !== sub.id));
+        setSelectedSub(sub);
+        setShowDeleteDialog(true);
+    }
+
+    function confirmDelete() {
+        if (!selectedSub) return;
+        setSubmissions((prev) => prev.filter((s) => s.id !== selectedSub.id));
+        setShowDeleteDialog(false);
+        toast.success("Submission deleted");
     }
 
     function exportToSheets() {
-        window.alert("Exporting submissions to Sheets (simulated).");
+        toast.info("Exporting submissions to Sheets (simulated).");
     }
 
     const total = submissions.length;
@@ -399,6 +426,52 @@ export default function SubmissionsPage() {
                     onClose={() => setSelected(null)}
                 />
             )}
+
+            <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Edit Submission</DialogTitle>
+                        <DialogDescription>Update the title and description of your submission.</DialogDescription>
+                    </DialogHeader>
+                    <div className="space-y-4 py-4">
+                        <div className="space-y-2">
+                            <Label htmlFor="edit-title">Title</Label>
+                            <Input
+                                id="edit-title"
+                                value={editData.title}
+                                onChange={(e) => setEditData({ ...editData, title: e.target.value })}
+                            />
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="edit-desc">Description</Label>
+                            <Textarea
+                                id="edit-desc"
+                                value={editData.description}
+                                onChange={(e) => setEditData({ ...editData, description: e.target.value })}
+                            />
+                        </div>
+                    </div>
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => setShowEditDialog(false)}>Cancel</Button>
+                        <Button onClick={confirmEdit}>Save Changes</Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+            <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Delete Submission</DialogTitle>
+                        <DialogDescription>
+                            Are you sure you want to delete "{selectedSub?.title}"? This action cannot be undone.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => setShowDeleteDialog(false)}>Cancel</Button>
+                        <Button variant="destructive" onClick={confirmDelete}>Delete</Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </div>
     );
 }

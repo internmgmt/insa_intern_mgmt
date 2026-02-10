@@ -85,8 +85,8 @@ services:
       - ./apps/web:/usr/src/app
       - /usr/src/app/node_modules
     working_dir: /usr/src/app
-    # Dev: Next.js dev server with HMR
-    command: sh -c "npm run dev -- -H 0.0.0.0 -p 3000"
+    # Production: build then start
+    command: sh -c "npm run build && npm run start -- -H 0.0.0.0 -p 3000"
     environment:
       NEXT_PUBLIC_API_BASE_URL: /api
       API_PROXY_TARGET: http://api:5005

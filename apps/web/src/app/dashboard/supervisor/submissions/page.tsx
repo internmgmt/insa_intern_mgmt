@@ -4,10 +4,21 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from "@/components/ui/dialog";
 import { FileText, Download, Eye, CheckCircle, XCircle, Clock, Loader2 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
 import { FilePreview } from "@/components/file-preview";
+import { toast } from "sonner";
 
 type ReviewStatus = "PENDING" | "APPROVED" | "REJECTED" | "NEEDS_REVISION";
 
@@ -43,6 +54,11 @@ export default function SubmissionsPage() {
     const [submissions, setSubmissions] = useState<SubmissionRow[]>([]);
     const [loading, setLoading] = useState(true);
     const [selectedSubmission, setSelectedSubmission] = useState<SubmissionRow | null>(null);
+    const [showReviewDialog, setShowReviewDialog] = useState(false);
+    const [reviewActionStatus, setReviewActionStatus] = useState<ReviewStatus>("PENDING");
+    const [feedback, setFeedback] = useState("");
+    const [isSubmitting, setIsSubmitting] = useState(false);
+
     const searchParams = useSearchParams();
     const internFilter = searchParams.get("intern");
 
@@ -78,31 +94,42 @@ export default function SubmissionsPage() {
         : submissions;
 
     async function review(id: string, status: ReviewStatus) {
-        let feedback: string | undefined = undefined;
-
-        if (status !== "APPROVED") {
-            const input = window.prompt("Supervisor feedback (required):", "");
-            if (!input || !input.trim()) return;
-            feedback = input.trim();
+        if (status === "APPROVED") {
+            await confirmReview(id, status, "Approved");
+            return;
         }
 
+        const sub = submissions.find(s => s.id === id);
+        setSelectedSubmission(sub || null);
+        setReviewActionStatus(status);
+        setFeedback("");
+        setShowReviewDialog(true);
+    }
+
+    async function confirmReview(id: string, status: ReviewStatus, feedbackText: string) {
         try {
+            setIsSubmitting(true);
             const res = await fetch(`/api/submissions/${id}`, {
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     status,
-                    supervisorFeedback: feedback
+                    supervisorFeedback: feedbackText
                 }),
             });
             const json = await res.json();
             if (!res.ok || !json?.success) {
-                alert(json?.message || 'Failed to review submission');
+                toast.error(json?.message || 'Failed to review submission');
                 return;
             }
+
+            toast.success('Submission reviewed successfully');
+            setShowReviewDialog(false);
             fetchSubmissions();
         } catch (error) {
-            console.error('Failed to review submission:', error);
+            console.error('Review failed:', error);
+        } finally {
+            setIsSubmitting(false);
         }
     }
 
@@ -263,6 +290,45 @@ export default function SubmissionsPage() {
                     )}
                 </CardContent>
             </Card>
+
+            {/* Review Feedback Dialog */}
+            <Dialog open={showReviewDialog} onOpenChange={setShowReviewDialog}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Review Submission</DialogTitle>
+                        <DialogDescription>
+                            Please provide feedback for this submission. The status will be marked as <strong>{reviewActionStatus.replace('_', ' ')}</strong>.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="space-y-4 py-4">
+                        <div className="space-y-2">
+                            <Label htmlFor="review-feedback">Feedback</Label>
+                            <Input
+                                id="review-feedback"
+                                placeholder="Enter feedback or reason for status..."
+                                value={feedback}
+                                onChange={(e) => setFeedback(e.target.value)}
+                            />
+                        </div>
+                    </div>
+                    <DialogFooter>
+                        <Button
+                            variant="outline"
+                            onClick={() => setShowReviewDialog(false)}
+                            disabled={isSubmitting}
+                        >
+                            Cancel
+                        </Button>
+                        <Button
+                            variant={reviewActionStatus === "APPROVED" ? "default" : "destructive"}
+                            onClick={() => confirmReview(selectedSubmission?.id || "", reviewActionStatus, feedback)}
+                            disabled={!feedback.trim() || isSubmitting}
+                        >
+                            {isSubmitting ? "Processing..." : "Submit Review"}
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </div>
     );
 }

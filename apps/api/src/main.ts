@@ -29,7 +29,7 @@ async function bootstrap() {
   const allowedOrigins = getAllowedOrigins();
   app.enableCors({
     origin: (origin: string, callback: (err: Error | null, allow?: boolean) => void) => {
-      if (!origin) {
+      if (!origin || process.env.APP_ENV !== 'production') {
         return callback(null, true);
       }
 
@@ -42,6 +42,7 @@ async function bootstrap() {
     },
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
     credentials: true,
+    allowedHeaders: 'Content-Type,Accept,Authorization,X-Requested-With',
   });
 
   const config = new DocumentBuilder()

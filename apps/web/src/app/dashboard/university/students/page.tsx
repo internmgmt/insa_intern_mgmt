@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback, useMemo } from "react";
+import { useSearchParams } from "next/navigation";
 import { useAuth } from "@/components/auth-provider";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -46,7 +47,9 @@ import {
     AlertCircle,
     FileText,
     ChevronLeft,
-    ChevronRight
+    ChevronRight,
+    Send,
+    Clock
 } from "lucide-react";
 import {
     listApplicationStudents,
@@ -54,7 +57,7 @@ import {
     updateApplicationStudent,
     removeApplicationStudent
 } from "@/lib/services/students";
-import { listApplications, type ApplicationListItem as Application } from "@/lib/services/applications";
+import { listApplications, submitApplication, type ApplicationListItem as Application } from "@/lib/services/applications";
 import { uploadDocument } from "@/lib/services/documents";
 import { toast } from "sonner";
 import type { Student } from "@/lib/types";
@@ -63,6 +66,8 @@ import { getAcademicYears } from "@/lib/utils";
 
 export default function UniversityStudentsPage() {
     const { token, user } = useAuth();
+    const searchParams = useSearchParams();
+    const queryAppId = searchParams.get("applicationId");
 
     const [applications, setApplications] = useState<Application[]>([]);
     const [selectedAppId, setSelectedAppId] = useState<string | null>(null);
@@ -79,6 +84,68 @@ export default function UniversityStudentsPage() {
     const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
     const [isSubmitting, setIsSubmitting] = useState(false);
 
+    const fetchApps = useCallback(async () => {
+        if (!token) return;
+        try {
+            setAppsLoading(true);
+            const res = await listApplications({ page: 1, limit: 100 }, token);
+            const apps = res.data.items || [];
+            console.log("Fetched apps:", apps.map(a => ({ id: a.id, count: a.studentCount, doc: !!a.officialLetterUrl })));
+            setApplications(apps);
+            
+            // Set initial selectedAppId if not set or from query
+            if (apps.length > 0) {
+                setSelectedAppId(currentId => {
+                    if (queryAppId && apps.some(a => a.id === queryAppId)) return queryAppId;
+                    if (!currentId) return apps[0].id;
+                    return currentId;
+                });
+            }
+        } catch (err: any) {
+            console.error("Failed to fetch applications", err);
+            toast.error(err?.message || "Failed to load applications");
+        } finally {
+            setAppsLoading(false);
+        }
+    }, [token, queryAppId]);
+
+    useEffect(() => {
+        fetchApps();
+    }, [token, fetchApps]);
+
+    const selectedApp = useMemo(() => {
+        return applications.find(a => a.id === selectedAppId);
+    }, [applications, selectedAppId]);
+
+    const isStudentsVisible = useMemo(() => {
+        // If no application selected, we show the "No Application Selected" state anyway
+        if (!selectedAppId) return true;
+        
+        // While apps are loading or if selected app isn't found in the list yet, 
+        // default to HIDDEN to avoid flashing current students or restricted data.
+        if (appsLoading || !selectedApp) return false;
+
+        // Students are visible in Draft (PENDING) for management,
+        // Under Review (UNDER_REVIEW) for tracking, 
+        // and Approved for monitoring.
+        // Basically, coordinators see all status including Rejected to allow fixing.
+        return ["PENDING", "UNDER_REVIEW", "APPROVED", "REJECTED"].includes(selectedApp.status);
+    }, [selectedApp, selectedAppId, appsLoading]);
+
+    const handleSendForReview = async () => {
+        if (!selectedAppId || !token) return;
+        try {
+            setIsSubmitting(true);
+            await submitApplication(selectedAppId, token);
+            toast.success("Application sent for review successfully");
+            await fetchApps();
+        } catch (err: any) {
+            toast.error(err?.message || "Failed to send application for review");
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+
     const [formData, setFormData] = useState({
         studentId: "",
         firstName: "",
@@ -90,27 +157,6 @@ export default function UniversityStudentsPage() {
     });
     const [cvFile, setCvFile] = useState<File | null>(null);
     const [transcriptFile, setTranscriptFile] = useState<File | null>(null);
-
-    useEffect(() => {
-        const fetchApps = async () => {
-            if (!token) return;
-            try {
-                setAppsLoading(true);
-                const res = await listApplications({ page: 1, limit: 100 }, token);
-                const apps = res.data.items || [];
-                setApplications(apps);
-                if (apps.length > 0 && !selectedAppId) {
-                    setSelectedAppId(apps[0].id);
-                }
-            } catch (err: any) {
-                console.error("Failed to fetch applications", err);
-                toast.error(err?.message || "Failed to load applications");
-            } finally {
-                setAppsLoading(false);
-            }
-        };
-        fetchApps();
-    }, [token]);
 
     const fetchStudents = useCallback(async () => {
         if (!token || !selectedAppId) return;
@@ -131,6 +177,7 @@ export default function UniversityStudentsPage() {
     }, [fetchStudents]);
 
     const filteredStudents = useMemo(() => {
+        if (!isStudentsVisible) return [];
         return students.filter(s => {
             const matchesSearch =
                 s.firstName.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -203,6 +250,7 @@ export default function UniversityStudentsPage() {
             setShowAddDialog(false);
             resetForm();
             fetchStudents();
+            fetchApps();
         } catch (err: any) {
             toast.error(err?.message || "Failed to add student");
         } finally {
@@ -256,6 +304,7 @@ export default function UniversityStudentsPage() {
             toast.success("Student removed successfully");
             setShowDeleteDialog(false);
             fetchStudents();
+            fetchApps();
         } catch (err: any) {
             toast.error(err?.message || "Failed to delete student");
         } finally {
@@ -317,10 +366,43 @@ export default function UniversityStudentsPage() {
                     <h1 className="text-3xl font-bold tracking-tight">University Students</h1>
                     <p className="text-muted-foreground">Manage students and their application documents.</p>
                 </div>
-                <Button onClick={() => { resetForm(); setShowAddDialog(true); }} disabled={!selectedAppId}>
-                    <UserPlus className="mr-2 h-4 w-4" />
-                    Add Student
-                </Button>
+                <div className="flex items-center gap-2">
+                    {selectedApp && selectedApp.status === "PENDING" && (() => {
+                        const letterUrl = selectedApp.officialLetterUrl || (selectedApp as any).official_letter_url;
+                        return (
+                            <Button
+                                variant="default"
+                                className="bg-primary hover:bg-primary/90"
+                                onClick={handleSendForReview}
+                                disabled={isSubmitting || students.length === 0 || !letterUrl}
+                                title={
+                                    students.length === 0 ? "Add at least 1 student" : 
+                                    !letterUrl ? `Official letter missing (ID: ${selectedAppId})` : 
+                                    "Send for review"
+                                }
+                            >
+                                <Send className="mr-2 h-4 w-4" />
+                                Send for Review
+                            </Button>
+                        );
+                    })()}
+                    <Button 
+                        onClick={() => { resetForm(); setShowAddDialog(true); }} 
+                        disabled={!selectedAppId || selectedApp?.status !== "PENDING"}
+                        title={selectedApp?.status !== "PENDING" && selectedAppId ? "Can only add students to Draft batches" : ""}
+                    >
+                        <UserPlus className="mr-2 h-4 w-4" />
+                        Add Student
+                    </Button>
+                </div>
+            </div>
+            
+            {/* Debug info to help identify why the button is grayed out */}
+            <div className="bg-muted/30 p-2 rounded text-[10px] text-muted-foreground flex gap-4">
+                <span>Students Added: <strong>{students.length}</strong></span>
+                <span>Active Batch: <strong>{selectedApp?.name || selectedAppId || 'None'}</strong></span>
+                <span>Letter Uploaded: <strong>{!!(selectedApp?.officialLetterUrl || (selectedApp as any)?.official_letter_url) ? 'YES' : 'NO'}</strong></span>
+                <span>Batch Status: <strong>{selectedApp?.status || 'Unknown'}</strong></span>
             </div>
 
             <Card>

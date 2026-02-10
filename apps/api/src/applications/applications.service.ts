@@ -209,12 +209,11 @@ export class ApplicationsService {
     };
   }
 
-  async list(query: any) {
+  async list(query: any, userRole?: UserRole) {
     const { page = 1, universityId, status, academicYear } = query;
     const limit = 100; // Enforce strict 100 limit as requested
     const qb = this.applicationRepository.createQueryBuilder('application');
     qb.leftJoinAndSelect('application.university', 'university');
-    qb.loadRelationCountAndMap('application.studentCount', 'application.students');
 
     if (universityId) {
       qb.andWhere('application.universityId = :universityId', { universityId });
@@ -226,17 +225,41 @@ export class ApplicationsService {
       qb.andWhere('application.academicYear = :academicYear', { academicYear });
     }
 
+    // Admins should not see PENDING (draft) applications
+    if (userRole === UserRole.ADMIN) {
+      qb.andWhere('application.status != :pendingStatus', { pendingStatus: ApplicationStatus.PENDING });
+    }
+
     qb.skip((page - 1) * limit);
     qb.take(limit);
     qb.orderBy('application.createdAt', 'DESC');
 
     const [items, total] = await qb.getManyAndCount();
 
+    const enrichedItems = await Promise.all(
+      items.map(async (application) => {
+        const studentCount = await this.studentRepository.count({
+          where: { applicationId: application.id },
+        });
+        
+        console.log(`Application ${application.id} studentCount: ${studentCount}`);
+
+        // Return a plain object to ensure all virtual properties are serialized correctly
+        // and ensure studentCount is explicitly a number
+        return {
+          ...application,
+          studentCount: Number(studentCount),
+          // Ensure officialLetterUrl is explicitly present (sometimes TypeORM mapping issues occur)
+          officialLetterUrl: application.officialLetterUrl,
+        };
+      }),
+    );
+
     return {
       success: true,
       message: 'Applications fetched successfully',
       data: {
-        items,
+        items: enrichedItems,
         pagination: {
           totalItems: total,
           totalPages: Math.ceil(total / limit),

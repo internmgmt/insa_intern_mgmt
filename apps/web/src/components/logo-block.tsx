@@ -26,7 +26,7 @@ export function LogoBlock() {
 
   return (
     <div className="flex items-center gap-3">
-      <div className="relative flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-white border shadow-sm">
+      <div className="relative flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-transparent">
         {!imageError ? (
           <img
             src="/logo.png"

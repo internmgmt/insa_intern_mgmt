@@ -72,6 +72,12 @@ export default function AdminApplicationsPage() {
     const [statusFilter, setStatusFilter] = useState<string>("ALL");
     const [searchQuery, setSearchQuery] = useState("");
 
+    // Rejection Dialog State
+    const [showRejectionDialog, setShowRejectionDialog] = useState(false);
+    const [selectedRejectionApp, setSelectedRejectionApp] = useState<any>(null);
+    const [rejectionReason, setRejectionReason] = useState("");
+    const [isSubmittingReview, setIsSubmittingReview] = useState(false);
+
     // Helpers
     const academicYears = useMemo(() => {
         // Collect unique academic years from current applications or common ones
@@ -160,34 +166,44 @@ export default function AdminApplicationsPage() {
     async function handleReview(id: string, decision: 'APPROVED' | 'REJECTED') {
         const app = applications.find(a => a.id === id);
         const appName = app?.name || id;
-        let rejectionReason: string | undefined = undefined;
 
         if (decision === 'REJECTED') {
-            const input = window.prompt(`Rejection reason for "${appName}" (required):`, '');
-            if (!input || !input.trim()) return;
-            rejectionReason = input.trim();
+            setSelectedRejectionApp(app);
+            setRejectionReason("");
+            setShowRejectionDialog(true);
+            return;
         }
 
+        await processReview(id, 'APPROVE');
+    }
+
+    async function processReview(id: string, decision: 'APPROVE' | 'REJECT', reason?: string) {
         try {
-            const apiDecision = decision === 'APPROVED' ? 'APPROVE' : 'REJECT';
+            setIsSubmittingReview(true);
+            const app = applications.find(a => a.id === id);
+            const appName = app?.name || id;
+            
             try {
-                await reviewApplication(id, { decision: apiDecision, rejectionReason }, token || undefined);
+                await reviewApplication(id, { decision, rejectionReason: reason }, token || undefined);
             } catch (err: any) {
                 const code = String(err?.code || "");
                 const msg = String(err?.message || "").toLowerCase();
                 
                 if (code === 'APPLICATION_NOT_REVIEWABLE' || msg.includes('under_review') || msg.includes('not under review')) {
-                    // Try to auto-submit and review again
                     await submitApplication(id, token || undefined);
-                    await reviewApplication(id, { decision: apiDecision, rejectionReason }, token || undefined);
+                    await reviewApplication(id, { decision, rejectionReason: reason }, token || undefined);
                 } else {
                     throw err;
                 }
             }
-            toast.success(`Application "${appName}" ${decision.toLowerCase()}`);
+
+            toast.success(`Application "${appName}" ${decision === 'APPROVE' ? 'approved' : 'rejected'}`);
+            setShowRejectionDialog(false);
             fetchApplications();
         } catch (error: any) {
             toast.error(error?.message || 'Failed to review application');
+        } finally {
+            setIsSubmittingReview(false);
         }
     }
 
@@ -202,15 +218,15 @@ export default function AdminApplicationsPage() {
 
     const stats = useMemo(() => [
         { label: "Total Batches", value: applications.length.toString(), icon: ClipboardList, color: "text-primary" },
-        { label: "Pending Review", value: applications.filter(a => a.status === 'PENDING' || a.status === 'UNDER_REVIEW').length.toString(), icon: Clock, color: "text-warning" },
+        { label: "Pending Review", value: applications.filter(a => a.status === 'UNDER_REVIEW').length.toString(), icon: Clock, color: "text-warning" },
         { label: "Approved", value: applications.filter(a => a.status === 'APPROVED').length.toString(), icon: CheckCircle, color: "text-success" },
         { label: "Rejected", value: applications.filter(a => a.status === 'REJECTED').length.toString(), icon: XCircle, color: "text-destructive" },
     ], [applications]);
 
     const getStatusBadge = (status: string) => {
         switch (status) {
-            case "PENDING": return <Badge variant="outline">Pending (Draft)</Badge>;
-            case "UNDER_REVIEW": return <Badge variant="warning">Under Review</Badge>;
+            case "PENDING": return <Badge variant="outline">Draft</Badge>;
+            case "UNDER_REVIEW": return <Badge variant="warning">Review Required</Badge>;
             case "APPROVED": return <Badge variant="success">Approved</Badge>;
             case "REJECTED": return <Badge variant="destructive">Rejected</Badge>;
             default: return <Badge variant="outline">{status}</Badge>;
@@ -299,8 +315,7 @@ export default function AdminApplicationsPage() {
                                 </SelectTrigger>
                                 <SelectContent>
                                     <SelectItem value="ALL">All Statuses</SelectItem>
-                                    <SelectItem value="PENDING">Pending</SelectItem>
-                                    <SelectItem value="UNDER_REVIEW">Under Review</SelectItem>
+                                    <SelectItem value="UNDER_REVIEW">Review Required</SelectItem>
                                     <SelectItem value="APPROVED">Approved</SelectItem>
                                     <SelectItem value="REJECTED">Rejected</SelectItem>
                                 </SelectContent>
@@ -436,6 +451,45 @@ export default function AdminApplicationsPage() {
                     )}
                 </CardContent>
             </Card>
+
+            {/* Rejection Dialog */}
+            <Dialog open={showRejectionDialog} onOpenChange={setShowRejectionDialog}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Reject Application</DialogTitle>
+                        <DialogDescription>
+                            Please provide a reason for rejecting the application from <strong>{selectedRejectionApp?.university?.name}</strong>.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="space-y-4 py-4">
+                        <div className="space-y-2">
+                            <Label htmlFor="reason">Rejection Reason</Label>
+                            <Input
+                                id="reason"
+                                placeholder="Enter reason for rejection..."
+                                value={rejectionReason}
+                                onChange={(e) => setRejectionReason(e.target.value)}
+                            />
+                        </div>
+                    </div>
+                    <DialogFooter>
+                        <Button
+                            variant="outline"
+                            onClick={() => setShowRejectionDialog(false)}
+                            disabled={isSubmittingReview}
+                        >
+                            Cancel
+                        </Button>
+                        <Button
+                            variant="destructive"
+                            onClick={() => processReview(selectedRejectionApp.id, 'REJECT', rejectionReason)}
+                            disabled={!rejectionReason.trim() || isSubmittingReview}
+                        >
+                            {isSubmittingReview ? "Processing..." : "Confirm Rejection"}
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </div>
     );
 }

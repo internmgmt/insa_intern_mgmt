@@ -48,7 +48,7 @@ export class ApplicationsController {
       req.user?.role === UserRole.UNIVERSITY
         ? req.user.universityId
         : undefined;
-    return this.applicationsService.list({ ...query, universityId });
+    return this.applicationsService.list({ ...query, universityId }, req.user?.role);
   }
 
   @Get(':id')
