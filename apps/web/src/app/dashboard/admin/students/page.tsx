@@ -499,7 +499,7 @@ export default function AdminStudentsPage() {
 
       <Card className="border-none shadow-sm overflow-visible">
         <CardHeader className="pb-4">
-          <div className="grid gap-4 md:grid-cols-4 lg:grid-cols-4">
+          <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-4">
             <div className="space-y-2">
               <Label className="text-xs font-bold uppercase text-muted-foreground">University</Label>
               <Select value={selectedUniId} onValueChange={setSelectedUniId}>
@@ -676,7 +676,7 @@ export default function AdminStudentsPage() {
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-1">
                 <Label htmlFor="firstName" className="text-xs">First Name *</Label>
                 <Input id="firstName" className="h-8 text-sm" value={formData.firstName} onChange={(e) => setFormData({ ...formData, firstName: e.target.value })} />
@@ -686,7 +686,7 @@ export default function AdminStudentsPage() {
                 <Input id="lastName" className="h-8 text-sm" value={formData.lastName} onChange={(e) => setFormData({ ...formData, lastName: e.target.value })} />
               </div>
             </div>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-1">
                 <Label htmlFor="studentId" className="text-xs">Student ID *</Label>
                 <Input id="studentId" className="h-8 text-sm" value={formData.studentId} disabled={showEditDialog} onChange={(e) => setFormData({ ...formData, studentId: e.target.value })} />
@@ -696,15 +696,15 @@ export default function AdminStudentsPage() {
                 <Input id="email" type="email" className="h-8 text-sm" value={formData.email} onChange={(e) => setFormData({ ...formData, email: e.target.value })} />
               </div>
             </div>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-1">
                 <Label htmlFor="fieldOfStudy" className="text-xs">Field of Study *</Label>
                 <Input id="fieldOfStudy" className="h-8 text-sm" value={formData.fieldOfStudy} onChange={(e) => setFormData({ ...formData, fieldOfStudy: e.target.value })} />
               </div>
               <div className="space-y-1">
                 <Label htmlFor="academicYear" className="text-xs">Academic Year *</Label>
-                <Select 
-                  value={formData.academicYear} 
+                <Select
+                  value={formData.academicYear}
                   onValueChange={(val) => setFormData({ ...formData, academicYear: val })}
                 >
                   <SelectTrigger id="academicYear" className="h-8 text-sm">
@@ -727,7 +727,7 @@ export default function AdminStudentsPage() {
               <h4 className="text-sm font-medium mb-3 flex items-center gap-2">
                 <FileText className="h-4 w-4" /> Documents
               </h4>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-1">
                   <Label className="text-xs text-muted-foreground italic">CV (PDF)</Label>
                   <Input

@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useState } from "react";
 import { cn } from "@/lib/utils";
 import {
     LayoutDashboard,
@@ -15,20 +14,21 @@ import {
     FileCheck,
     User,
     FolderOpen,
+    Key,
+    LogOut,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { LogoBlock } from "@/components/logo-block";
 import { useAuth } from "@/components/auth-provider";
-import { Button } from "@/components/ui/button";
-import { Separator } from "@/components/ui/separator";
+import { useState } from "react";
 
-type NavItem = {
+export type NavItem = {
     title: string;
     href: string;
     icon: LucideIcon;
 };
 
-const roleNavItems: Record<string, NavItem[]> = {
+export const roleNavItems: Record<string, NavItem[]> = {
     ADMIN: [
         { title: "Dashboard", href: "/dashboard/admin", icon: LayoutDashboard },
         { title: "Users", href: "/dashboard/admin/users", icon: Users },
@@ -48,64 +48,154 @@ const roleNavItems: Record<string, NavItem[]> = {
     ],
     SUPERVISOR: [
         { title: "Dashboard", href: "/dashboard/supervisor", icon: LayoutDashboard },
-        { title: "Departments", href: "/dashboard/supervisor/departments", icon: Briefcase },
-        { title: "Interns", href: "/dashboard/supervisor/interns", icon: Users },
+        { title: "Mentors", href: "/dashboard/supervisor/mentors", icon: Users },
+        { title: "Interns", href: "/dashboard/supervisor/interns", icon: GraduationCap },
         { title: "Submissions", href: "/dashboard/supervisor/submissions", icon: FileCheck },
+    ],
+    MENTOR: [
+        { title: "Dashboard", href: "/dashboard/mentor", icon: LayoutDashboard },
+        { title: "Tasks", href: "/dashboard/mentor/tasks", icon: Briefcase },
+        { title: "My Interns", href: "/dashboard/mentor/interns", icon: GraduationCap },
+        { title: "Submissions", href: "/dashboard/mentor/submissions", icon: FileCheck },
     ],
     INTERN: [
         { title: "Dashboard", href: "/dashboard/intern", icon: LayoutDashboard },
+        { title: "Weekly Reports", href: "/dashboard/intern/reports", icon: FilePlus },
+        { title: "Assigned Tasks", href: "/dashboard/intern/tasks", icon: Briefcase },
+        { title: "History", href: "/dashboard/intern/submissions", icon: FileCheck },
         { title: "My Profile", href: "/dashboard/intern/profile", icon: User },
-        { title: "Submissions", href: "/dashboard/intern/submissions", icon: FileText },
     ],
 };
 
-export function Sidebar() {
+interface SidebarProps {
+    isMobile?: boolean;
+}
+
+export function Sidebar({ isMobile = false }: SidebarProps) {
     const pathname = usePathname();
-    const { user } = useAuth();
+    const { user, logout } = useAuth();
+    const [isHovered, setIsHovered] = useState(false);
 
     if (!user) return null;
 
-    const navItems = roleNavItems[user.role] || [];
+    const showExpanded = isMobile || isHovered;
+
+    const navItems = user.isFirstLogin
+        ? [{ title: "Change Password", href: "/dashboard/settings/password", icon: Key }]
+        : (roleNavItems[user.role] || []);
 
     return (
-    	    <div className="fixed left-0 top-0 h-screen hidden md:flex flex-col sidebar-rail border-r border-border w-72 shrink-0 elevation-2 z-40">
-            {/* Logo */}
-            <div className="px-5 py-4 border-b border-border">
-                <LogoBlock />
+        <div
+            className={cn(
+                "group/sidebar flex flex-col h-full border-r bg-background transition-all duration-500 ease-[cubic-bezier(0.25,1,0.5,1)] z-40 relative group-hover:shadow-[20px_0_40px_-15px_rgba(0,0,0,0.1)]",
+                isMobile ? "w-full border-none" : "w-[76px] hover:w-[260px]"
+            )}
+            onMouseEnter={() => !isMobile && setIsHovered(true)}
+            onMouseLeave={() => !isMobile && setIsHovered(false)}
+        >
+            {/* Header / Logo */}
+            <div className="flex h-[64px] shrink-0 items-center px-[18px] mb-2">
+                <div className="flex items-center gap-2 overflow-hidden">
+                    <LogoBlock showText={showExpanded} />
+                </div>
             </div>
+
             {/* Navigation */}
-            <nav className="flex-1 p-3 space-y-1 overflow-y-auto custom-scrollbar">
-                {navItems.map((item) => {
-                    const isActive = pathname === item.href;
-                    return (
-                            <Button
-                                key={item.href}
-                                asChild
-                                variant={isActive ? "secondary" : "ghost"}
-                                className={cn(
-    	                            "w-full justify-start gap-3 px-3 h-10 text-sm transition-all duration-200",
-    	                            isActive
-    	                                ? "bg-primary/10 text-primary hover:bg-primary/20 hover:text-primary"
-    	                                : "text-muted-foreground hover:bg-muted/40 hover:text-foreground hover:translate-x-1"
-    	                        )}
-                            >
-                            <Link href={item.href}>
-                                <item.icon className={cn(
-                                    "h-4 w-4 transition-transform duration-200",
-                                    isActive && "scale-110"
-                                )} />
-                                <span>{item.title}</span>
-                            </Link>
-                        </Button>
-                    );
-                })}
-            </nav>
-            {/* User Info & Help */}
-            <div className="px-4 py-3 border-t border-border">
-                <Separator className="mb-3" />
-                <div className="text-[11px] text-muted-foreground">Signed in as</div>
-                <div className="mt-1 text-xs font-medium truncate">{user.email}</div>
-                <div className="mt-2 text-[11px] text-muted-foreground">Need help? Contact the administrator.</div>
+            <div className="flex-1 overflow-y-auto overflow-x-hidden px-3 no-scrollbar space-y-4">
+                <nav className="space-y-1">
+                    <p className={cn(
+                        "px-3 text-[9px] font-bold tracking-[0.2em] text-muted-foreground/40 uppercase transition-all duration-500",
+                        showExpanded ? "opacity-100 mb-1.5 translate-x-0" : "opacity-0 mb-0 -translate-x-4 pointer-events-none h-0"
+                    )}>
+                        Portal
+                    </p>
+                    <div className="space-y-1 focus-visible:outline-none">
+                        {navItems.map((item) => {
+                            const isActive = pathname === item.href;
+                            return (
+                                <Link
+                                    key={item.href}
+                                    href={item.href}
+                                    className={cn(
+                                        "group/item flex items-center h-[40px] rounded-xl transition-all duration-200 relative",
+                                        isActive
+                                            ? "bg-primary/[0.08] text-primary"
+                                            : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
+                                    )}
+                                >
+                                    <div className="flex w-[52px] h-full items-center justify-center shrink-0">
+                                        <div className={cn(
+                                            "flex items-center justify-center rounded-lg transition-transform duration-200 group-hover/item:scale-110",
+                                            isActive ? "text-primary" : "text-muted-foreground"
+                                        )}>
+                                            <item.icon
+                                                className="h-[20px] w-[20px]"
+                                                strokeWidth={isActive ? 2.5 : 2}
+                                            />
+                                        </div>
+                                    </div>
+
+                                    <span className={cn(
+                                        "text-[13px] font-medium tracking-tight whitespace-nowrap transition-all duration-500",
+                                        showExpanded
+                                            ? "opacity-100 translate-x-0 visible"
+                                            : "opacity-0 -translate-x-4 invisible pointer-events-none"
+                                    )}>
+                                        {item.title}
+                                    </span>
+
+                                    {isActive && (
+                                        <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-5 bg-primary rounded-r-full shadow-[0_0_8px_rgba(var(--primary),0.5)]" />
+                                    )}
+                                </Link>
+                            );
+                        })}
+                    </div>
+                </nav>
+            </div>
+
+            {/* Footer / Profile & Logout */}
+            <div className="mt-auto px-3 py-4 space-y-1 border-t border-border/40">
+                <div
+                    className={cn(
+                        "flex items-center h-[40px] rounded-xl px-2 transition-all duration-200",
+                        showExpanded ? "bg-muted/30" : ""
+                    )}
+                >
+                    <div className="flex w-[36px] items-center justify-center shrink-0">
+                        <div className="h-7 w-7 rounded-full bg-gradient-to-tr from-primary/20 to-primary/10 flex items-center justify-center text-primary font-bold text-[10px] border border-primary/20">
+                            {user.email[0].toUpperCase()}
+                        </div>
+                    </div>
+                    {showExpanded && (
+                        <div className="ml-2 flex flex-col min-w-0 animate-in fade-in slide-in-from-left-2 duration-500">
+                            <span className="text-[12px] font-semibold truncate text-foreground leading-tight">
+                                {user.role.charAt(0) + user.role.slice(1).toLowerCase()}
+                            </span>
+                            <span className="text-[10px] text-muted-foreground truncate leading-tight">
+                                {user.email}
+                            </span>
+                        </div>
+                    )}
+                </div>
+
+                <button
+                    type="button"
+                    onClick={() => logout()}
+                    className="group/logout flex items-center h-[40px] w-full rounded-xl transition-all duration-200 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
+                >
+                    <div className="flex w-[52px] h-full items-center justify-center shrink-0">
+                        <LogOut className="h-[18px] w-[18px] group-hover/logout:scale-110 transition-transform" strokeWidth={2} />
+                    </div>
+                    <span className={cn(
+                        "text-[13px] font-medium transition-all duration-500",
+                        showExpanded
+                            ? "opacity-100 translate-x-0 visible"
+                            : "opacity-0 -translate-x-4 invisible pointer-events-none"
+                    )}>
+                        Log out
+                    </span>
+                </button>
             </div>
         </div>
     );

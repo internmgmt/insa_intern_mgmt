@@ -1,4 +1,4 @@
-export type UserRole = "ADMIN" | "UNIVERSITY" | "SUPERVISOR" | "INTERN";
+export type UserRole = "ADMIN" | "UNIVERSITY" | "SUPERVISOR" | "MENTOR" | "INTERN";
 
 export type ApiSuccess<T> = {
   success: true;
@@ -35,7 +35,14 @@ export type User = {
   createdAt?: string;
   university?: { id: string; name: string } | null;
   department?: { id: string; name: string; type?: string } | null;
-  intern?: { id: string; internId: string } | null;
+  intern?: {
+    id: string;
+    internId: string;
+    studentId?: string | null;
+    startDate?: string | null;
+    endDate?: string | null;
+    status?: string | null;
+  } | null;
 };
 
 export type LoginResponse = {
@@ -147,7 +154,7 @@ export type SubmissionListItem = {
   createdAt: string;
 };
 
-export type DocumentType = "OFFICIAL_LETTER" | "CV" | "TRANSCRIPT" | "CERTIFICATE" | "OTHER";
+export type DocumentType = "OFFICIAL_LETTER" | "CV" | "TRANSCRIPT" | "CERTIFICATE" | "SUBMISSION" | "OTHER";
 export type EntityType = "APPLICATION" | "STUDENT" | "INTERN";
 
 export type DocumentInfo = {

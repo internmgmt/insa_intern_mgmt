@@ -1,0 +1,7 @@
+export enum SubmissionType {
+  WEEKLY_REPORT = 'WEEKLY_REPORT',
+  PROJECT_FILE = 'PROJECT_FILE',
+  CODE = 'CODE',
+  TASK = 'TASK',
+  DOCUMENT = 'DOCUMENT',
+}

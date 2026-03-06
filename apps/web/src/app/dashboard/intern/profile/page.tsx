@@ -6,43 +6,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { User, Mail, Phone, Building2, Calendar, Award, Plus, X } from "lucide-react";
+import { User, Mail, Phone, Building2, Calendar, Award, Plus, X, GraduationCap } from "lucide-react";
 import { useState, useEffect } from "react";
-import { ThemePaletteSelector } from "@/components/theme-palette-selector";
 import { useAuth } from "@/components/auth-provider";
 import { getMyProfile } from "@/lib/services/interns";
 import { toast } from "sonner";
-
-const internProfile = {
-    id: "uuid-1",
-    internId: "INSA-2025-001",
-    status: "ACTIVE",
-    startDate: "2025-07-01",
-    endDate: "2025-10-31",
-    skills: ["Go", "Linux", "Monitoring"],
-    finalEvaluation: null as number | null,
-    certificateUrl: null as string | null,
-    certificateIssued: false,
-    student: {
-        firstName: "Yared",
-        lastName: "Getachew",
-        studentId: "UGR/1234/13",
-        fieldOfStudy: "Computer Science",
-        email: "yared.getachew@example.com",
-        phone: "+251 91 234 5678",
-    },
-    department: {
-        id: "dept-1",
-        name: "Cybersecurity Operations",
-        type: "CYBERSECURITY",
-    },
-    supervisor: {
-        id: "sup-1",
-        firstName: "Melaku",
-        lastName: "Abebe",
-        email: "melaku.abebe@example.com",
-    },
-};
 
 export default function ProfilePage() {
     const { token, user } = useAuth();
@@ -84,95 +52,124 @@ export default function ProfilePage() {
     const student = profile?.student ?? null;
     const department = profile?.department ?? null;
     const supervisor = profile?.supervisor ?? null;
+    const mentor = profile?.mentor ?? null;
 
     return (
-        <div className="space-y-6">
-            <div>
-                <h1 className="text-2xl font-bold">My Profile</h1>
-                <p className="text-muted-foreground text-sm mt-1">
-                    View your official records and update your technical skills.
-                </p>
+        <div className="space-y-4 sm:space-y-6">
+            <div className="flex flex-col gap-0.5 sm:gap-1 px-1">
+                <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground">Personnel Dossier</h1>
+                <p className="text-muted-foreground text-[11px] sm:text-sm">Comprehensive view of your professional and technical standing.</p>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                <Card>
-                    <CardContent className="p-6">
-                        <div className="flex flex-col items-center text-center">
-                            <Avatar className="h-24 w-24 mb-4">
-                                <AvatarFallback className="bg-primary/10 text-primary text-3xl font-medium">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 px-1">
+                <Card className="shadow-sm border-primary/10 overflow-hidden">
+                    <CardHeader className="bg-primary/[0.02] border-b border-primary/5 p-4 sm:p-6 text-center">
+                        <div className="flex flex-col items-center">
+                            <Avatar className="h-20 w-20 sm:h-28 sm:w-28 border-4 border-background shadow-xl mb-3 sm:mb-4">
+                                <AvatarFallback className="bg-[#5ba1a2] text-white text-3xl sm:text-4xl font-black italic">
                                     {(profile?.firstName?.[0] ?? '') + (profile?.lastName?.[0] ?? '')}
                                 </AvatarFallback>
                             </Avatar>
-                            <h3 className="text-xl font-semibold">
+                            <h3 className="text-lg sm:text-2xl font-bold text-foreground tracking-tight">
                                 {profile?.firstName ?? ''} {profile?.lastName ?? ''}
                             </h3>
-                            <p className="text-sm text-muted-foreground mt-1">{profile?.email ?? ''}</p>
-                            <div className="mt-4 flex flex-wrap items-center justify-center gap-2 text-xs">
-                                <Badge variant="outline">Intern ID: {profile?.internId ?? '—'}</Badge>
-                                <Badge variant="secondary">Status: {profile?.status ?? '—'}</Badge>
-                                <Badge variant="outline">Role: INTERN</Badge>
+                            <p className="text-[10px] sm:text-xs font-mono text-muted-foreground mt-1 uppercase tracking-widest">{profile?.email ?? ''}</p>
+                            <div className="mt-4 sm:mt-6 flex flex-wrap items-center justify-center gap-2">
+                                <Badge variant="outline" className="text-[9px] sm:text-[10px] font-bold border-[#5ba1a2]/30 text-[#5ba1a2] bg-[#5ba1a2]/5 px-2 h-5">
+                                    ID: {profile?.internId ?? '—'}
+                                </Badge>
+                                <Badge variant="secondary" className="text-[9px] sm:text-[10px] font-bold bg-[#b28b71]/10 text-[#b28b71] px-2 h-5 border-none">
+                                    {profile?.status ?? '—'}
+                                </Badge>
                             </div>
                         </div>
+                    </CardHeader>
+                    <CardContent className="p-3 sm:p-6">
+                         <div className="p-3 sm:p-4 rounded-xl sm:rounded-2xl bg-muted/30 border border-dashed flex flex-col items-center gap-1 sm:gap-2">
+                            <p className="text-[9px] sm:text-[10px] font-black uppercase tracking-tighter text-muted-foreground">Verification Hash</p>
+                            <p className="text-[8px] sm:text-[9px] font-mono text-muted-foreground break-all opacity-50 text-center">
+                                {profile?.id}
+                            </p>
+                         </div>
                     </CardContent>
                 </Card>
 
-                <Card className="lg:col-span-2">
-                    <CardHeader>
-                        <CardTitle>Student and internship details</CardTitle>
-                        <CardDescription>These details come from your university and system records.</CardDescription>
+                <Card className="lg:col-span-2 shadow-sm border-primary/10">
+                    <CardHeader className="flex flex-row items-center gap-3 sm:gap-4 p-4 sm:p-6">
+                        <div className="h-8 w-8 sm:h-10 sm:w-10 rounded-lg sm:rounded-xl bg-[#5ba1a2]/10 flex items-center justify-center border border-[#5ba1a2]/20 shrink-0">
+                            <Building2 className="h-4 w-4 sm:h-5 sm:w-5 text-[#5ba1a2]" />
+                        </div>
+                        <div>
+                            <CardTitle className="text-base sm:text-lg">Institutional Records</CardTitle>
+                            <CardDescription className="text-[11px] sm:text-xs">Verified data from university and corporate systems.</CardDescription>
+                        </div>
                     </CardHeader>
-                    <CardContent className="space-y-4 text-sm text-muted-foreground">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div className="flex items-start gap-3">
-                                <User className="h-4 w-4 mt-1" />
+                    <CardContent className="space-y-4 sm:space-y-6 p-4 sm:p-6 pt-0">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-4 sm:gap-x-8 gap-y-4 sm:gap-y-6">
+                            <div className="flex items-center gap-3 sm:gap-4 group">
+                                <div className="h-8 w-8 sm:h-10 sm:w-10 shrink-0 rounded-lg sm:rounded-xl bg-muted/50 flex items-center justify-center group-hover:bg-primary/5 transition-colors">
+                                    <Award className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-muted-foreground group-hover:text-primary" />
+                                </div>
                                 <div>
-                                    <div className="font-medium text-foreground">Student ID</div>
-                                    <div>{student?.studentId ?? '—'}</div>
+                                    <p className="text-[9px] sm:text-[10px] font-black uppercase tracking-widest text-muted-foreground">Student ID</p>
+                                    <p className="text-xs sm:text-sm font-bold text-foreground">{student?.studentId ?? '—'}</p>
                                 </div>
                             </div>
-                            <div className="flex items-start gap-3">
-                                <Mail className="h-4 w-4 mt-1" />
+                            <div className="flex items-center gap-3 sm:gap-4 group">
+                                <div className="h-8 w-8 sm:h-10 sm:w-10 shrink-0 rounded-lg sm:rounded-xl bg-muted/50 flex items-center justify-center group-hover:bg-primary/5 transition-colors">
+                                    <Mail className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-muted-foreground group-hover:text-primary" />
+                                </div>
                                 <div>
-                                    <div className="font-medium text-foreground">Email</div>
-                                    <div>{profile?.email ?? '—'}</div>
+                                    <p className="text-[9px] sm:text-[10px] font-black uppercase tracking-widest text-muted-foreground">Corporate Email</p>
+                                    <p className="text-xs sm:text-sm font-bold text-foreground truncate">{profile?.email ?? '—'}</p>
                                 </div>
                             </div>
-                            <div className="flex items-start gap-3">
-                                <Phone className="h-4 w-4 mt-1" />
+                            <div className="flex items-center gap-3 sm:gap-4 group">
+                                <div className="h-8 w-8 sm:h-10 sm:w-10 shrink-0 rounded-lg sm:rounded-xl bg-muted/50 flex items-center justify-center group-hover:bg-primary/5 transition-colors">
+                                    <Phone className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-muted-foreground group-hover:text-primary" />
+                                </div>
                                 <div>
-                                    <div className="font-medium text-foreground">Phone</div>
-                                    <div>{profile?.phone ?? '—'}</div>
+                                    <p className="text-[9px] sm:text-[10px] font-black uppercase tracking-widest text-muted-foreground">Mobile Access</p>
+                                    <p className="text-xs sm:text-sm font-bold text-foreground">{profile?.phone ?? '—'}</p>
                                 </div>
                             </div>
-                            <div className="flex items-start gap-3">
-                                <Building2 className="h-4 w-4 mt-1" />
+                            <div className="flex items-center gap-3 sm:gap-4 group">
+                                <div className="h-8 w-8 sm:h-10 sm:w-10 shrink-0 rounded-lg sm:rounded-xl bg-muted/50 flex items-center justify-center group-hover:bg-primary/5 transition-colors">
+                                    <Building2 className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-muted-foreground group-hover:text-primary" />
+                                </div>
                                 <div>
-                                    <div className="font-medium text-foreground">Department</div>
-                                    <div>
-                                        {department?.name ?? '—'} ({department?.type ?? '—'})
-                                    </div>
+                                    <p className="text-[9px] sm:text-[10px] font-black uppercase tracking-widest text-muted-foreground">Strategic Unit</p>
+                                    <p className="text-xs sm:text-sm font-bold text-foreground">
+                                        {department?.name ?? '—'} <span className="text-[9px] sm:text-[10px] font-mono opacity-50 ml-1">[{department?.type ?? '—'}]</span>
+                                    </p>
                                 </div>
                             </div>
                         </div>
 
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2 border-t">
-                            <div className="flex items-start gap-3">
-                                <User className="h-4 w-4 mt-1" />
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-4 sm:gap-x-6 gap-y-4 sm:gap-y-6 pt-4 sm:pt-6 border-t font-medium">
+                            <div className="flex items-center gap-3 sm:gap-4 group">
+                                <div className="h-8 w-8 sm:h-10 sm:w-10 shrink-0 rounded-lg sm:rounded-xl bg-[#5ba1a2]/5 flex items-center justify-center border border-[#5ba1a2]/10">
+                                    <GraduationCap className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-[#5ba1a2]" />
+                                </div>
                                 <div>
-                                        <div className="font-medium text-foreground">Supervisor</div>
-                                    <div>
-                                        {supervisor?.firstName ?? ''} {supervisor?.lastName ?? ''}
-                                    </div>
-                                    <div className="text-xs">{supervisor?.email ?? ''}</div>
+                                    <p className="text-[9px] sm:text-[10px] font-black uppercase tracking-widest text-[#5ba1a2]/60 leading-none mb-1">Technical Mentor</p>
+                                    <p className="text-xs sm:text-sm font-bold text-foreground">
+                                        {mentor ? `${mentor.firstName} ${mentor.lastName}` : '—'}
+                                    </p>
+                                    <p className="text-[9px] font-mono text-muted-foreground truncate">{mentor?.email ?? '—'}</p>
                                 </div>
                             </div>
-                            <div className="flex items-start gap-3">
-                                <Calendar className="h-4 w-4 mt-1" />
+                            <div className="flex items-center gap-3 sm:gap-4 group">
+                                <div className="h-8 w-8 sm:h-10 sm:w-10 shrink-0 rounded-lg sm:rounded-xl bg-amber-500/5 flex items-center justify-center border border-amber-500/10">
+                                    <Calendar className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-amber-500" />
+                                </div>
                                 <div>
-                                    <div className="font-medium text-foreground">Internship period</div>
-                                    <div>
-                                        {profile?.startDate ? new Date(profile.startDate).toLocaleDateString() : '—'} → {profile?.endDate ? new Date(profile.endDate).toLocaleDateString() : '—'}
-                                    </div>
+                                    <p className="text-[9px] sm:text-[10px] font-black uppercase tracking-widest text-amber-700/60 leading-none mb-1">Tenure Window</p>
+                                    <p className="text-xs sm:text-sm font-bold text-foreground">
+                                        {profile?.startDate ? new Date(profile.startDate).toLocaleDateString() : '—'} 
+                                        <span className="mx-2 text-muted-foreground/30 font-light">→</span> 
+                                        {profile?.endDate ? new Date(profile.endDate).toLocaleDateString() : '—'}
+                                    </p>
                                 </div>
                             </div>
                         </div>
@@ -180,63 +177,49 @@ export default function ProfilePage() {
                 </Card>
             </div>
 
-            <Card>
-                <CardHeader>
-                    <CardTitle>Technical skills</CardTitle>
-                    <CardDescription>Only your skills are editable from here.</CardDescription>
+            <Card className="shadow-sm border-primary/10 mx-1">
+                <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-4 sm:p-6 pb-4 sm:pb-6">
+                    <div className="flex items-center gap-3 sm:gap-4">
+                        <div className="h-8 w-8 sm:h-10 sm:w-10 rounded-lg sm:rounded-xl bg-[#8bac99]/10 flex items-center justify-center border border-[#8bac99]/20 shrink-0">
+                            <Award className="h-4 w-4 sm:h-5 sm:w-5 text-[#8bac99]" />
+                        </div>
+                        <div>
+                            <CardTitle className="text-base sm:text-lg">Technical Competencies</CardTitle>
+                            <CardDescription className="text-[11px] sm:text-xs">Self-declared skill set and professional certifications.</CardDescription>
+                        </div>
+                    </div>
+                    <div className="flex items-center gap-2 w-full sm:w-auto">
+                         <Badge variant={profile?.certificateIssued ? "success" : "outline"} className="px-2 sm:px-3 h-6 sm:h-7 text-[9px] sm:text-[10px] font-black uppercase tracking-widest border-none w-full justify-center sm:w-auto">
+                            Certificate: {profile?.certificateIssued ? "VERIFIED" : "PENDING"}
+                        </Badge>
+                    </div>
                 </CardHeader>
-                <CardContent className="space-y-4">
-                    <div className="flex flex-wrap gap-2 text-xs">
+                <CardContent className="space-y-6 sm:space-y-8 p-4 sm:p-6 pt-0">
+                    <div className="flex flex-wrap gap-2 sm:gap-3">
                         {skills.map((skill) => (
-                                <Badge key={skill} variant="outline" className="flex items-center gap-1">
+                                <Badge key={skill} variant="secondary" className="pl-3 pr-1 py-1 text-[10px] sm:text-[11px] font-bold bg-muted/50 border hover:bg-muted/80 transition-all flex items-center gap-2 rounded-full">
                                     {skill}
-                                    <Button variant="ghost" size="icon" onClick={() => removeSkill(skill)} aria-label={`Remove ${skill}`}>
+                                    <button onClick={() => removeSkill(skill)} className="h-5 w-5 rounded-full bg-muted/0 hover:bg-destructive/20 text-destructive/50 hover:text-destructive transition-colors flex items-center justify-center">
                                         <X className="h-3 w-3" />
-                                    </Button>
+                                    </button>
                                 </Badge>
                         ))}
-                        {skills.length === 0 && (
-                            <span className="text-xs text-muted-foreground">No skills added yet.</span>
-                        )}
                     </div>
-                    <div className="flex flex-col sm:flex-row gap-2">
-                        <div className="flex-1 space-y-1">
-                            <Label htmlFor="new-skill">Add skill</Label>
-                            <Input
-                                id="new-skill"
+                    <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-4 pt-4 sm:pt-6 border-t">
+                        <div className="relative flex-1">
+                            <Input 
+                                placeholder="Add a new skill (e.g., Python, React)" 
                                 value={newSkill}
                                 onChange={(e) => setNewSkill(e.target.value)}
-                                placeholder="e.g. Go, React, Network security"
+                                onKeyDown={(e) => e.key === 'Enter' && addSkill()}
+                                className="h-9 sm:h-10 text-xs sm:text-sm pr-10"
                             />
-                        </div>
-                        <div className="flex items-end">
-                            <Button type="button" className="gap-1" onClick={addSkill}>
+                            <button onClick={addSkill} className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7 sm:h-8 sm:w-8 rounded-md bg-muted/0 hover:bg-primary/10 text-primary/60 hover:text-primary transition-colors flex items-center justify-center">
                                 <Plus className="h-4 w-4" />
-                                Add
-                            </Button>
+                            </button>
                         </div>
+                        <Button onClick={saveSkills} size="sm" className="h-9 sm:h-10 text-xs font-bold uppercase tracking-widest w-full sm:w-auto">Save Skills</Button>
                     </div>
-                    <div className="pt-2 flex justify-between items-center text-xs text-muted-foreground border-t mt-2">
-                        <div className="flex items-center gap-2">
-                            <Award className="h-4 w-4" />
-                            <span>
-                                Certificate: {internProfile.certificateIssued ? "Issued" : "Not yet issued"}
-                            </span>
-                        </div>
-                        <Button type="button" variant="outline" size="sm" onClick={saveSkills}>
-                            Save skills
-                        </Button>
-                    </div>
-                </CardContent>
-            </Card>
-
-            <Card>
-                <CardHeader>
-                    <CardTitle>Theme & appearance</CardTitle>
-                    <CardDescription>Switch light/dark in the header and choose a color palette here.</CardDescription>
-                </CardHeader>
-                <CardContent>
-                    <ThemePaletteSelector />
                 </CardContent>
             </Card>
         </div>

@@ -2,6 +2,7 @@ import {
   Controller,
   Post,
   Patch,
+  Delete,
   Get,
   Param,
   Body,
@@ -9,6 +10,7 @@ import {
   UseGuards,
   HttpCode,
   HttpStatus,
+  ParseUUIDPipe,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -28,19 +30,19 @@ export class SubmissionsController {
   constructor(private readonly submissionsService: SubmissionsService) {}
 
   @Post()
-  @UseGuards(JwtAuthGuard)
-  @Roles(UserRole.INTERN, UserRole.ADMIN)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.INTERN, UserRole.MENTOR, UserRole.ADMIN)
   @ApiBearerAuth()
   @HttpCode(HttpStatus.CREATED)
   @ApiOperation({ summary: 'Create a new submission' })
   @ApiResponse({ status: 201, description: 'Submission created successfully' })
-  async create(@Body() createSubmissionDto: any) {
-    return this.submissionsService.create(createSubmissionDto);
+  async create(@Body() createSubmissionDto: any, @CurrentUser() user: any) {
+    return this.submissionsService.create(createSubmissionDto, user);
   }
 
   @Patch(':id')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(UserRole.ADMIN)
+  @Roles(UserRole.ADMIN, UserRole.INTERN, UserRole.MENTOR, UserRole.SUPERVISOR)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Update a submission' })
   @ApiResponse({ status: 200, description: 'Submission updated successfully' })
@@ -50,28 +52,18 @@ export class SubmissionsController {
 
   @Get()
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(UserRole.ADMIN, UserRole.SUPERVISOR)
+  @Roles(UserRole.ADMIN, UserRole.SUPERVISOR, UserRole.MENTOR)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'List submissions with pagination' })
   @ApiResponse({
     status: 200,
     description: 'Submissions retrieved successfully',
   })
-  async list(@Query() query?: { page?: number; limit?: number }) {
-    return this.submissionsService.list(query);
-  }
-
-  @Get(':id')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(UserRole.ADMIN, UserRole.SUPERVISOR)
-  @ApiBearerAuth()
-  @ApiOperation({ summary: 'Get submission by id' })
-  @ApiResponse({
-    status: 200,
-    description: 'Submission retrieved successfully',
-  })
-  async findById(@Param('id') id: string) {
-    return this.submissionsService.findById(id);
+  async list(
+    @Query() query: { page?: number; limit?: number; status?: string },
+    @CurrentUser() user: any,
+  ) {
+    return this.submissionsService.list(query, user);
   }
 
   @Get('my')
@@ -87,48 +79,40 @@ export class SubmissionsController {
     @Query() query?: { page?: number; limit?: number },
   ) {
     const page = query?.page && Number(query.page) > 0 ? Number(query.page) : 1;
-    const limit =
-      query?.limit && Number(query.limit) > 0 ? Number(query.limit) : 20;
+    const limit = query?.limit && Number(query.limit) > 0 ? Number(query.limit) : 100;
 
-    const all = await this.submissionsService.list({ page: 1, limit: 10000 });
-    const items = (all?.data?.items || []).filter((s: any) => {
-      if (!s.student) return false;
-      if (user?.email && s.student.email && s.student.email === user.email)
-        return true;
-      if (user?.id && s.student.userId && s.student.userId === user.id)
-        return true;
-      return false;
-    });
+    // Use a direct query for performance
+    return this.submissionsService.list({ 
+      page, 
+      limit, 
+      studentId: user.studentId, // If the user has a linked student record
+      userId: user.id 
+    }, user);
+  }
 
-    const totalItems = items.length;
-    const start = (page - 1) * limit;
-    const pagedItems = items.slice(start, start + limit);
-
-    return {
-      success: true,
-      message: 'Submissions retrieved successfully',
-      data: {
-        items: pagedItems,
-        pagination: {
-          page,
-          limit,
-          totalItems,
-          totalPages: Math.max(1, Math.ceil(totalItems / limit || 1)),
-        },
-      },
-    };
+  @Get(':id')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN, UserRole.SUPERVISOR, UserRole.MENTOR)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Get submission by id' })
+  @ApiResponse({
+    status: 200,
+    description: 'Submission retrieved successfully',
+  })
+  async findById(@Param('id', new ParseUUIDPipe()) id: string) {
+    return this.submissionsService.findById(id);
   }
 
   @Post(':id/review')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(UserRole.SUPERVISOR)
+  @Roles(UserRole.ADMIN, UserRole.SUPERVISOR, UserRole.MENTOR)
   @ApiBearerAuth()
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Review a submission (approve/reject)' })
   @ApiResponse({ status: 200, description: 'Submission reviewed successfully' })
   async review(
     @Param('id') id: string,
-    @Body() body: { decision: 'APPROVE' | 'REJECT'; rejectionReason?: string },
+    @Body() body: { decision: 'APPROVE' | 'REJECT'; rejectionReason?: string; score?: number; feedback?: string },
     @CurrentUser() user: any,
   ) {
     return this.submissionsService.reviewSubmission(
@@ -136,6 +120,18 @@ export class SubmissionsController {
       user?.id ?? null,
       body.decision,
       body.rejectionReason,
+      body.score,
+      body.feedback,
     );
+  }
+
+  @Delete(':id')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN, UserRole.MENTOR, UserRole.SUPERVISOR)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Delete a submission/task' })
+  @ApiResponse({ status: 200, description: 'Submission deleted successfully' })
+  async delete(@Param('id', new ParseUUIDPipe()) id: string) {
+    return this.submissionsService.delete(id);
   }
 }

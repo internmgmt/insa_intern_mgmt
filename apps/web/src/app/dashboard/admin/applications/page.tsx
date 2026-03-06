@@ -182,13 +182,13 @@ export default function AdminApplicationsPage() {
             setIsSubmittingReview(true);
             const app = applications.find(a => a.id === id);
             const appName = app?.name || id;
-            
+
             try {
                 await reviewApplication(id, { decision, rejectionReason: reason }, token || undefined);
             } catch (err: any) {
                 const code = String(err?.code || "");
                 const msg = String(err?.message || "").toLowerCase();
-                
+
                 if (code === 'APPLICATION_NOT_REVIEWABLE' || msg.includes('under_review') || msg.includes('not under review')) {
                     await submitApplication(id, token || undefined);
                     await reviewApplication(id, { decision, rejectionReason: reason }, token || undefined);
@@ -276,7 +276,7 @@ export default function AdminApplicationsPage() {
             {/* Filters */}
             <Card className="border-none shadow-sm overflow-visible">
                 <CardHeader className="pb-4">
-                    <div className="grid gap-4 md:grid-cols-4 lg:grid-cols-5">
+                    <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-5">
                         <div className="space-y-2 col-span-1 lg:col-span-1">
                             <Label className="text-xs font-bold uppercase text-muted-foreground">University</Label>
                             <Select value={universityFilter} onValueChange={(v) => { setUniversityFilter(v); setPage(1); }}>

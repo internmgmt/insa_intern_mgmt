@@ -47,6 +47,10 @@ export async function getMyProfile(token?: string) {
   return apiFetch<ApiSuccess<any>>(`/interns/me`, { method: "GET", token });
 }
 
+export async function updateIntern(internId: string, body: { assignedMentorId?: string | null; status?: string }, token?: string) {
+  return apiFetch<ApiSuccess<any>>(`/interns/${internId}`, { method: "PATCH", body, token });
+}
+
 export async function assignSupervisor(internId: string, body: { supervisorId: string }, token?: string) {
   return apiFetch<ApiSuccess<InternListItem>>(`/interns/${internId}/assign-supervisor`, { method: "POST", body, token });
 }

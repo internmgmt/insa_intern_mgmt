@@ -330,7 +330,7 @@ export default function AdminInternsPage() {
 
             <Card className="border-none shadow-sm overflow-visible">
                 <CardHeader className="pb-4">
-                    <div className="grid gap-4 md:grid-cols-4 lg:grid-cols-4">
+                    <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-4">
                         <div className="space-y-2">
                             <Label className="text-xs font-bold uppercase text-muted-foreground">University</Label>
                             <Select value={selectedUniId} onValueChange={setSelectedUniId}>

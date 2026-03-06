@@ -5,8 +5,9 @@ import {
   CreateDateColumn,
   UpdateDateColumn,
   ManyToOne,
-  JoinColumn,
   OneToMany,
+  OneToOne,
+  JoinColumn,
 } from 'typeorm';
 import { UniversityEntity } from './university.entity';
 import { DepartmentEntity } from './department.entity';
@@ -16,6 +17,7 @@ export enum UserRole {
   ADMIN = 'ADMIN',
   UNIVERSITY = 'UNIVERSITY',
   SUPERVISOR = 'SUPERVISOR',
+  MENTOR = 'MENTOR',
   INTERN = 'INTERN',
 }
 
@@ -140,7 +142,15 @@ export class UserEntity {
   })
   supervisedInterns?: InternEntity[];
 
-  interns?: InternEntity[];
+  @OneToMany(() => InternEntity, (intern) => intern.mentor, {
+    nullable: true,
+  })
+  mentoredInterns?: InternEntity[];
 
+  @OneToOne(() => InternEntity, (intern) => intern.user, {
+    nullable: true,
+  })
   intern?: InternEntity | null;
+
+  interns?: InternEntity[];
 }

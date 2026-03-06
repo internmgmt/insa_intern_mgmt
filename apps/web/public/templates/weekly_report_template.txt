@@ -1,0 +1,23 @@
+INSA STRATEGIC INTELLIGENCE SYSTEM
+WEEKLY PERFORMANCE BRIEFING DOSSIER
+
+INTERN NAME: [Your Name]
+STUDENT ID: [Your Student ID]
+WEEK NUMBER: [Week #]
+DATE RANGE: [Start Date] - [End Date]
+
+1. EXECUTIVE SUMMARY
+[Briefly summarize your key technical achievements and project impact for this week]
+
+2. OPERATIONAL OUTPUT (TASKS COMPLETED)
+- [Project/Task 1]: [Brief description of execution and result]
+- [Project/Task 2]: [Brief description of execution and result]
+
+3. CRITICAL CHALLENGES & BLOCKERS
+- [Issue 1]: [Technical or workflow hurdle and current mitigation status]
+
+4. STRATEGIC GOALS FOR NEXT CYCLE
+- [Objective 1]: [Key milestone you aim to reach next week]
+
+5. MENTOR EVALUATION & FEEDBACK
+[Reserved for mentor's professional assessment]

@@ -130,24 +130,28 @@ export default function UniversityDashboardPage() {
     });
   };
 
+  // Keep the UI light: show only the most recent application inline here
+  const visibleApplications = recentApplications.slice(0, 1);
+  const remainingApplications = Math.max(0, recentApplications.length - visibleApplications.length);
+
   return (
-    <div className="space-y-8">
+    <div className="space-y-5 sm:space-y-8">
       <PageHeader
         title="University Dashboard"
       />
 
       {/* Quick Actions */}
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
         <Link href="/dashboard/university/applications?new=true" className="group">
           <Card className="transition-all hover:shadow-lg hover:scale-[1.02] cursor-pointer border-2 hover:border-primary/50">
-            <CardContent className="p-6">
+            <CardContent className="p-4 sm:p-6">
               <div className="flex items-center gap-4">
-                <div className="p-3 rounded-lg bg-gradient-to-br from-primary/20 to-primary/10 group-hover:from-primary/30 group-hover:to-primary/20 transition-colors">
-                  <Plus className="h-6 w-6 text-primary" />
+                <div className="p-2.5 sm:p-3 rounded-lg bg-gradient-to-br from-primary/20 to-primary/10 group-hover:from-primary/30 group-hover:to-primary/20 transition-colors">
+                  <Plus className="h-5 w-5 sm:h-6 sm:w-6 text-primary" />
                 </div>
                 <div>
-                  <div className="text-sm font-medium text-muted-foreground">Quick Action</div>
-                  <div className="text-lg font-bold">New Application</div>
+                  <div className="text-xs sm:text-sm font-medium text-muted-foreground">Quick Action</div>
+                  <div className="text-base sm:text-lg font-bold">New Application</div>
                 </div>
               </div>
             </CardContent>
@@ -156,14 +160,14 @@ export default function UniversityDashboardPage() {
 
         <Link href="/dashboard/university/students" className="group">
           <Card className="transition-all hover:shadow-lg hover:scale-[1.02] cursor-pointer border-2 hover:border-secondary/50">
-            <CardContent className="p-6">
+            <CardContent className="p-4 sm:p-6">
               <div className="flex items-center gap-4">
-                <div className="p-3 rounded-lg bg-gradient-to-br from-secondary/20 to-secondary/10 group-hover:from-secondary/30 group-hover:to-secondary/20 transition-colors">
-                  <Users className="h-6 w-6 text-secondary" />
+                <div className="p-2.5 sm:p-3 rounded-lg bg-gradient-to-br from-secondary/20 to-secondary/10 group-hover:from-secondary/30 group-hover:to-secondary/20 transition-colors">
+                  <Users className="h-5 w-5 sm:h-6 sm:w-6 text-secondary" />
                 </div>
                 <div>
-                  <div className="text-sm font-medium text-muted-foreground">Manage</div>
-                  <div className="text-lg font-bold">Students</div>
+                  <div className="text-xs sm:text-sm font-medium text-muted-foreground">Manage</div>
+                  <div className="text-base sm:text-lg font-bold">Students</div>
                 </div>
               </div>
             </CardContent>
@@ -172,14 +176,14 @@ export default function UniversityDashboardPage() {
 
         <Link href="/dashboard/university/documents" className="group">
           <Card className="transition-all hover:shadow-lg hover:scale-[1.02] cursor-pointer border-2 hover:border-success/50">
-            <CardContent className="p-6">
+            <CardContent className="p-4 sm:p-6">
               <div className="flex items-center gap-4">
-                <div className="p-3 rounded-lg bg-gradient-to-br from-success/20 to-success/10 group-hover:from-success/30 group-hover:to-success/20 transition-colors">
-                  <Upload className="h-6 w-6 text-success" />
+                <div className="p-2.5 sm:p-3 rounded-lg bg-gradient-to-br from-success/20 to-success/10 group-hover:from-success/30 group-hover:to-success/20 transition-colors">
+                  <Upload className="h-5 w-5 sm:h-6 sm:w-6 text-success" />
                 </div>
                 <div>
-                  <div className="text-sm font-medium text-muted-foreground">Upload</div>
-                  <div className="text-lg font-bold">Documents</div>
+                  <div className="text-xs sm:text-sm font-medium text-muted-foreground">Upload</div>
+                  <div className="text-base sm:text-lg font-bold">Documents</div>
                 </div>
               </div>
             </CardContent>
@@ -188,14 +192,14 @@ export default function UniversityDashboardPage() {
 
         <Link href="/dashboard/university/applications" className="group">
           <Card className="transition-all hover:shadow-lg hover:scale-[1.02] cursor-pointer border-2 hover:border-warning/50">
-            <CardContent className="p-6">
+            <CardContent className="p-4 sm:p-6">
               <div className="flex items-center gap-4">
-                <div className="p-3 rounded-lg bg-gradient-to-br from-warning/20 to-warning/10 group-hover:from-warning/30 group-hover:to-warning/20 transition-colors">
-                  <FileText className="h-6 w-6 text-warning" />
+                <div className="p-2.5 sm:p-3 rounded-lg bg-gradient-to-br from-warning/20 to-warning/10 group-hover:from-warning/30 group-hover:to-warning/20 transition-colors">
+                  <FileText className="h-5 w-5 sm:h-6 sm:w-6 text-warning" />
                 </div>
                 <div>
-                  <div className="text-sm font-medium text-muted-foreground">View</div>
-                  <div className="text-lg font-bold">Applications</div>
+                  <div className="text-xs sm:text-sm font-medium text-muted-foreground">View</div>
+                  <div className="text-base sm:text-lg font-bold">Applications</div>
                 </div>
               </div>
             </CardContent>
@@ -205,66 +209,66 @@ export default function UniversityDashboardPage() {
 
       {/* Statistics Overview */}
       <div>
-        <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
-          <TrendingUp className="h-5 w-5 text-primary" />
+        <h2 className="text-lg sm:text-xl font-bold mb-3 sm:mb-4 flex items-center gap-2">
+          <TrendingUp className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
           Overview & Statistics
         </h2>
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
           <Card className="border-l-4 border-l-primary">
-            <CardContent className="p-6">
+            <CardContent className="p-4 sm:p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-muted-foreground">Total Applications</p>
-                  <p className="text-3xl font-bold mt-2">{stats.totalApplications}</p>
-                  <p className="text-xs text-muted-foreground mt-1">All time</p>
+                  <p className="text-xs sm:text-sm font-medium text-muted-foreground">Total Applications</p>
+                  <p className="text-2xl sm:text-3xl font-bold mt-1 sm:mt-2">{stats.totalApplications}</p>
+                  <p className="text-[11px] sm:text-xs text-muted-foreground mt-0.5 sm:mt-1">All time</p>
                 </div>
-                <div className="p-3 rounded-lg bg-primary/10">
-                  <FileText className="h-8 w-8 text-primary" />
+                <div className="p-2.5 sm:p-3 rounded-lg bg-primary/10">
+                  <FileText className="h-6 w-6 sm:h-8 sm:w-8 text-primary" />
                 </div>
               </div>
             </CardContent>
           </Card>
 
           <Card className="border-l-4 border-l-warning">
-            <CardContent className="p-6">
+            <CardContent className="p-4 sm:p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-muted-foreground">Under Review</p>
-                  <p className="text-3xl font-bold mt-2">{stats.pendingReview}</p>
-                  <p className="text-xs text-muted-foreground mt-1">Awaiting admin</p>
+                  <p className="text-xs sm:text-sm font-medium text-muted-foreground">Under Review</p>
+                  <p className="text-2xl sm:text-3xl font-bold mt-1 sm:mt-2">{stats.pendingReview}</p>
+                  <p className="text-[11px] sm:text-xs text-muted-foreground mt-0.5 sm:mt-1">Awaiting admin</p>
                 </div>
-                <div className="p-3 rounded-lg bg-warning/10">
-                  <Clock className="h-8 w-8 text-warning" />
+                <div className="p-2.5 sm:p-3 rounded-lg bg-warning/10">
+                  <Clock className="h-6 w-6 sm:h-8 sm:w-8 text-warning" />
                 </div>
               </div>
             </CardContent>
           </Card>
 
           <Card className="border-l-4 border-l-success">
-            <CardContent className="p-6">
+            <CardContent className="p-4 sm:p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-muted-foreground">Approved</p>
-                  <p className="text-3xl font-bold mt-2">{stats.approved}</p>
-                  <p className="text-xs text-success mt-1">+2 this month</p>
+                  <p className="text-xs sm:text-sm font-medium text-muted-foreground">Approved</p>
+                  <p className="text-2xl sm:text-3xl font-bold mt-1 sm:mt-2">{stats.approved}</p>
+                  <p className="text-[11px] sm:text-xs text-success mt-0.5 sm:mt-1">+2 this month</p>
                 </div>
-                <div className="p-3 rounded-lg bg-success/10">
-                  <CheckCircle className="h-8 w-8 text-success" />
+                <div className="p-2.5 sm:p-3 rounded-lg bg-success/10">
+                  <CheckCircle className="h-6 w-6 sm:h-8 sm:w-8 text-success" />
                 </div>
               </div>
             </CardContent>
           </Card>
 
           <Card className="border-l-4 border-l-secondary">
-            <CardContent className="p-6">
+            <CardContent className="p-4 sm:p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-muted-foreground">Total Students</p>
-                  <p className="text-3xl font-bold mt-2">{stats.totalStudents}</p>
-                  <p className="text-xs text-muted-foreground mt-1">{stats.acceptedStudents} accepted</p>
+                  <p className="text-xs sm:text-sm font-medium text-muted-foreground">Total Students</p>
+                  <p className="text-2xl sm:text-3xl font-bold mt-1 sm:mt-2">{stats.totalStudents}</p>
+                  <p className="text-[11px] sm:text-xs text-muted-foreground mt-0.5 sm:mt-1">{stats.acceptedStudents} accepted</p>
                 </div>
-                <div className="p-3 rounded-lg bg-secondary/10">
-                  <Users className="h-8 w-8 text-secondary" />
+                <div className="p-2.5 sm:p-3 rounded-lg bg-secondary/10">
+                  <Users className="h-6 w-6 sm:h-8 sm:w-8 text-secondary" />
                 </div>
               </div>
             </CardContent>
@@ -273,21 +277,21 @@ export default function UniversityDashboardPage() {
       </div>
 
       {/* Student Status Breakdown */}
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-3">
         <Card>
-          <CardContent className="p-6">
+          <CardContent className="p-4 sm:p-6">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-muted-foreground">Accepted Students</p>
-                <p className="text-2xl font-bold mt-2">{stats.acceptedStudents}</p>
+                <p className="text-xl sm:text-2xl font-bold mt-1 sm:mt-2">{stats.acceptedStudents}</p>
               </div>
-              <Avatar className="h-12 w-12">
+              <Avatar className="h-10 w-10 sm:h-12 sm:w-12">
                 <AvatarFallback className="bg-success/10 text-success">
-                  <CheckCircle className="h-6 w-6" />
+                  <CheckCircle className="h-5 w-5 sm:h-6 sm:w-6" />
                 </AvatarFallback>
               </Avatar>
             </div>
-            <div className="mt-4 h-2 bg-muted rounded-full overflow-hidden">
+            <div className="mt-3 sm:mt-4 h-2 bg-muted rounded-full overflow-hidden">
               <div
                 className="h-full bg-success rounded-full transition-all"
                 style={{ width: `${(stats.acceptedStudents / stats.totalStudents) * 100}%` }}
@@ -297,44 +301,22 @@ export default function UniversityDashboardPage() {
         </Card>
 
         <Card>
-          <CardContent className="p-6">
+          <CardContent className="p-4 sm:p-6">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-muted-foreground">Awaiting Arrival</p>
-                <p className="text-2xl font-bold mt-2">{stats.awaitingArrival}</p>
+                <p className="text-xl sm:text-2xl font-bold mt-1 sm:mt-2">{stats.awaitingArrival}</p>
               </div>
-              <Avatar className="h-12 w-12">
+              <Avatar className="h-10 w-10 sm:h-12 sm:w-12">
                 <AvatarFallback className="bg-warning/10 text-warning">
-                  <Clock className="h-6 w-6" />
+                  <Clock className="h-5 w-5 sm:h-6 sm:w-6" />
                 </AvatarFallback>
               </Avatar>
             </div>
-            <div className="mt-4 h-2 bg-muted rounded-full overflow-hidden">
+            <div className="mt-3 sm:mt-4 h-2 bg-muted rounded-full overflow-hidden">
               <div
                 className="h-full bg-warning rounded-full transition-all"
                 style={{ width: `${(stats.awaitingArrival / stats.acceptedStudents) * 100}%` }}
-              />
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-muted-foreground">Arrived at INSA</p>
-                <p className="text-2xl font-bold mt-2">{stats.arrived}</p>
-              </div>
-              <Avatar className="h-12 w-12">
-                <AvatarFallback className="bg-primary/10 text-primary">
-                  <Users className="h-6 w-6" />
-                </AvatarFallback>
-              </Avatar>
-            </div>
-            <div className="mt-4 h-2 bg-muted rounded-full overflow-hidden">
-              <div
-                className="h-full bg-primary rounded-full transition-all"
-                style={{ width: `${(stats.arrived / stats.acceptedStudents) * 100}%` }}
               />
             </div>
           </CardContent>
@@ -343,14 +325,14 @@ export default function UniversityDashboardPage() {
 
       {/* Recent Applications */}
       <Card>
-        <CardHeader>
+        <CardHeader className="px-4 sm:px-6 pt-3 sm:pt-4 pb-1">
           <div className="flex items-center justify-between">
             <div>
               <CardTitle className="flex items-center gap-2">
-                <Calendar className="h-5 w-5 text-primary" />
+                <Calendar className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
                 Recent Applications
               </CardTitle>
-              <CardDescription>Track your latest internship application submissions</CardDescription>
+              <CardDescription className="text-xs sm:text-sm">Track your latest internship application submissions</CardDescription>
             </div>
             <Link href="/dashboard/university/applications">
               <Button variant="outline" size="sm">
@@ -360,55 +342,67 @@ export default function UniversityDashboardPage() {
             </Link>
           </div>
         </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            {recentApplications.map((app) => (
-              <Card key={app.id} className="group hover:shadow-md transition-all">
-                <CardContent className="p-4">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-4 flex-1">
-                      <div className="p-3 rounded-lg bg-gradient-to-br from-primary/10 to-primary/5">
-                        <FileText className="h-5 w-5 text-primary" />
+        <CardContent className="px-3 sm:px-6 pb-4 sm:pb-6">
+          <div className="space-y-3 sm:space-y-4">
+            {visibleApplications.map((app) => (
+              <div
+                key={app.id}
+                className="group rounded-lg border border-border/60 bg-muted/40 hover:bg-muted/60 transition-colors px-3 py-2.5 sm:px-4 sm:py-3"
+              >
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4">
+                  <div className="flex items-center gap-3 sm:gap-4 flex-1">
+                    <div className="p-2 rounded-lg bg-gradient-to-br from-primary/10 to-primary/5">
+                      <FileText className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+                        <p className="font-semibold truncate max-w-[180px] sm:max-w-none">
+                          {(app as any).name || app.id}
+                        </p>
+                        {getStatusBadge(app.status)}
                       </div>
-                      <div className="flex-1">
-                        <div className="flex items-center gap-3">
-                          <p className="font-semibold">{(app as any).name || app.id}</p>
-                          {getStatusBadge(app.status)}
-                        </div>
-                        <div className="flex items-center gap-4 mt-1 text-sm text-muted-foreground">
-                          <span className="flex items-center gap-1">
-                            <Calendar className="h-3 w-3" />
-                            {app.academicYear}
-                          </span>
-                          <span className="flex items-center gap-1">
-                            <Users className="h-3 w-3" />
-                            {app.studentCount} students
-                          </span>
-                          <span>Created {formatDate(app.createdAt)}</span>
-                        </div>
+                      <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-1 text-[11px] sm:text-xs text-muted-foreground">
+                        <span className="flex items-center gap-1.5">
+                          <Calendar className="h-3 w-3" />
+                          {app.academicYear}
+                        </span>
+                        <span className="flex items-center gap-1.5">
+                          <Users className="h-3 w-3" />
+                          {app.studentCount} students
+                        </span>
+                        <span>Created {formatDate(app.createdAt)}</span>
                       </div>
                     </div>
-                    <Link href={`/dashboard/university/applications?view=${app.id}`}>
-                      <Button variant="ghost" size="sm" className="opacity-0 group-hover:opacity-100 transition-opacity">
-                        View Details
-                        <ArrowRight className="ml-2 h-4 w-4" />
-                      </Button>
-                    </Link>
                   </div>
-                </CardContent>
-              </Card>
+                  <Link href={`/dashboard/university/applications?view=${app.id}`}>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="w-full sm:w-auto mt-1 sm:mt-0"
+                    >
+                      View Details
+                      <ArrowRight className="ml-2 h-4 w-4" />
+                    </Button>
+                  </Link>
+                </div>
+              </div>
             ))}
+            {remainingApplications > 0 && (
+              <p className="text-[11px] sm:text-xs text-muted-foreground">
+                And {remainingApplications} more application{remainingApplications > 1 ? "s" : ""}. Use "View All" to see the full list.
+              </p>
+            )}
           </div>
         </CardContent>
       </Card>
 
       <Card>
-        <CardHeader>
+        <CardHeader className="px-4 sm:px-6 pt-3 sm:pt-4 pb-2">
           <CardTitle>University Workflow</CardTitle>
           <CardDescription>Key steps to submit and manage applications.</CardDescription>
         </CardHeader>
-        <CardContent>
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <CardContent className="px-3 sm:px-6 pb-4 sm:pb-6">
+          <div className="grid gap-3 sm:gap-4 sm:grid-cols-2 lg:grid-cols-4">
             <Link href="/dashboard/university/applications?new=true" className="group">
               <Button variant="ghost" className="w-full justify-start">
                 <div className="flex items-center gap-3">

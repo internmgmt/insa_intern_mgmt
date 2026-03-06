@@ -20,3 +20,7 @@ export type AdminDashboardResponse = ApiSuccess<{
 export async function getAdminDashboard(token?: string) {
   return apiFetch<AdminDashboardResponse>("/dashboard/admin", { method: "GET", token });
 }
+
+export async function getDashboardSummary(token?: string) {
+  return apiFetch<ApiSuccess<any>>("/dashboard/summary", { method: "GET", token });
+}

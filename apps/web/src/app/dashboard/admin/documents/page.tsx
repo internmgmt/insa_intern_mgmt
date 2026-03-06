@@ -290,7 +290,7 @@ export default function AdminDocumentsPage() {
 
       <Card>
         <CardHeader className="pb-4">
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+          <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-4">
             <div className="space-y-2">
               <Label>University</Label>
               <Select value={selectedUniId} onValueChange={setSelectedUniId}>
@@ -362,18 +362,18 @@ export default function AdminDocumentsPage() {
               {(selectedUniId !== "ALL" ||
                 typeFilter !== "ALL" ||
                 searchQuery) && (
-                <Button
-                  variant="link"
-                  onClick={() => {
-                    setSelectedUniId("ALL");
-                    setTypeFilter("ALL");
-                    setSearchQuery("");
-                  }}
-                  className="mt-4"
-                >
-                  Reset all filters
-                </Button>
-              )}
+                  <Button
+                    variant="link"
+                    onClick={() => {
+                      setSelectedUniId("ALL");
+                      setTypeFilter("ALL");
+                      setSearchQuery("");
+                    }}
+                    className="mt-4"
+                  >
+                    Reset all filters
+                  </Button>
+                )}
             </div>
           ) : (
             <div className="rounded-md border overflow-hidden">

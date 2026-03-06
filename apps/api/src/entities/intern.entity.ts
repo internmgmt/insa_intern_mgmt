@@ -51,6 +51,13 @@ export class InternEntity {
   assignedSupervisorId: string;
 
   @Column({
+    name: 'assigned_mentor_id',
+    type: 'uuid',
+    nullable: true,
+  })
+  assignedMentorId: string | null;
+
+  @Column({
     name: 'department_id',
     type: 'uuid',
     nullable: true,
@@ -184,6 +191,13 @@ export class InternEntity {
   })
   @JoinColumn({ name: 'assigned_supervisor_id' })
   supervisor?: UserEntity;
+
+  @ManyToOne(() => UserEntity, (user) => user.mentoredInterns as any, {
+    nullable: true,
+    onDelete: 'SET NULL',
+  })
+  @JoinColumn({ name: 'assigned_mentor_id' })
+  mentor?: UserEntity;
 
   @ManyToOne(
     () => DepartmentEntity,

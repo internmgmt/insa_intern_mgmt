@@ -20,22 +20,27 @@ export class SubmissionsService {
     private readonly studentRepository: Repository<StudentEntity>,
   ) { }
 
-  async create(createSubmissionDto: any) {
-    const { studentId } = createSubmissionDto;
-    if (studentId) {
-      const student = await this.studentRepository.findOne({
-        where: { id: studentId },
-      });
-      if (!student) {
-        throw new NotFoundException({
-          success: false,
-          message: 'Student not found',
-          error: { code: 'STUDENT_NOT_FOUND', details: null },
-        });
-      }
+  async create(createSubmissionDto: any, currentUser?: any) {
+    const { studentId, internId } = createSubmissionDto;
+    
+    // Normalize empty strings to null for UUID fields
+    const normalizedDto = { ...createSubmissionDto };
+    if (normalizedDto.studentId === '') normalizedDto.studentId = null;
+    if (normalizedDto.internId === '') normalizedDto.internId = null;
+    if (normalizedDto.assignedBy === '') normalizedDto.assignedBy = null;
+
+    // Map fileUrl to files if present
+    if (normalizedDto.fileUrl) {
+      normalizedDto.files = normalizedDto.fileUrl;
+      delete normalizedDto.fileUrl;
     }
 
-    const submission = this.submissionRepository.create(createSubmissionDto);
+    const submission = this.submissionRepository.create({
+      ...normalizedDto,
+      status: normalizedDto.status || (normalizedDto.type === 'TASK' ? 'ASSIGNED' : 'SUBMITTED'),
+      assignedBy: normalizedDto.assignedBy || (currentUser?.role === 'MENTOR' ? currentUser.id : null),
+    });
+    
     const saved = await this.submissionRepository.save(submission);
 
     return {
@@ -57,6 +62,12 @@ export class SubmissionsService {
       });
     }
 
+    // Map fileUrl to files if present
+    if (updateSubmissionDto.fileUrl) {
+      updateSubmissionDto.files = updateSubmissionDto.fileUrl;
+      delete updateSubmissionDto.fileUrl;
+    }
+
     Object.assign(submission, updateSubmissionDto);
     const updated = await this.submissionRepository.save(submission);
 
@@ -67,16 +78,46 @@ export class SubmissionsService {
     };
   }
 
-  async list(query?: { page?: number; limit?: number }) {
+  async list(query?: { page?: number; limit?: number; status?: string; studentId?: string; userId?: string }, currentUser?: any) {
     const page = query?.page && query.page > 0 ? query.page : 1;
     const limit = 100; // Enforce strict 100 limit as requested
 
-    const [items, totalItems] = await this.submissionRepository.findAndCount({
-      relations: ['student'],
-      order: { createdAt: 'DESC' },
-      skip: (page - 1) * limit,
-      take: limit,
-    });
+    const qb = this.submissionRepository
+      .createQueryBuilder('submission')
+      .leftJoinAndSelect('submission.student', 'student')
+      .leftJoinAndSelect('submission.intern', 'intern')
+      .leftJoinAndSelect('intern.user', 'internUser')
+      .leftJoinAndSelect('submission.reviewer', 'reviewer')
+      .orderBy('submission.createdAt', 'DESC')
+      .skip((page - 1) * limit)
+      .take(limit);
+
+    if (query?.status) {
+      qb.andWhere('submission.status = :status', { status: query.status });
+    }
+
+    if (query?.studentId && query.studentId !== '') {
+      qb.andWhere('submission.studentId = :studentId', { studentId: query.studentId });
+    }
+
+    if (query?.userId && query.userId !== '') {
+      // Find by intern's userId (for interns)
+      qb.andWhere('intern.userId = :userId', { userId: query.userId });
+    }
+
+    if (currentUser && !query?.userId && !query?.studentId) { // Only apply role filters if not explicitly searching for a user
+      if (currentUser.role === 'SUPERVISOR') {
+        qb.andWhere('intern.departmentId = :deptId', {
+          deptId: currentUser.departmentId,
+        });
+      } else if (currentUser.role === 'MENTOR') {
+        qb.andWhere('(intern.assignedMentorId = :mentorId OR submission.assignedBy = :mentorId)', {
+          mentorId: currentUser.id,
+        });
+      }
+    }
+
+    const [items, totalItems] = await qb.getManyAndCount();
 
     return {
       success: true,
@@ -118,6 +159,8 @@ export class SubmissionsService {
     reviewerId: string | null,
     decision: 'APPROVE' | 'REJECT',
     rejectionReason?: string,
+    score?: number,
+    feedback?: string,
   ) {
     const submission = await this.submissionRepository.findOne({
       where: { id },
@@ -132,7 +175,8 @@ export class SubmissionsService {
 
     if (
       submission.status !== SubmissionStatus.SUBMITTED &&
-      submission.status !== SubmissionStatus.UNDER_REVIEW
+      submission.status !== SubmissionStatus.UNDER_REVIEW &&
+      submission.status !== SubmissionStatus.ASSIGNED
     ) {
       throw new BadRequestException({
         success: false,
@@ -146,13 +190,15 @@ export class SubmissionsService {
 
     submission.reviewedBy = reviewerId ?? null;
     submission.reviewedAt = new Date();
+    submission.score = score ?? null;
+    submission.feedback = feedback ?? null;
 
     if (decision === 'APPROVE') {
       submission.status = SubmissionStatus.APPROVED;
       submission.rejectionReason = null;
     } else {
       submission.status = SubmissionStatus.REJECTED;
-      submission.rejectionReason = rejectionReason ?? null;
+      submission.rejectionReason = rejectionReason ?? feedback ?? null;
     }
 
     const saved = await this.submissionRepository.save(submission);
@@ -161,6 +207,26 @@ export class SubmissionsService {
       success: true,
       message: 'Submission reviewed successfully',
       data: saved,
+    };
+  }
+
+  async delete(id: string) {
+    const submission = await this.submissionRepository.findOne({
+      where: { id },
+    });
+    if (!submission) {
+      throw new NotFoundException({
+        success: false,
+        message: 'Submission not found',
+        error: { code: 'SUBMISSION_NOT_FOUND', details: null },
+      });
+    }
+
+    await this.submissionRepository.remove(submission);
+
+    return {
+      success: true,
+      message: 'Submission deleted successfully',
     };
   }
 }

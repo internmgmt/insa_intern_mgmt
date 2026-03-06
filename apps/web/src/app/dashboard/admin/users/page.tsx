@@ -45,13 +45,13 @@ export default function AdminUsersPage() {
     departmentId: "",
   });
 
-  const canCreate = useMemo(() => 
-    newUser.firstName.trim() && 
-    newUser.lastName.trim() && 
+  const canCreate = useMemo(() =>
+    newUser.firstName.trim() &&
+    newUser.lastName.trim() &&
     newUser.email.trim() &&
     (newUser.role !== "UNIVERSITY" || newUser.universityId) &&
     (newUser.role !== "SUPERVISOR" || newUser.departmentId),
-  [newUser]);
+    [newUser]);
 
   useEffect(() => {
     void fetchUsers();
@@ -141,7 +141,7 @@ export default function AdminUsersPage() {
             <CardTitle className="text-base font-semibold">Register New User</CardTitle>
             <CardDescription>Accounts are created with an auto-generated temporary password sent to the user's email.</CardDescription>
           </CardHeader>
-          <CardContent className="grid gap-4 md:grid-cols-4 lg:grid-cols-6">
+          <CardContent className="grid gap-4 grid-cols-1 md:grid-cols-4 lg:grid-cols-6">
             <div className="space-y-1 lg:col-span-2">
               <label className="text-xs font-bold uppercase text-muted-foreground/70">Legal Name</label>
               <div className="flex gap-2">
@@ -159,7 +159,7 @@ export default function AdminUsersPage() {
                 />
               </div>
             </div>
-            
+
             <div className="space-y-1 lg:col-span-2">
               <label className="text-xs font-bold uppercase text-muted-foreground/70">Email Address</label>
               <Input
@@ -238,12 +238,12 @@ export default function AdminUsersPage() {
         <CardHeader className="pb-3 border-b">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
             <CardTitle className="text-lg">System Registries</CardTitle>
-            <div className="flex items-center gap-2">
-              <div className="relative">
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+              <div className="relative flex-1 sm:flex-initial">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input 
-                  placeholder="Search by name or email..." 
-                  className="pl-9 w-[280px] h-9"
+                <Input
+                  placeholder="Search..."
+                  className="pl-9 w-full sm:w-[200px] md:w-[280px] h-9"
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
                   onKeyDown={(e) => e.key === 'Enter' && fetchUsers()}
@@ -295,9 +295,9 @@ export default function AdminUsersPage() {
                       </div>
                     </TableCell>
                     <TableCell className="text-right pr-6">
-                      <Button 
-                        variant="ghost" 
-                        size="sm" 
+                      <Button
+                        variant="ghost"
+                        size="sm"
                         className={`h-8 px-2 ${u.isActive ? 'hover:text-amber-600 hover:bg-amber-50/50' : 'hover:text-emerald-600 hover:bg-emerald-50/50'}`}
                         onClick={() => handleToggleStatus(u)}
                       >
@@ -309,7 +309,7 @@ export default function AdminUsersPage() {
               )}
             </TableBody>
           </Table>
-          
+
           <div className="p-4 border-t flex items-center justify-between">
             <p className="text-xs text-muted-foreground">
               Showing page <span className="font-bold text-foreground">{page}</span> of <span className="font-bold text-foreground">{totalPages}</span>

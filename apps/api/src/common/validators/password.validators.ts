@@ -3,7 +3,7 @@ import * as crypto from 'crypto';
 
 const PASSWORD_MIN_LENGTH = 12;
 const PASSWORD_REGEX =
-  /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]/;
+  /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z\d]).+$/;
 
 const COMMON_PASSWORDS = new Set([
   'password',
@@ -45,7 +45,7 @@ export function validatePasswordStrength(password: string): void {
     throw new BadRequestException({
       success: false,
       message:
-        'Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character (@$!%*?&)',
+        'Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character',
       error: {
         code: 'WEAK_PASSWORD',
         details: {
@@ -54,7 +54,7 @@ export function validatePasswordStrength(password: string): void {
             uppercase: /[A-Z]/.test(password),
             lowercase: /[a-z]/.test(password),
             number: /\d/.test(password),
-            special: /[@$!%*?&]/.test(password),
+            special: /[^A-Za-z\d]/.test(password),
           },
         },
       },

@@ -26,6 +26,7 @@ import { UserRole } from '../common/enums/user-role.enum';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { QueryUsersDto } from './dto/query-users.dto';
+import { CurrentUser } from '../auth/decorators/current-user.decorator';
 
 @ApiTags('users')
 @Controller('users')
@@ -35,7 +36,7 @@ export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
   @Get()
-  @Roles(UserRole.ADMIN)
+  @Roles(UserRole.ADMIN, UserRole.SUPERVISOR)
   @ApiOperation({ summary: 'List all users with pagination and filters' })
   @ApiResponse({
     status: 200,
@@ -75,8 +76,11 @@ export class UsersController {
       },
     },
   })
-  async findAll(@Query() query: QueryUsersDto) {
-    return this.usersService.findAll(query);
+  async findAll(
+    @Query() query: QueryUsersDto,
+    @CurrentUser() currentUser: any,
+  ) {
+    return this.usersService.findAll(query, currentUser);
   }
 
   @Get(':id')
@@ -117,7 +121,7 @@ export class UsersController {
   }
 
   @Post()
-  @Roles(UserRole.ADMIN)
+  @Roles(UserRole.ADMIN, UserRole.SUPERVISOR)
   @HttpCode(HttpStatus.CREATED)
   @ApiOperation({ summary: 'Create new user' })
   @ApiResponse({
@@ -140,8 +144,11 @@ export class UsersController {
       },
     },
   })
-  async create(@Body() createUserDto: CreateUserDto) {
-    return this.usersService.create(createUserDto);
+  async create(
+    @Body() createUserDto: CreateUserDto,
+    @CurrentUser() currentUser: any,
+  ) {
+    return this.usersService.create(createUserDto, currentUser);
   }
 
   @Patch(':id')

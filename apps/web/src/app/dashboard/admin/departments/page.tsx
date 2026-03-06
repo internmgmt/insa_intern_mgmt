@@ -37,14 +37,14 @@ export default function DepartmentsPage() {
                     'CYBERSECURITY': 'Cyber Operations',
                     'NETWORKING': 'Networking & Infra'
                 };
-                return { 
-                    id: d.id, 
-                    name: d.name || "Unnamed Unit", 
+                return {
+                    id: d.id,
+                    name: d.name || "Unnamed Unit",
                     type: typeMap[d.type] || d.type || "General",
                     description: d.description || "",
-                    head: d.head || 'Not Assigned', 
-                    internCount: Number(d.internCount || 0), 
-                    isActive: d.isActive !== false 
+                    head: d.head || 'Not Assigned',
+                    internCount: Number(d.internCount || 0),
+                    isActive: d.isActive !== false
                 };
             }));
         } catch (err) {
@@ -106,7 +106,7 @@ export default function DepartmentsPage() {
                         <CardTitle className="text-base">Registration: New Department</CardTitle>
                     </CardHeader>
                     <CardContent className="space-y-4">
-                        <div className="grid gap-4 md:grid-cols-2">
+                        <div className="grid gap-4 grid-cols-1 md:grid-cols-2">
                             <div className="space-y-1.5">
                                 <label className="text-xs font-bold uppercase text-muted-foreground">Department Name</label>
                                 <Input value={newDept.name} onChange={(e) => setNewDept({ ...newDept, name: e.target.value })} placeholder="e.g. Network Infrastructure" />
@@ -164,27 +164,27 @@ export default function DepartmentsPage() {
                             </CardHeader>
                             <CardContent className="space-y-4">
                                 <div className="grid grid-cols-2 gap-2">
-                                    <div className="p-2 rounded-lg bg-background/60 border border-transparent group-hover:border-primary/10 transition-colors">
+                                    <div className="p-2 rounded-lg bg-background border border-transparent group-hover:border-primary/10 transition-colors">
                                         <p className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider leading-none mb-1">Domain</p>
                                         <p className="text-xs font-semibold truncate uppercase">{dept.type}</p>
                                     </div>
-                                    <div className="p-2 rounded-lg bg-background/60 border border-transparent group-hover:border-primary/10 transition-colors">
+                                    <div className="p-2 rounded-lg bg-background border border-transparent group-hover:border-primary/10 transition-colors">
                                         <p className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider leading-none mb-1">Intern Capacity</p>
                                         <div className="flex items-center gap-1.5 font-bold text-xs uppercase">
                                             <Users className="h-3 w-3 text-primary" /> {dept.internCount} Interns
                                         </div>
                                     </div>
                                 </div>
-                                
+
                                 <div className="pt-4 border-t flex items-center justify-between">
                                     <div className="flex items-center gap-2 text-xs text-muted-foreground italic">
                                         <Info className="h-3 w-3" /> Dept. Head: {dept.head}
                                     </div>
                                     <div className="flex items-center gap-1">
-                                        <Button 
-                                            variant="ghost" 
-                                            size="icon" 
-                                            className="h-8 w-8 hover:bg-primary/10 hover:text-primary transition-colors" 
+                                        <Button
+                                            variant="ghost"
+                                            size="icon"
+                                            className="h-8 w-8 hover:bg-primary/10 hover:text-primary transition-colors"
                                             onClick={() => openEdit(dept)}
                                         >
                                             <Edit className="h-4 w-4" />

@@ -9,6 +9,7 @@ import { JwtService } from '@nestjs/jwt';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, Not, IsNull } from 'typeorm';
 import { UserEntity } from '../entities/user.entity';
+import { InternEntity } from '../entities/intern.entity';
 import { LoginDto } from './dto/login.dto';
 import { ChangePasswordDto } from './dto/change-password.dto';
 import { MailService } from '../global/services/mail/mail.service';
@@ -35,7 +36,7 @@ export class AuthService {
 
     const user = await this.userRepository.findOne({
       where: { email: email.toLowerCase() },
-      relations: ['university', 'department'],
+      relations: ['university', 'department', 'intern', 'intern.student'],
     });
 
     if (!user) {
@@ -104,6 +105,7 @@ export class AuthService {
                 type: user.department.type,
               }
             : null,
+          intern: this.mapIntern(user.intern),
         },
         token,
         expiresIn: 86400,
@@ -122,7 +124,7 @@ export class AuthService {
   async getCurrentUser(user: any) {
     const currentUser = await this.userRepository.findOne({
       where: { id: user.id },
-      relations: ['university', 'department'],
+      relations: ['university', 'department', 'intern', 'intern.student'],
     });
 
     if (!currentUser) {
@@ -161,6 +163,7 @@ export class AuthService {
               type: currentUser.department.type,
             }
           : null,
+        intern: this.mapIntern(currentUser.intern),
       },
     };
   }
@@ -368,5 +371,17 @@ export class AuthService {
   private async artificialDelay(): Promise<void> {
     const delay = 100 + Math.random() * 200;
     return new Promise(resolve => setTimeout(resolve, delay));
+  }
+
+  private mapIntern(intern?: InternEntity | null) {
+    if (!intern) return null;
+    return {
+      id: intern.id,
+      internId: intern.internId,
+      studentId: intern.studentId,
+      startDate: intern.startDate ? intern.startDate.toISOString() : null,
+      endDate: intern.endDate ? intern.endDate.toISOString() : null,
+      status: intern.status ?? null,
+    };
   }
 }

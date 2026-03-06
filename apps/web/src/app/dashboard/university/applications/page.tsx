@@ -269,7 +269,7 @@ export default function ApplicationsPage() {
 
     return (
         <div className="space-y-8 px-4">
-            <div className="rounded-2xl border bg-card/60 p-6 shadow-sm">
+            <div className="rounded-2xl border bg-card p-6 shadow-sm">
                 <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
                     <div>
                         <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
@@ -287,11 +287,11 @@ export default function ApplicationsPage() {
                 </div>
 
                 <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
-                    <Card className="border-l-4 border-l-foreground/70 bg-background/70 shadow-sm"><CardContent className="p-4"><div className="flex items-center justify-between"><div><p className="text-xs font-medium text-muted-foreground">Total</p><p className="text-2xl font-bold mt-1">{stats.total}</p></div><FileText className="h-8 w-8 text-muted-foreground" /></div></CardContent></Card>
-                    <Card className="border-l-4 border-l-warning cursor-pointer bg-background/70 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md" onClick={() => setSelectedStatus("PENDING")}><CardContent className="p-4"><div className="flex items-center justify-between"><div><p className="text-xs font-medium text-muted-foreground">Drafts</p><p className="text-2xl font-bold mt-1">{stats.pending}</p></div><Clock className="h-8 w-8 text-warning" /></div></CardContent></Card>
-                    <Card className="border-l-4 border-l-secondary cursor-pointer bg-background/70 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md" onClick={() => setSelectedStatus("UNDER_REVIEW")}><CardContent className="p-4"><div className="flex items-center justify-between"><div><p className="text-xs font-medium text-muted-foreground">Under Review</p><p className="text-2xl font-bold mt-1">{stats.underReview}</p></div><AlertCircle className="h-8 w-8 text-secondary" /></div></CardContent></Card>
-                    <Card className="border-l-4 border-l-success cursor-pointer bg-background/70 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md" onClick={() => setSelectedStatus("APPROVED")}><CardContent className="p-4"><div className="flex items-center justify-between"><div><p className="text-xs font-medium text-muted-foreground">Approved</p><p className="text-2xl font-bold mt-1">{stats.approved}</p></div><CheckCircle className="h-8 w-8 text-success" /></div></CardContent></Card>
-                    <Card className="border-l-4 border-l-destructive cursor-pointer bg-background/70 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md" onClick={() => setSelectedStatus("REJECTED")}><CardContent className="p-4"><div className="flex items-center justify-between"><div><p className="text-xs font-medium text-muted-foreground">Rejected</p><p className="text-2xl font-bold mt-1">{stats.rejected}</p></div><XCircle className="h-8 w-8 text-destructive" /></div></CardContent></Card>
+                    <Card className="border-l-4 border-l-foreground/70 bg-background shadow-sm"><CardContent className="p-4"><div className="flex items-center justify-between"><div><p className="text-xs font-medium text-muted-foreground">Total</p><p className="text-2xl font-bold mt-1">{stats.total}</p></div><FileText className="h-8 w-8 text-muted-foreground" /></div></CardContent></Card>
+                    <Card className="border-l-4 border-l-warning cursor-pointer bg-background shadow-sm transition hover:-translate-y-0.5 hover:shadow-md" onClick={() => setSelectedStatus("PENDING")}><CardContent className="p-4"><div className="flex items-center justify-between"><div><p className="text-xs font-medium text-muted-foreground">Drafts</p><p className="text-2xl font-bold mt-1">{stats.pending}</p></div><Clock className="h-8 w-8 text-warning" /></div></CardContent></Card>
+                    <Card className="border-l-4 border-l-secondary cursor-pointer bg-background shadow-sm transition hover:-translate-y-0.5 hover:shadow-md" onClick={() => setSelectedStatus("UNDER_REVIEW")}><CardContent className="p-4"><div className="flex items-center justify-between"><div><p className="text-xs font-medium text-muted-foreground">Under Review</p><p className="text-2xl font-bold mt-1">{stats.underReview}</p></div><AlertCircle className="h-8 w-8 text-secondary" /></div></CardContent></Card>
+                    <Card className="border-l-4 border-l-success cursor-pointer bg-background shadow-sm transition hover:-translate-y-0.5 hover:shadow-md" onClick={() => setSelectedStatus("APPROVED")}><CardContent className="p-4"><div className="flex items-center justify-between"><div><p className="text-xs font-medium text-muted-foreground">Approved</p><p className="text-2xl font-bold mt-1">{stats.approved}</p></div><CheckCircle className="h-8 w-8 text-success" /></div></CardContent></Card>
+                    <Card className="border-l-4 border-l-destructive cursor-pointer bg-background shadow-sm transition hover:-translate-y-0.5 hover:shadow-md" onClick={() => setSelectedStatus("REJECTED")}><CardContent className="p-4"><div className="flex items-center justify-between"><div><p className="text-xs font-medium text-muted-foreground">Rejected</p><p className="text-2xl font-bold mt-1">{stats.rejected}</p></div><XCircle className="h-8 w-8 text-destructive" /></div></CardContent></Card>
                 </div>
             </div>
 
@@ -339,13 +339,13 @@ export default function ApplicationsPage() {
                                 const statusConfig = getStatusConfig(app.status);
                                 const StatusIcon = statusConfig.icon;
                                 const canEdit = app.status === "PENDING";
-                                
+
                                 // Support both camelCase and snake_case for the letter URL
                                 const letterUrl = app.officialLetterUrl || (app as any).official_letter_url;
                                 const canSubmit = app.status === "PENDING" && !!letterUrl && app.studentCount > 0;
 
                                 return (
-                                    <div key={app.id} className="flex flex-col gap-4 rounded-xl border bg-background/60 p-5 transition hover:-translate-y-0.5 hover:shadow-md md:flex-row md:items-center md:justify-between">
+                                    <div key={app.id} className="flex flex-col gap-4 rounded-xl border bg-background p-5 transition hover:-translate-y-0.5 hover:shadow-md md:flex-row md:items-center md:justify-between">
                                         <div className="flex items-center gap-4 flex-1">
                                             <div className={`p-4 rounded-xl bg-gradient-to-br from-${statusConfig.variant}/20 to-${statusConfig.variant}/10 shadow-sm`}>
                                                 <StatusIcon className={`h-6 w-6 text-${statusConfig.variant}`} />
@@ -379,8 +379,8 @@ export default function ApplicationsPage() {
                                                 ) : (
                                                     <Button variant="outline" size="sm" className="gap-2 opacity-50 cursor-not-allowed" disabled title={
                                                         app.status !== "PENDING" ? `Status is ${app.status}, not Draft` :
-                                                        !letterUrl ? "Official letter missing" :
-                                                        app.studentCount === 0 ? "Add at least 1 student" : `Requirements not met (Count: ${app.studentCount}, Letter: ${!!letterUrl})`
+                                                            !letterUrl ? "Official letter missing" :
+                                                                app.studentCount === 0 ? "Add at least 1 student" : `Requirements not met (Count: ${app.studentCount}, Letter: ${!!letterUrl})`
                                                     }>
                                                         <Send className="h-4 w-4" /> Send for Review
                                                     </Button>
@@ -399,7 +399,7 @@ export default function ApplicationsPage() {
             <Dialog open={showNewAppDialog} onOpenChange={setShowNewAppDialog}>
                 <DialogContent className="sm:max-w-[480px]">
                     <DialogHeader><DialogTitle>Create New Application</DialogTitle><DialogDescription>Start a new internship application batch. You'll be able to add students after creation.</DialogDescription></DialogHeader>
-                        <div className="space-y-4 py-2">
+                    <div className="space-y-4 py-2">
                         <div className="space-y-2"><Label htmlFor="app-name" className="text-xs uppercase font-bold text-muted-foreground">Application Name *</Label><Input id="app-name" placeholder="e.g., Software Engineering Batch 2025" value={formData.name} onChange={(e) => { setFormData({ ...formData, name: e.target.value }); }} required /></div>
                         <div className="space-y-2">
                             <Label htmlFor="academic-year" className="text-xs uppercase font-bold text-muted-foreground">Academic Year *</Label>
@@ -444,7 +444,7 @@ export default function ApplicationsPage() {
             <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
                 <DialogContent className="sm:max-w-[600px]">
                     <DialogHeader><DialogTitle>Edit Application</DialogTitle><DialogDescription>Update application: {selectedApp?.name || selectedApp?.id}</DialogDescription></DialogHeader>
-                        <div className="space-y-4 py-4">
+                    <div className="space-y-4 py-4">
                         <div className="space-y-2"><Label htmlFor="edit-name">Name *</Label><Input id="edit-name" placeholder="e.g., Fall Internship Batch 2024" value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} required /><p className="text-xs text-muted-foreground">Short name to identify this application</p></div>
                         <div className="space-y-2">
                             <Label htmlFor="edit-academic-year">Academic Year *</Label>
@@ -487,7 +487,7 @@ export default function ApplicationsPage() {
                     </DialogHeader>
                     {selectedApp && (
                         <div className="space-y-4 py-4">
-                            <div className="grid grid-cols-2 gap-4">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                 <div>
                                     <Label className="text-muted-foreground">Application Name</Label>
                                     <p className="font-medium mt-1 uppercase">{selectedApp.name || 'Untitled Application'}</p>

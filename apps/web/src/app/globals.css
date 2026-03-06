@@ -42,79 +42,84 @@
 }
 
 :root {
-  /* Default Light – Obsidian palette */
-  --background: 251 251 253;
-  --foreground: 28 27 35;
+  /* Default Light – Mineral palette */
+  --background: 246 248 249;
+  --foreground: 34 38 43;
 
-  --card: 245 247 251;
-  --card-foreground: 28 27 35;
+  --card: 255 255 255;
+  --card-foreground: 34 38 43;
 
-  --popover: 245 247 251;
-  --popover-foreground: 28 27 35;
+  --popover: 255 255 255;
+  --popover-foreground: 34 38 43;
 
-  --primary: 30 99 216; /* #1E63D8 */
+  --primary: 74 124 125; /* Soft Teal */
   --primary-foreground: 255 255 255;
 
-  --secondary: 75 85 99;
-  --secondary-foreground: 255 255 255;
+  --secondary: 226 232 240;
+  --secondary-foreground: 34 38 43;
 
-  --muted: 245 247 251;
-  --muted-foreground: 98 104 116;
+  --muted: 241 243 245;
+  --muted-foreground: 100 110 120;
 
   --accent: 242 246 250;
-  --accent-foreground: 230 234 240;
+  --accent-foreground: 34 38 43;
 
-  --destructive: 239 68 68;
+  --destructive: 180 80 80;
   --destructive-foreground: 255 255 255;
 
-  --success: 16 185 129;
+  --success: 60 140 110;
   --success-foreground: 255 255 255;
 
-  --warning: 245 158 11;
-  --warning-foreground: 28 27 35;
+  --warning: 180 120 70;
+  --warning-foreground: 255 255 255;
 
-  --border: 224 229 240;
-  --input: 242 246 250;
-  --ring: 37 99 235;
+  --border: 210 215 220;
+  --input: 235 240 242;
+  --ring: 74 124 125;
 
   --radius: 0.625rem;
+
+  /* Font Fallbacks for build environments with restricted internet */
+  --font-geist-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-geist-mono: "JetBrains Mono", ui-mono, monospace;
+  --font-newsreader: "Georgia", ui-serif, serif;
 }
 
 .dark {
-  /* Default Dark – Obsidian palette */
-  --background: 14 15 20;
-  --foreground: 230 234 240;
+  /* Mineral Dark Palette */
+  --background: 18 20 23;
+  --foreground: 224 229 235;
 
-  --card: 22 23 29;
-  --card-foreground: 230 234 240;
+  --card: 28 31 35;
+  --card-foreground: 224 229 235;
 
-  --popover: 22 23 29;
-  --popover-foreground: 230 234 240;
+  --popover: 36 40 45;
+  --popover-foreground: 230 235 241;
 
-  --primary: 51 94 217; /* #335ED9 */
-  --primary-foreground: 255 255 255;
+  --primary: 107 158 159;
+  --primary-foreground: 18 20 23;
 
-  --secondary: 98 108 128;
-  --secondary-foreground: 14 15 20;
+  --secondary: 58 63 69;
+  --secondary-foreground: 224 229 235;
 
-  --muted: 28 38 56;
-  --muted-foreground: 230 234 240;
+  --muted: 34 38 43;
+  --muted-foreground: 156 163 175;
 
-  --accent: 242 246 250;
-  --accent-foreground: 28 27 35;
+  --accent: 184 134 107;
+  --accent-foreground: 18 20 23;
 
-  --destructive: 248 113 113;
-  --destructive-foreground: 14 15 20;
+  --destructive: 184 107 107;
+  --destructive-foreground: 18 20 23;
 
-  --success: 52 211 153;
-  --success-foreground: 14 15 20;
+  --success: 125 184 158;
+  --success-foreground: 18 20 23;
 
-  --warning: 251 191 36;
-  --warning-foreground: 14 15 20;
+  --warning: 201 154 109;
+  --warning-foreground: 18 20 23;
 
-  --border: 47 59 78;
-  --input: 28 38 56;
-  --ring: 70 124 220;
+  --border: 51 56 62;
+  --input: 36 40 45;
+  --ring: 107 158 159;
 }
 
 
@@ -258,6 +263,43 @@
   --ring: 160 172 252;
 }
 
+[data-palette="mineral"] {
+  /* Light Mineral - Cool grey & teal */
+  --background: 246 248 249;
+  --card: 255 255 255;
+  --foreground: 34 38 43;
+  --muted: 241 243 245;
+  --muted-foreground: 100 110 120;
+  --primary: 74 124 125; /* Darker soft teal */
+  --primary-foreground: 255 255 255;
+  --secondary: 226 232 240;
+  --accent: 138 100 79; /* Darker weathered copper */
+  --success: 60 140 110;
+  --warning: 180 120 70;
+  --destructive: 180 80 80;
+  --border: 210 215 220;
+  --input: 235 240 242;
+  --ring: 74 124 125;
+}
+
+.dark[data-palette="mineral"] {
+  /* Cool Mineral Dark */
+  --background: 18 20 23;
+  --card: 28 31 35;
+  --foreground: 224 229 235;
+  --muted: 34 38 43;
+  --primary: 107 158 159;
+  --primary-foreground: 18 20 23;
+  --secondary: 58 63 69;
+  --accent: 184 134 107;
+  --success: 125 184 158;
+  --warning: 201 154 109;
+  --destructive: 184 107 107;
+  --border: 51 56 62;
+  --input: 36 40 45;
+  --ring: 107 158 159;
+}
+
 * {
   border-color: rgb(var(--border));
 }
@@ -288,10 +330,10 @@ h6 {
 .elevation-1 { box-shadow: 0 1px 2px rgb(0 0 0 / 0.05), 0 1px 1px rgb(0 0 0 / 0.03); }
 .elevation-2 { box-shadow: 0 4px 12px rgb(0 0 0 / 0.06), 0 2px 6px rgb(0 0 0 / 0.04); }
 
-/* Glass header backdrop */
+/* Glass header backdrop - changed to solid to avoid transparency issues requested by user */
 .header-glass {
-  background-color: rgb(var(--card) / 0.85);
-  backdrop-filter: saturate(1.2) blur(8px);
+  background-color: rgb(var(--card));
+  border-bottom: 1px solid rgb(var(--border));
 }
 
 /* Sidebar rail gradient */

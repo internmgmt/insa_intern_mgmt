@@ -3,6 +3,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { DocumentEntity } from '../entities/document.entity';
 import { StudentEntity } from '../entities/student.entity';
 import { ApplicationEntity } from '../entities/application.entity';
+import { InternEntity } from '../entities/intern.entity';
 import { DocumentsService } from './documents.service';
 import { DocumentsController } from './documents.controller';
 import { MulterModule } from '@nestjs/platform-express';
@@ -45,6 +46,7 @@ const MAX_FILE_SIZE = 5 * 1024 * 1024;
       DocumentEntity,
       StudentEntity,
       ApplicationEntity,
+      InternEntity,
     ]),
   ],
   controllers: [DocumentsController],

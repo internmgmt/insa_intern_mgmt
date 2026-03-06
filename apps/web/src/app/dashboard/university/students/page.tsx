@@ -92,7 +92,7 @@ export default function UniversityStudentsPage() {
             const apps = res.data.items || [];
             console.log("Fetched apps:", apps.map(a => ({ id: a.id, count: a.studentCount, doc: !!a.officialLetterUrl })));
             setApplications(apps);
-            
+
             // Set initial selectedAppId if not set or from query
             if (apps.length > 0) {
                 setSelectedAppId(currentId => {
@@ -120,7 +120,7 @@ export default function UniversityStudentsPage() {
     const isStudentsVisible = useMemo(() => {
         // If no application selected, we show the "No Application Selected" state anyway
         if (!selectedAppId) return true;
-        
+
         // While apps are loading or if selected app isn't found in the list yet, 
         // default to HIDDEN to avoid flashing current students or restricted data.
         if (appsLoading || !selectedApp) return false;
@@ -376,9 +376,9 @@ export default function UniversityStudentsPage() {
                                 onClick={handleSendForReview}
                                 disabled={isSubmitting || students.length === 0 || !letterUrl}
                                 title={
-                                    students.length === 0 ? "Add at least 1 student" : 
-                                    !letterUrl ? `Official letter missing (ID: ${selectedAppId})` : 
-                                    "Send for review"
+                                    students.length === 0 ? "Add at least 1 student" :
+                                        !letterUrl ? `Official letter missing (ID: ${selectedAppId})` :
+                                            "Send for review"
                                 }
                             >
                                 <Send className="mr-2 h-4 w-4" />
@@ -386,8 +386,8 @@ export default function UniversityStudentsPage() {
                             </Button>
                         );
                     })()}
-                    <Button 
-                        onClick={() => { resetForm(); setShowAddDialog(true); }} 
+                    <Button
+                        onClick={() => { resetForm(); setShowAddDialog(true); }}
                         disabled={!selectedAppId || selectedApp?.status !== "PENDING"}
                         title={selectedApp?.status !== "PENDING" && selectedAppId ? "Can only add students to Draft batches" : ""}
                     >
@@ -396,7 +396,7 @@ export default function UniversityStudentsPage() {
                     </Button>
                 </div>
             </div>
-            
+
             {/* Debug info to help identify why the button is grayed out */}
             <div className="bg-muted/30 p-2 rounded text-[10px] text-muted-foreground flex gap-4">
                 <span>Students Added: <strong>{students.length}</strong></span>
@@ -475,45 +475,45 @@ export default function UniversityStudentsPage() {
                         <Card className="shadow-none">
                             <CardContent className="p-0">
                                 <Table>
-                                <TableHeader>
-                                    <TableRow>
-                                        <TableHead>Student</TableHead>
-                                        <TableHead>Student ID</TableHead>
-                                        <TableHead>Field of Study</TableHead>
-                                        <TableHead>Year</TableHead>
-                                        <TableHead>Status</TableHead>
-                                        <TableHead className="text-right">Actions</TableHead>
-                                    </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                    {filteredStudents.map((student) => (
-                                        <TableRow key={student.id}>
-                                            <TableCell>
-                                                <div className="flex flex-col">
-                                                    <span className="font-medium">{student.firstName} {student.lastName}</span>
-                                                    <span className="text-xs text-muted-foreground">{student.email}</span>
-                                                </div>
-                                            </TableCell>
-                                            <TableCell className="font-mono text-sm">{student.studentId}</TableCell>
-                                            <TableCell>{student.fieldOfStudy}</TableCell>
-                                            <TableCell>{student.academicYear}</TableCell>
-                                            <TableCell>{getStatusBadge(student.status)}</TableCell>
-                                            <TableCell className="text-right">
-                                                <div className="flex justify-end gap-2">
-                                                    <Button variant="ghost" size="icon" onClick={() => { setSelectedStudent(student); setShowViewDialog(true); }}>
-                                                        <Eye className="h-4 w-4" />
-                                                    </Button>
-                                                    <Button variant="ghost" size="icon" onClick={() => openEdit(student)}>
-                                                        <Pencil className="h-4 w-4" />
-                                                    </Button>
-                                                    <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive" onClick={() => { setSelectedStudent(student); setShowDeleteDialog(true); }}>
-                                                        <Trash2 className="h-4 w-4" />
-                                                    </Button>
-                                                </div>
-                                            </TableCell>
+                                    <TableHeader>
+                                        <TableRow>
+                                            <TableHead>Student</TableHead>
+                                            <TableHead>Student ID</TableHead>
+                                            <TableHead>Field of Study</TableHead>
+                                            <TableHead>Year</TableHead>
+                                            <TableHead>Status</TableHead>
+                                            <TableHead className="text-right">Actions</TableHead>
                                         </TableRow>
-                                    ))}
-                                </TableBody>
+                                    </TableHeader>
+                                    <TableBody>
+                                        {filteredStudents.map((student) => (
+                                            <TableRow key={student.id}>
+                                                <TableCell>
+                                                    <div className="flex flex-col">
+                                                        <span className="font-medium">{student.firstName} {student.lastName}</span>
+                                                        <span className="text-xs text-muted-foreground">{student.email}</span>
+                                                    </div>
+                                                </TableCell>
+                                                <TableCell className="font-mono text-sm">{student.studentId}</TableCell>
+                                                <TableCell>{student.fieldOfStudy}</TableCell>
+                                                <TableCell>{student.academicYear}</TableCell>
+                                                <TableCell>{getStatusBadge(student.status)}</TableCell>
+                                                <TableCell className="text-right">
+                                                    <div className="flex justify-end gap-2">
+                                                        <Button variant="ghost" size="icon" onClick={() => { setSelectedStudent(student); setShowViewDialog(true); }}>
+                                                            <Eye className="h-4 w-4" />
+                                                        </Button>
+                                                        <Button variant="ghost" size="icon" onClick={() => openEdit(student)}>
+                                                            <Pencil className="h-4 w-4" />
+                                                        </Button>
+                                                        <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive" onClick={() => { setSelectedStudent(student); setShowDeleteDialog(true); }}>
+                                                            <Trash2 className="h-4 w-4" />
+                                                        </Button>
+                                                    </div>
+                                                </TableCell>
+                                            </TableRow>
+                                        ))}
+                                    </TableBody>
                                 </Table>
                             </CardContent>
                         </Card>
@@ -532,7 +532,7 @@ export default function UniversityStudentsPage() {
                         </DialogDescription>
                     </DialogHeader>
                     <div className="grid gap-4 py-4">
-                        <div className="grid grid-cols-2 gap-4">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div className="space-y-2">
                                 <Label htmlFor="firstName">First Name *</Label>
                                 <Input id="firstName" value={formData.firstName} onChange={(e) => setFormData({ ...formData, firstName: e.target.value })} />
@@ -542,7 +542,7 @@ export default function UniversityStudentsPage() {
                                 <Input id="lastName" value={formData.lastName} onChange={(e) => setFormData({ ...formData, lastName: e.target.value })} />
                             </div>
                         </div>
-                        <div className="grid grid-cols-2 gap-4">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div className="space-y-2">
                                 <Label htmlFor="studentId">Student ID *</Label>
                                 <Input id="studentId" value={formData.studentId} disabled={showEditDialog} onChange={(e) => setFormData({ ...formData, studentId: e.target.value })} />
@@ -552,15 +552,15 @@ export default function UniversityStudentsPage() {
                                 <Input id="email" type="email" value={formData.email} onChange={(e) => setFormData({ ...formData, email: e.target.value })} />
                             </div>
                         </div>
-                        <div className="grid grid-cols-2 gap-4">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div className="space-y-2">
                                 <Label htmlFor="fieldOfStudy">Field of Study *</Label>
                                 <Input id="fieldOfStudy" value={formData.fieldOfStudy} onChange={(e) => setFormData({ ...formData, fieldOfStudy: e.target.value })} />
                             </div>
                             <div className="space-y-2">
                                 <Label htmlFor="academicYear">Academic Year *</Label>
-                                <Select 
-                                    value={formData.academicYear} 
+                                <Select
+                                    value={formData.academicYear}
                                     onValueChange={(val) => setFormData({ ...formData, academicYear: val })}
                                 >
                                     <SelectTrigger id="academicYear">
@@ -582,7 +582,7 @@ export default function UniversityStudentsPage() {
 
                         <div className="border-t pt-4 mt-2">
                             <h4 className="text-sm font-medium mb-4">Required Documents</h4>
-                            <div className="grid grid-cols-2 gap-4">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                 <div className="space-y-2">
                                     <Label className="flex items-center gap-1.5">
                                         <FileText className="h-3.5 w-3.5" />
@@ -634,7 +634,7 @@ export default function UniversityStudentsPage() {
                     </DialogHeader>
                     {selectedStudent && (
                         <div className="space-y-4">
-                            <div className="grid grid-cols-2 gap-y-3 text-sm">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-3 text-sm">
                                 <div className="text-muted-foreground">Student ID:</div>
                                 <div className="font-mono">{selectedStudent.studentId}</div>
                                 <div className="text-muted-foreground">Email:</div>

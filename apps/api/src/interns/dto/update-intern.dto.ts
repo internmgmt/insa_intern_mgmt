@@ -31,7 +31,14 @@ export class UpdateInternDto {
   @IsOptional()
   @IsUUID()
   supervisorId?: string;
-
+  @ApiPropertyOptional({
+    example: '550e8400-e29b-41d4-a716-446655440002',
+    description: 'Mentor user ID (Supervisor or ADMIN only)',
+    required: false,
+  })
+  @IsOptional()
+  @IsUUID()
+  assignedMentorId?: string | null;
   @ApiPropertyOptional({
     example: '2024-06-01T00:00:00Z',
     description: 'Intern start date (ADMIN only)',

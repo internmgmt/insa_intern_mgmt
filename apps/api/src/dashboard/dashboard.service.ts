@@ -8,6 +8,7 @@ import { StudentEntity } from '../entities/student.entity';
 import { InternEntity } from '../entities/intern.entity';
 import { SubmissionEntity } from '../entities/submission.entity';
 import { DepartmentEntity } from '../entities/department.entity';
+import { UserRole } from '../common/enums/user-role.enum';
 
 @Injectable()
 export class DashboardService {
@@ -19,7 +20,67 @@ export class DashboardService {
     @InjectRepository(InternEntity) private readonly interns: Repository<InternEntity>,
     @InjectRepository(SubmissionEntity) private readonly submissions: Repository<SubmissionEntity>,
     @InjectRepository(DepartmentEntity) private readonly departments: Repository<DepartmentEntity>,
-  ) {}
+  ) { }
+
+  async getSummary(user: any) {
+    if (user.role === UserRole.ADMIN) {
+      return this.adminSummary();
+    }
+
+    if (user.role === UserRole.SUPERVISOR) {
+      const deptId = user.departmentId;
+
+      const [internsCount, activeInternsCount, pendingSubmissions, mentorsCount] = await Promise.all([
+        this.interns.count({ where: { departmentId: deptId } }),
+        this.interns.count({ where: { departmentId: deptId, status: 'ACTIVE' } }),
+        this.submissions.createQueryBuilder('s')
+          .innerJoin('s.intern', 'i')
+          .where('i.departmentId = :deptId', { deptId })
+          .andWhere('s.status = :status', { status: 'SUBMITTED' })
+          .getCount(),
+        this.users.count({ where: { departmentId: deptId, role: UserRole.MENTOR } })
+      ]);
+
+      return {
+        success: true,
+        data: {
+          internsCount,
+          activeInternsCount,
+          pendingSubmissions,
+          mentorsCount
+        }
+      };
+    }
+
+    if (user.role === UserRole.MENTOR) {
+      const mentorId = user.id;
+
+      const [internsCount, pendingReviews, activeTasks] = await Promise.all([
+        this.interns.count({ where: { assignedMentorId: mentorId } }),
+        this.submissions.createQueryBuilder('s')
+          .innerJoin('s.intern', 'i')
+          .where('i.assignedMentorId = :mentorId', { mentorId })
+          .andWhere('s.status = :status', { status: 'SUBMITTED' })
+          .getCount(),
+        this.submissions.createQueryBuilder('s')
+          .innerJoin('s.intern', 'i')
+          .where('i.assignedMentorId = :mentorId', { mentorId })
+          .andWhere('s.status = :status', { status: 'ASSIGNED' })
+          .getCount()
+      ]);
+
+      return {
+        success: true,
+        data: {
+          internsCount,
+          pendingReviews,
+          activeTasks
+        }
+      };
+    }
+
+    return { success: false, message: 'No summary for this role' };
+  }
 
   async adminSummary() {
     const [users, universities, applications, students, interns, submissions] = await Promise.all([

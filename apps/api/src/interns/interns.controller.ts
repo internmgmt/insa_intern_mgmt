@@ -13,6 +13,7 @@ import {
   Req,
   BadRequestException,
   NotFoundException,
+  ParseUUIDPipe,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -75,19 +76,11 @@ export class InternsController {
   }
 
   @Get()
-  @Roles(UserRole.ADMIN, UserRole.SUPERVISOR)
+  @Roles(UserRole.ADMIN, UserRole.SUPERVISOR, UserRole.MENTOR)
   @ApiOperation({ summary: 'List interns with optional pagination' })
   @ApiResponse({ status: 200, description: 'Interns retrieved successfully' })
   async list(@Query() query: QueryInternsDto, @Req() req: any) {
     return this.internsService.list(query, req.user);
-  }
-
-  @Get(':id')
-  @Roles(UserRole.ADMIN, UserRole.SUPERVISOR, UserRole.INTERN)
-  @ApiOperation({ summary: 'Get intern by id' })
-  @ApiResponse({ status: 200, description: 'Intern retrieved successfully' })
-  async getById(@Param('id') id: string, @Req() req: any) {
-    return this.internsService.getById(id, req.user);
   }
 
   @Get('me')
@@ -98,14 +91,22 @@ export class InternsController {
     return this.internsService.getMyProfile(req.user);
   }
 
+  @Get(':id')
+  @Roles(UserRole.ADMIN, UserRole.SUPERVISOR, UserRole.INTERN, UserRole.MENTOR)
+  @ApiOperation({ summary: 'Get intern by id' })
+  @ApiResponse({ status: 200, description: 'Intern retrieved successfully' })
+  async getById(@Param('id', new ParseUUIDPipe()) id: string, @Req() req: any) {
+    return this.internsService.getById(id, req.user);
+  }
+
   @Patch(':id')
-  @Roles(UserRole.ADMIN, UserRole.INTERN)
+  @Roles(UserRole.ADMIN, UserRole.SUPERVISOR, UserRole.INTERN)
   @ApiOperation({
     summary: 'Update intern',
   })
   @ApiResponse({ status: 200, description: 'Intern updated successfully' })
   async update(
-    @Param('id') id: string,
+    @Param('id', new ParseUUIDPipe()) id: string,
     @Body() updateInternDto: UpdateInternDto,
     @Req() req: any,
   ) {

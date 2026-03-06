@@ -20,11 +20,22 @@ function toSupervisorResponse(intern: InternEntity) {
   };
 }
 
+function toMentorResponse(intern: InternEntity) {
+  if (!intern.mentor) return null;
+  return {
+    id: intern.mentor.id,
+    firstName: intern.mentor.firstName,
+    lastName: intern.mentor.lastName,
+    email: intern.mentor.email,
+  };
+}
+
 function toUserName(intern: InternEntity) {
   return {
     firstName: intern.user?.firstName ?? null,
     lastName: intern.user?.lastName ?? null,
     email: intern.user?.email ?? null,
+    phone: intern.student?.phone ?? null,
   };
 }
 
@@ -83,6 +94,7 @@ export class InternMapper {
       // Organizational context
       department: toDepartmentResponse(intern),
       supervisor: toSupervisorResponse(intern),
+      mentor: toMentorResponse(intern),
       university: intern.student?.application?.university
         ? {
           id: intern.student.application.university.id,
@@ -122,6 +134,7 @@ export class InternMapper {
       certificateIssued: intern.certificateIssued ?? false,
       department: toDepartmentResponse(intern),
       supervisor: toSupervisorResponse(intern),
+      mentor: toMentorResponse(intern),
       student: intern.student
         ? {
           id: intern.student.id,
@@ -159,7 +172,19 @@ export class InternMapper {
       recentSubmissions: submissions,
       skills: intern.skills ?? [],
       supervisor: toSupervisorResponse(intern),
+      mentor: toMentorResponse(intern),
       department: toDepartmentResponse(intern),
+      student: intern.student
+        ? {
+          id: intern.student.id,
+          firstName: intern.student.firstName,
+          lastName: intern.student.lastName,
+          studentId: intern.student.studentId,
+          email: intern.student.email,
+          status: intern.student.status,
+          phone: intern.student.phone,
+        }
+        : null,
       ...toUserName(intern),
     };
   }

@@ -54,6 +54,7 @@ export class InternsService {
       .leftJoinAndSelect('intern.user', 'user')
       .leftJoinAndSelect('intern.department', 'department')
       .leftJoinAndSelect('intern.supervisor', 'supervisor')
+      .leftJoinAndSelect('intern.mentor', 'mentor')
       .leftJoinAndSelect('student.application', 'application')
       .leftJoinAndSelect('application.university', 'university')
       .leftJoin('intern.submissions', 'submission')
@@ -63,6 +64,7 @@ export class InternsService {
       .addGroupBy('user.id')
       .addGroupBy('department.id')
       .addGroupBy('supervisor.id')
+      .addGroupBy('mentor.id')
       .addGroupBy('application.id')
       .addGroupBy('university.id');
 
@@ -79,6 +81,12 @@ export class InternsService {
       }
       qb.andWhere('intern.departmentId = :deptId', {
         deptId: currentUser.departmentId,
+      });
+    }
+
+    if (currentUser?.role === UserRole.MENTOR) {
+      qb.andWhere('intern.assignedMentorId = :mentorId', {
+        mentorId: currentUser.id,
       });
     }
 
@@ -150,7 +158,7 @@ export class InternsService {
   async getById(id: string, currentUser: any) {
     const intern = await this.internRepository.findOne({
       where: { id },
-      relations: ['student', 'user', 'department', 'supervisor', 'submissions'],
+      relations: ['student', 'user', 'department', 'supervisor', 'mentor', 'submissions'],
     });
 
     if (!intern) {
@@ -181,6 +189,16 @@ export class InternsService {
       }
     }
 
+    if (currentUser?.role === UserRole.MENTOR) {
+      if (intern.assignedMentorId !== currentUser.id) {
+        throw new ForbiddenException({
+          success: false,
+          message: 'You can only access interns assigned to you',
+          error: { code: AUTH_INSUFFICIENT_PERMISSIONS, details: null },
+        });
+      }
+    }
+
     return {
       success: true,
       message: 'Intern retrieved successfully',
@@ -191,7 +209,7 @@ export class InternsService {
   async getMyProfile(currentUser: any) {
     const intern = await this.internRepository.findOne({
       where: { userId: currentUser.id },
-      relations: ['student', 'user', 'department', 'supervisor', 'submissions'],
+      relations: ['student', 'user', 'department', 'supervisor', 'mentor', 'submissions'],
     });
 
     if (!intern) {
@@ -240,6 +258,42 @@ export class InternsService {
         });
       }
       intern.skills = skills ?? intern.skills ?? [];
+    } else if (currentUser?.role === UserRole.SUPERVISOR) {
+      if (intern.departmentId !== currentUser.departmentId) {
+        throw new ForbiddenException({
+          success: false,
+          message: 'You can only update interns in your own department',
+          error: { code: AUTH_INSUFFICIENT_PERMISSIONS, details: null },
+        });
+      }
+
+      // Supervisor can only update specific fields, namely assignedMentorId
+      if (dto.assignedMentorId !== undefined) {
+        // Enforce that the mentor belongs to the same department
+        if (dto.assignedMentorId) {
+          const mentor = await this.userRepository.findOne({
+            where: {
+              id: dto.assignedMentorId,
+              role: UserRole.MENTOR,
+              departmentId: currentUser.departmentId
+            }
+          });
+          if (!mentor) {
+            throw new BadRequestException({
+              success: false,
+              message: 'Assigned mentor must belong to your department',
+              error: { code: 'INVALID_MENTOR', details: null },
+            });
+          }
+        }
+        intern.assignedMentorId = dto.assignedMentorId;
+        // Explicitly set the mentor relation to ensure TypeORM notices the change
+        if (dto.assignedMentorId) {
+          intern.mentor = { id: dto.assignedMentorId } as any;
+        } else {
+          intern.mentor = undefined;
+        }
+      }
     } else if (currentUser?.role === UserRole.ADMIN) {
       if (dto.finalEvaluation !== undefined) {
         if (dto.finalEvaluation < 0 || dto.finalEvaluation > 4) {
@@ -268,6 +322,14 @@ export class InternsService {
       if (dto.supervisorId !== undefined) {
         intern.assignedSupervisorId = dto.supervisorId;
       }
+      if (dto.assignedMentorId !== undefined) {
+        intern.assignedMentorId = dto.assignedMentorId;
+        if (dto.assignedMentorId) {
+          intern.mentor = { id: dto.assignedMentorId } as any;
+        } else {
+          intern.mentor = undefined;
+        }
+      }
       if (dto.startDate !== undefined) {
         intern.startDate = dto.startDate ? new Date(dto.startDate) : null;
       }
@@ -295,7 +357,7 @@ export class InternsService {
 
     const reloaded = await this.internRepository.findOne({
       where: { id: saved.id },
-      relations: ['student', 'user', 'department', 'supervisor', 'submissions'],
+      relations: ['student', 'user', 'department', 'supervisor', 'mentor', 'submissions'],
     });
 
     return {

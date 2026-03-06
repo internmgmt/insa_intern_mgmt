@@ -40,8 +40,8 @@ export class CreateUserDto {
 
   @ApiProperty({
     example: 'SUPERVISOR',
-    description: 'User role (ADMIN, UNIVERSITY, SUPERVISOR)',
-    enum: [UserRole.ADMIN, UserRole.UNIVERSITY, UserRole.SUPERVISOR],
+    description: 'User role (ADMIN, UNIVERSITY, SUPERVISOR, MENTOR)',
+    enum: [UserRole.ADMIN, UserRole.UNIVERSITY, UserRole.SUPERVISOR, UserRole.MENTOR],
   })
   @IsEnum(UserRole)
   @IsNotEmpty()

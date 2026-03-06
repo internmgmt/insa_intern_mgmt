@@ -12,7 +12,7 @@ import { toast } from "sonner";
 import { Key, Eye, EyeOff, Check, X, ShieldCheck, ShieldAlert, AlertTriangle } from "lucide-react";
 
 export default function ChangePasswordPage() {
-  const { token, logout } = useAuth();
+  const { token, logout, user } = useAuth();
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [showPasswords, setShowPasswords] = useState(false);
@@ -24,7 +24,7 @@ export default function ChangePasswordPage() {
   });
 
   const passwordRequirements = useMemo(() => [
-    { label: "At least 8 characters", regex: /.{8,}/ },
+    { label: "At least 12 characters", regex: /.{12,}/ },
     { label: "At least one uppercase letter", regex: /[A-Z]/ },
     { label: "At least one lowercase letter", regex: /[a-z]/ },
     { label: "At least one number", regex: /[0-9]/ },
@@ -98,11 +98,21 @@ export default function ChangePasswordPage() {
         </div>
       </div>
 
+      {user?.isFirstLogin && (
+        <div className="bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900 rounded-lg p-4 flex gap-3 text-amber-800 dark:text-amber-300 animate-slide-up-fade">
+          <AlertTriangle className="h-5 w-5 shrink-0" />
+          <div className="text-sm">
+            <p className="font-semibold">Password Change Required</p>
+            <p>For security reasons, you must change your temporary password before proceeding to the dashboard.</p>
+          </div>
+        </div>
+      )}
+
       <Card>
         <CardHeader>
           <CardTitle>Change Password</CardTitle>
           <CardDescription>
-            Choose a strong password with at least 8 characters, including letters, numbers, and symbols.
+            Choose a strong password with at least 12 characters, including letters, numbers, and symbols.
           </CardDescription>
         </CardHeader>
         <CardContent>

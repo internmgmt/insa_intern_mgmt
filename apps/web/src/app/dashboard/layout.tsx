@@ -5,6 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useAuth } from "@/components/auth-provider";
 import { Sidebar } from "@/components/sidebar";
 import { Topbar } from "@/components/topbar";
+import { cn } from "@/lib/utils";
 
 export default function DashboardLayout({
   children,
@@ -13,12 +14,18 @@ export default function DashboardLayout({
 }) {
   const router = useRouter();
   const pathname = usePathname();
-  const { user, isLoading, roleHome, logout } = useAuth();
+  const { user, isLoading, roleHome } = useAuth();
 
   useEffect(() => {
     if (isLoading) return;
     if (!user) {
       router.replace("/login");
+      return;
+    }
+
+    // Force password change on first login
+    if (user.isFirstLogin && pathname !== "/dashboard/settings/password") {
+      router.replace("/dashboard/settings/password");
       return;
     }
 
@@ -47,17 +54,23 @@ export default function DashboardLayout({
   }
 
   return (
-    <div className="flex min-h-screen bg-background">
-      <Sidebar />
+    <div className="min-h-screen w-full bg-background flex flex-col md:flex-row overflow-x-hidden">
+      {/* Sidebar - Fixed Position */}
+      <aside
+        className={cn(
+          "fixed inset-y-0 left-0 z-30 hidden md:flex flex-col transition-all duration-500 ease-[cubic-bezier(0.25,1,0.5,1)] peer/sidebar",
+          "w-[76px] hover:w-[260px]"
+        )}
+      >
+        <Sidebar />
+      </aside>
 
-      <div className="flex-1 flex flex-col overflow-hidden ml-0 md:ml-72">
-        {/* Header */}
-        <header className="sticky top-0 z-40 h-14 header-glass border-b border-border flex items-center px-6 shrink-0 elevation-1">
-          <Topbar />
-        </header>
-
-        {/* Main Content */}
-        <main className="flex-1 overflow-auto p-6">
+      {/* Main Content - Pushed by sidebar hover */}
+      <div
+        className="flex flex-col min-h-screen w-full transition-all duration-500 ease-[cubic-bezier(0.25,1,0.5,1)] md:ml-[76px] peer-hover/sidebar:md:ml-[260px]"
+      >
+        <Topbar />
+        <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8 lg:p-10 overflow-x-hidden">
           <div className="mx-auto w-full max-w-6xl animate-fade-in">
             {children}
           </div>

@@ -5,16 +5,115 @@ import { useId, useState } from "react";
 type Datum = { label: string; value: number; color?: string };
 
 function normalizeColors(data: Datum[], palette?: string[]): Datum[] {
+  // A refined, professional palette that fits the application theme (Mineral/Teal/Copper)
+  // but offers distinct variation for readability.
   const defaultPalette = palette || [
-    "#2563eb", // blue-600
-    "#16a34a", // green-600
-    "#f59e0b", // amber-500
-    "#ef4444", // red-500
-    "#7c3aed", // violet-600
-    "#0ea5e9", // sky-500
-    "#14b8a6", // teal-500
+    "hsl(181, 36%, 52%)",   // Mineral Teal (Primary)
+    "hsl(215, 20%, 65%)",   // Cool Grey/Blue
+    "hsl(22, 34%, 57%)",    // Copper (Accent)
+    "hsl(262, 25%, 60%)",   // Muted Purple
+    "hsl(158, 29%, 55%)",   // Sage Green
+    "hsl(339, 25%, 60%)",   // Muted Rose
+    "hsl(45, 30%, 60%)",    // Sand/Gold
+    "hsl(190, 30%, 60%)",   // Sky
+    "hsl(10, 30%, 60%)",    // Terracotta
   ];
   return data.map((d, i) => ({ ...d, color: d.color || defaultPalette[i % defaultPalette.length] }));
+}
+
+function adjustAlpha(color: string, alpha: number): string {
+  if (color.startsWith("hsl")) {
+    return color.replace("hsl", "hsla").replace(")", `, ${alpha})`);
+  }
+  return color;
+}
+
+export function Treemap({
+  data,
+  height = 240,
+  className,
+}: {
+  data: Datum[];
+  height?: number;
+  className?: string;
+}) {
+  const normalized = normalizeColors(data);
+  const sorted = [...normalized].sort((a, b) => b.value - a.value).slice(0, 5); // Max 5 items for cleaner layout
+
+  if (sorted.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center p-8 text-muted-foreground bg-muted/5 rounded-xl border border-dashed h-40">
+        <p className="text-xs font-bold uppercase tracking-widest opacity-30">No data available</p>
+      </div>
+    );
+  }
+
+  const gridRows = 12;
+  const gridCols = 12;
+
+  // Render logic
+  return (
+    <div 
+        className={`grid gap-1.5 w-full ${className}`} 
+        style={{ 
+            height,
+            gridTemplateColumns: `repeat(${gridCols}, minmax(0, 1fr))`,
+            gridTemplateRows: `repeat(${gridRows}, minmax(0, 1fr))`
+        }}
+    >
+      {sorted.map((d, i) => {
+        let colSpan = 12;
+        let rowSpan = 12;
+
+        if (sorted.length === 2) {
+            colSpan = 6;
+            rowSpan = 12;
+        } else if (sorted.length >= 3) {
+            if (i === 0) {
+                // Main Hero Item
+                colSpan = 7;
+                rowSpan = 12;
+            } else {
+                // Side Items
+                colSpan = 5;
+                const remainingItems = sorted.length - 1;
+                rowSpan = Math.floor(12 / remainingItems);
+            }
+        }
+
+        return (
+          <div
+            key={i}
+            className="relative overflow-hidden rounded-xl transition-all duration-300 hover:scale-[1.02] hover:shadow-lg hover:z-10 group cursor-default"
+            style={{
+              backgroundColor: d.color,
+              gridColumn: `span ${colSpan}`,
+              gridRow: `span ${rowSpan}`
+            }}
+          >
+            {/* Glossy gradient overlay */}
+            <div className="absolute inset-0 bg-gradient-to-br from-white/20 to-black/5 pointer-events-none" />
+            
+            <div className="relative h-full flex flex-col justify-between p-3 sm:p-4 text-white">
+              <span className={`font-bold leading-tight break-words drop-shadow-sm ${i === 0 ? 'text-lg sm:text-xl' : 'text-xs sm:text-sm'}`}>
+                {d.label}
+              </span>
+              <div className="flex items-end justify-between">
+                <span className={`font-mono font-bold tracking-tighter opacity-90 drop-shadow-md ${i === 0 ? 'text-3xl sm:text-4xl' : 'text-xl sm:text-2xl'}`}>
+                  {d.value}
+                </span>
+                {i === 0 && (
+                    <span className="text-[10px] uppercase font-bold tracking-widest opacity-60 mb-1 hidden sm:inline-block">
+                        Top Field
+                    </span>
+                )}
+              </div>
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
 }
 
 export function DonutChart({
@@ -163,7 +262,7 @@ export function BarChart({
 
   return (
     <div
-      className={"rounded-xl border bg-background/60 p-3" + (className ? ` ${className}` : "")}
+      className={"rounded-xl border bg-background p-3" + (className ? ` ${className}` : "")}
       style={{
         backgroundImage: "linear-gradient(to top, rgba(0,0,0,0.04) 1px, transparent 1px)",
         backgroundSize: "100% 28px",
@@ -228,7 +327,7 @@ export function LineChart({
   const gridLines = 4;
 
   return (
-    <div className={"rounded-xl border bg-background/60 p-3" + (className ? ` ${className}` : "")}>
+    <div className={"rounded-xl border bg-background p-3" + (className ? ` ${className}` : "")}>
       <svg width={width} height={height} className="overflow-visible">
         <defs>
           <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
@@ -266,13 +365,15 @@ export function ProgressRing({
   label,
   size = 120,
   stroke = 10,
-  className
+  className,
+  color = "currentColor"
 }: {
   value: number;
   label: string;
   size?: number;
   stroke?: number;
   className?: string;
+  color?: string;
 }) {
   const radius = (size / 2) - (stroke / 2);
   const circumference = radius * 2 * Math.PI;
@@ -295,13 +396,13 @@ export function ProgressRing({
           cx={center}
           cy={center}
           r={radius}
-          stroke="currentColor"
+          stroke={color}
           strokeWidth={stroke}
           fill="transparent"
           strokeDasharray={circumference}
           strokeDashoffset={offset}
           strokeLinecap="round"
-          className="text-emerald-500 transition-all duration-1000 ease-out"
+          className="transition-all duration-1000 ease-out"
         />
       </svg>
       <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
@@ -315,11 +416,13 @@ export function ProgressRing({
 export function AreaTrendChart({
   data,
   height = 200,
-  className
+  className,
+  color = "rgb(59, 130, 246)"
 }: {
   data: { label: string; value: number }[];
   height?: number;
   className?: string;
+  color?: string;
 }) {
   const [hoverIdx, setHoverIdx] = useState<number | null>(null);
   
@@ -355,8 +458,8 @@ export function AreaTrendChart({
       <svg width="100%" height={height} viewBox={`0 0 ${width} ${height}`} preserveAspectRatio="none" className="overflow-visible">
         <defs>
           <linearGradient id={`grad-${id}`} x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="rgb(59, 130, 246)" stopOpacity="0.2" />
-            <stop offset="100%" stopColor="rgb(59, 130, 246)" stopOpacity="0" />
+            <stop offset="0%" stopColor={color} stopOpacity="0.2" />
+            <stop offset="100%" stopColor={color} stopOpacity="0" />
           </linearGradient>
         </defs>
         {/* Horizontal grid lines */}
@@ -372,7 +475,7 @@ export function AreaTrendChart({
           />
         ))}
         <path d={areaD} fill={`url(#grad-${id})`} />
-        <path d={d} fill="none" stroke="rgb(59, 130, 246)" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
+        <path d={d} fill="none" stroke={color} strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
         
         {/* Interaction points */}
         {points.map((p, i) => (
@@ -386,7 +489,8 @@ export function AreaTrendChart({
               cx={p.x} 
               cy={p.y} 
               r={hoverIdx === i ? "8" : "4"} 
-              className={`transition-all duration-300 ${hoverIdx === i ? 'fill-blue-600' : 'fill-blue-500'} stroke-background stroke-2`} 
+              fill={color}
+              className="transition-all duration-300 stroke-background stroke-2" 
             />
             {hoverIdx === i && (
               <g className="animate-in fade-in zoom-in duration-200">
@@ -400,7 +504,8 @@ export function AreaTrendChart({
               x={p.x} 
               y={height - 5} 
               textAnchor="middle" 
-              className={`text-[10px] uppercase tracking-tighter transition-colors duration-300 ${hoverIdx === i ? 'fill-primary font-bold' : 'fill-muted-foreground font-medium'}`}
+              className={`text-[10px] uppercase tracking-tighter transition-colors duration-300 ${hoverIdx === i ? 'font-bold' : 'fill-muted-foreground font-medium'}`}
+              style={{ fill: hoverIdx === i ? color : undefined }}
             >
               {data[i].label}
             </text>
@@ -414,16 +519,19 @@ export function AreaTrendChart({
 export function ModernBarChart({
   data,
   height = 180,
-  className
+  className,
+  color
 }: {
   data: { label: string; value: number }[];
   height?: number;
   className?: string;
+  color?: string;
 }) {
   const [hoverIdx, setHoverIdx] = useState<number | null>(null);
   const filteredData = data.filter(d => d.value > 0);
+  const normalized = normalizeColors(filteredData);
   
-  if (filteredData.length === 0) {
+  if (normalized.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center p-8 text-muted-foreground bg-muted/5 rounded-xl border border-dashed h-40">
         <p className="text-xs font-bold uppercase tracking-widest opacity-30">No regional data available</p>
@@ -431,27 +539,35 @@ export function ModernBarChart({
     );
   }
 
-  const max = Math.max(...filteredData.map(d => d.value), 1);
+  const max = Math.max(...normalized.map(d => d.value), 1);
   return (
     <div className={`space-y-3 w-full overflow-hidden ${className}`}>
-      {filteredData.map((d, i) => {
+      {normalized.map((d, i) => {
         const percentage = (d.value / max) * 100;
         const isActive = hoverIdx === i;
+        const currentColor = color || d.color;
+        
         return (
           <div 
             key={i} 
-            className={`space-y-1 transition-all duration-200 p-1 rounded-lg ${isActive ? 'bg-muted/50' : ''}`}
+            className={`space-y-1 transition-all duration-200 p-1.5 rounded-lg border border-transparent ${isActive ? 'bg-muted/50 border-muted/50' : ''}`}
             onMouseEnter={() => setHoverIdx(i)}
             onMouseLeave={() => setHoverIdx(null)}
           >
-            <div className={`flex justify-between items-center text-xs font-bold uppercase tracking-widest transition-colors ${isActive ? 'text-primary' : 'text-muted-foreground'}`}>
-              <span className="truncate max-w-[140px]">{d.label}</span>
+            <div className="flex justify-between items-center text-xs font-bold uppercase tracking-widest transition-colors mb-1">
+              <span className={`truncate max-w-[140px] flex items-center gap-2 ${isActive ? 'text-primary' : 'text-muted-foreground'}`}>
+                <span className="w-2 h-2 rounded-full hidden sm:inline-block" style={{ backgroundColor: currentColor }} />
+                {d.label}
+              </span>
               <span className={isActive ? 'text-foreground' : 'text-muted-foreground/60'}>{d.value}</span>
             </div>
-            <div className="h-2 w-full bg-muted/30 rounded-full overflow-hidden">
+            <div className="h-2.5 w-full bg-muted/30 rounded-full overflow-hidden">
               <div 
-                className={`h-full transition-all duration-1000 ease-in-out rounded-full shadow-[0_0_12px_rgba(59,130,246,0.2)] ${isActive ? 'bg-primary' : 'bg-primary/70'}`}
-                style={{ width: `${percentage}%` }}
+                className={`h-full transition-all duration-1000 ease-out rounded-full shadow-[0_0_12px_rgba(0,0,0,0.05)]`}
+                style={{ 
+                  width: `${percentage}%`,
+                  backgroundColor: currentColor,
+                }}
               />
             </div>
           </div>

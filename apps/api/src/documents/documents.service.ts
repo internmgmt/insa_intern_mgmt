@@ -9,6 +9,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { DocumentEntity } from '../entities/document.entity';
 import { StudentEntity } from '../entities/student.entity';
+import { InternEntity } from '../entities/intern.entity';
 import { ApplicationEntity } from '../entities/application.entity';
 import { UserRole } from '../common/enums/user-role.enum';
 import * as path from 'path';
@@ -26,6 +27,8 @@ export class DocumentsService {
     private readonly studentRepository: Repository<StudentEntity>,
     @InjectRepository(ApplicationEntity)
     private readonly applicationRepository: Repository<ApplicationEntity>,
+    @InjectRepository(InternEntity)
+    private readonly internRepository: Repository<InternEntity>,
   ) {
     this.uploadDir = path.resolve(process.cwd(), 'uploads');
   }
@@ -299,6 +302,45 @@ export class DocumentsService {
         console.error(
           `DEBUG: Access denied for document ${id} - universityId: ${currentUser.universityId}`,
         );
+        throw new ForbiddenException({
+          success: false,
+          message: 'Access denied',
+          error: { code: 'AUTH_INSUFFICIENT_PERMISSIONS', details: null },
+        });
+      }
+    }
+
+    // Mentors are allowed to download documents belonging to interns assigned to them
+    if (currentUser?.role === UserRole.MENTOR) {
+      let allowedForMentor = false;
+      try {
+        if (document.studentId) {
+          const intern = await this.internRepository.findOne({ where: { studentId: document.studentId } });
+          if (intern && intern.assignedMentorId === currentUser.id) {
+            allowedForMentor = true;
+          }
+        }
+
+        // Fallback: Check via uploadedBy user ID if studentId is not set
+        if (!allowedForMentor && document.metadata) {
+          try {
+            const meta = JSON.parse(document.metadata);
+            if (meta.uploadedBy) {
+              const intern = await this.internRepository.findOne({ where: { userId: meta.uploadedBy } });
+              if (intern && intern.assignedMentorId === currentUser.id) {
+                allowedForMentor = true;
+              }
+            }
+          } catch (e) {
+            // Ignore JSON parse errors
+          }
+        }
+      } catch (e) {
+        this.logger.warn(`Mentor access check failed for document ${id}: ${e}`);
+      }
+
+      if (!allowedForMentor) {
+        this.logger.error(`DEBUG: Access denied for document ${id} - mentorId: ${currentUser.id}`);
         throw new ForbiddenException({
           success: false,
           message: 'Access denied',

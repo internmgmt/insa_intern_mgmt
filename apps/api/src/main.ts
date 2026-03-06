@@ -73,6 +73,8 @@ function getAllowedOrigins(): string[] {
   const defaultOrigins = [
     'http://localhost:3000',
     'http://127.0.0.1:3000',
+    'http://172.20.137.195:3000',
+    'http://172.20.137.195',
   ];
 
   console.warn('⚠️  SECURITY WARNING: Using default CORS origins for development.');

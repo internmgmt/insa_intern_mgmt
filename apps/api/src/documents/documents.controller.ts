@@ -117,6 +117,7 @@ export class DocumentsController {
     UserRole.SUPERVISOR,
     UserRole.UNIVERSITY,
     UserRole.INTERN,
+    UserRole.MENTOR,
   )
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Get document by id (includes file and metadata)' })
@@ -153,6 +154,7 @@ export class DocumentsController {
     UserRole.SUPERVISOR,
     UserRole.UNIVERSITY,
     UserRole.INTERN,
+    UserRole.MENTOR,
   )
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Download document with standardized filename' })
@@ -190,6 +192,7 @@ export class DocumentsController {
     UserRole.SUPERVISOR,
     UserRole.UNIVERSITY,
     UserRole.INTERN,
+    UserRole.MENTOR,
   )
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Get document metadata by id' })

@@ -41,17 +41,23 @@ export function AccountMenu() {
       <DropdownMenuTrigger asChild>
         <Button
           variant="ghost"
-          className="relative h-9 w-9 rounded-full"
+          className="group relative h-9 px-1 rounded-full hover:bg-muted transition-all duration-200"
           aria-label="Account menu"
         >
-          <Avatar className="h-9 w-9">
-            <AvatarFallback className="bg-primary/10 text-primary font-semibold">
-              {initials}
-            </AvatarFallback>
-          </Avatar>
+          <div className="flex items-center gap-2">
+            <Avatar className="h-8 w-8 border border-border shadow-sm group-hover:border-primary/30 transition-colors">
+              <AvatarFallback className="bg-primary/10 text-primary font-semibold text-xs transition-colors group-hover:bg-primary/20">
+                {initials}
+              </AvatarFallback>
+            </Avatar>
+            <div className="hidden lg:flex flex-col items-start pr-1">
+              <span className="text-xs font-semibold leading-none">{name || email.split('@')[0]}</span>
+              <span className="text-[10px] text-muted-foreground leading-none mt-1 uppercase tracking-tight font-medium">{role.toLowerCase()}</span>
+            </div>
+          </div>
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-80 space-y-2 p-3">
+      <DropdownMenuContent align="end" className="w-[calc(100vw-32px)] sm:w-80 space-y-2 p-3">
         <DropdownMenuLabel className="font-normal">
           <div className="flex items-center gap-3 rounded-md bg-muted px-3 py-2">
             <Avatar className="h-10 w-10">

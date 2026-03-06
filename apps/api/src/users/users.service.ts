@@ -2,6 +2,8 @@ import {
   Injectable,
   NotFoundException,
   ConflictException,
+  ForbiddenException,
+  BadRequestException,
   Logger,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -12,6 +14,7 @@ import { UpdateUserDto } from './dto/update-user.dto';
 import { QueryUsersDto } from './dto/query-users.dto';
 import * as bcrypt from 'bcryptjs';
 import { MailService } from '../global/services/mail/mail.service';
+import { UserRole } from '../common/enums/user-role.enum';
 
 @Injectable()
 export class UsersService {
@@ -23,7 +26,7 @@ export class UsersService {
     private readonly mailService: MailService,
   ) { }
 
-  async findAll(query: QueryUsersDto) {
+  async findAll(query: QueryUsersDto, currentUser?: any) {
     const {
       page = 1,
       role,
@@ -37,6 +40,15 @@ export class UsersService {
 
     const whereConditions: any = {};
 
+    // Apply Supervisor restrictions
+    if (currentUser?.role === UserRole.SUPERVISOR) {
+      whereConditions.departmentId = currentUser.departmentId;
+      // Supervisor can only see Mentors and potentially Interns (though they are filtered differently usually)
+      // For the Mentor Tab, we'll want them to be able to filter by Mentor role.
+    } else if (departmentId) {
+      whereConditions.departmentId = departmentId;
+    }
+
     if (role) {
       whereConditions.role = role;
     }
@@ -45,28 +57,11 @@ export class UsersService {
       whereConditions.isActive = isActive;
     }
 
-    if (departmentId) {
-      whereConditions.departmentId = departmentId;
-    }
-
     const queryBuilder = this.userRepository
       .createQueryBuilder('user')
       .leftJoinAndSelect('user.department', 'department')
       .leftJoinAndSelect('user.university', 'university')
-      .select([
-        'user.id',
-        'user.email',
-        'user.firstName',
-        'user.lastName',
-        'user.role',
-        'user.isActive',
-        'user.isFirstLogin',
-        'user.createdAt',
-        'department.id',
-        'department.name',
-        'university.id',
-        'university.name',
-      ])
+      .leftJoinAndSelect('user.mentoredInterns', 'mentoredInterns')
       .where(whereConditions)
       .skip(skip)
       .take(limit);
@@ -80,13 +75,19 @@ export class UsersService {
 
     const [items, totalItems] = await queryBuilder.getManyAndCount();
 
+    // Map to remove sensitive data
+    const mappedItems = items.map(user => {
+      const { passwordHash, ...safeUser } = user;
+      return safeUser as any;
+    });
+
     const totalPages = Math.ceil(totalItems / limit);
 
     return {
       success: true,
       message: 'Users retrieved successfully',
       data: {
-        items,
+        items: mappedItems,
         pagination: {
           page,
           limit,
@@ -146,9 +147,65 @@ export class UsersService {
     });
   }
 
-  async create(createUserDto: CreateUserDto) {
+  async create(createUserDto: CreateUserDto, currentUser?: any) {
     const { email, firstName, lastName, role, departmentId, universityId } =
       createUserDto;
+
+    // Determine target department
+    let targetDepartmentId = departmentId;
+    if (currentUser?.role === UserRole.SUPERVISOR) {
+      targetDepartmentId = currentUser.departmentId;
+    }
+
+    // Role-based restrictions
+    if (currentUser) {
+      if (currentUser.role === UserRole.SUPERVISOR) {
+        // Supervisor can only create Mentors
+        if (role !== UserRole.MENTOR) {
+          throw new ForbiddenException({
+            success: false,
+            message: 'Supervisors can only create Mentor accounts',
+            error: { code: 'AUTH_INSUFFICIENT_PERMISSIONS', details: null },
+          });
+        }
+      }
+
+      if (currentUser.role !== UserRole.ADMIN && role === UserRole.ADMIN) {
+        throw new ForbiddenException({
+          success: false,
+          message: 'Only Administrators can create Admin accounts',
+          error: { code: 'AUTH_INSUFFICIENT_PERMISSIONS', details: null },
+        });
+      }
+    }
+
+    // INTERN accounts cannot be created via the general user creation flow
+    if (role === UserRole.INTERN) {
+      throw new BadRequestException({
+        success: false,
+        message: 'Intern accounts must be created through the physical arrival workflow',
+        error: { code: 'INVALID_ROLE', details: null },
+      });
+    }
+
+    // Only 1 supervisor per department
+    if (role === UserRole.SUPERVISOR && targetDepartmentId) {
+      const existingSupervisor = await this.userRepository.findOne({
+        where: {
+          role: UserRole.SUPERVISOR,
+          departmentId: targetDepartmentId,
+          isActive: true,
+        },
+      });
+
+      if (existingSupervisor) {
+        throw new ConflictException({
+          success: false,
+          message: 'A Head of Department already exists for this unit',
+          error: { code: 'SUPERVISOR_EXISTS', details: null },
+        });
+      }
+    }
 
     const existingUser = await this.findByEmail(email);
     if (existingUser) {
@@ -171,7 +228,7 @@ export class UsersService {
       lastName,
       role,
       passwordHash: hashedPassword,
-      departmentId,
+      departmentId: targetDepartmentId,
       universityId,
       isActive: true,
       isFirstLogin: true,

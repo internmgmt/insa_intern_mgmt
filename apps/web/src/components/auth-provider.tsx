@@ -140,7 +140,11 @@ export function roleHome(role: UserRole) {
       return "/dashboard/university";
     case "SUPERVISOR":
       return "/dashboard/supervisor";
+    case "MENTOR":
+      return "/dashboard/mentor";
     case "INTERN":
       return "/dashboard/intern";
+    default:
+      return "/auth/login";
   }
 }
