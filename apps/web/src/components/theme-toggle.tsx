@@ -20,7 +20,11 @@ export function ThemeToggle() {
 
   if (!mounted) {
     return (
-      <Button variant="ghost" size="icon" className="rounded-full w-9 h-9 opacity-0">
+      <Button
+        variant="outline"
+        size="icon"
+        className="rounded-full w-9 h-9 opacity-0"
+      >
         <Sun className="h-[1.2rem] w-[1.2rem]" />
       </Button>
     );
@@ -28,10 +32,10 @@ export function ThemeToggle() {
 
   return (
     <Button
-      variant="ghost"
+      variant="outline"
       size="icon"
       onClick={toggle}
-      className="rounded-full w-9 h-9 transition-colors hover:bg-muted"
+      className="rounded-full w-9 h-9 bg-background shadow-sm transition-colors hover:bg-muted"
       aria-label="Toggle theme"
     >
       <Sun className="h-[1.2rem] w-[1.2rem] rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
@@ -39,5 +43,3 @@ export function ThemeToggle() {
     </Button>
   );
 }
-
-

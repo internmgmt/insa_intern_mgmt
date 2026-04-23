@@ -59,12 +59,12 @@ export function ThemePaletteSelector() {
                     p.key === "obsidian"
                       ? "#1E63D8"
                       : p.key === "slateforge"
-                      ? "#6B3BD6"
-                      : p.key === "embercore"
-                      ? "#D4482E"
-                      : p.key === "nebula"
-                      ? "#5858EA"
-                      : "#6b9e9f",
+                        ? "#6B3BD6"
+                        : p.key === "embercore"
+                          ? "#D4482E"
+                          : p.key === "nebula"
+                            ? "#5858EA"
+                            : "#6b9e9f",
                 }}
               />
               <span
@@ -74,12 +74,12 @@ export function ThemePaletteSelector() {
                     p.key === "obsidian"
                       ? "#4B5563"
                       : p.key === "slateforge"
-                      ? "#374151"
-                      : p.key === "embercore"
-                      ? "#5F3E33"
-                      : p.key === "nebula"
-                      ? "#4C4F71"
-                      : "#b8866b",
+                        ? "#374151"
+                        : p.key === "embercore"
+                          ? "#5F3E33"
+                          : p.key === "nebula"
+                            ? "#4C4F71"
+                            : "#b8866b",
                 }}
               />
               <span
@@ -89,12 +89,12 @@ export function ThemePaletteSelector() {
                     p.key === "obsidian"
                       ? "#10B981"
                       : p.key === "slateforge"
-                      ? "#059669"
-                      : p.key === "embercore"
-                      ? "#2E8B57"
-                      : p.key === "nebula"
-                      ? "#3B8261"
-                      : "#7db89e",
+                        ? "#059669"
+                        : p.key === "embercore"
+                          ? "#2E8B57"
+                          : p.key === "nebula"
+                            ? "#3B8261"
+                            : "#7db89e",
                 }}
               />
             </div>

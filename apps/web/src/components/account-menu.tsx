@@ -40,8 +40,8 @@ export function AccountMenu() {
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button
-          variant="ghost"
-          className="group relative h-9 px-1 rounded-full hover:bg-muted transition-all duration-200"
+          variant="outline"
+          className="group relative h-9 px-2 rounded-full bg-background shadow-sm hover:bg-muted transition-all duration-200"
           aria-label="Account menu"
         >
           <div className="flex items-center gap-2">
@@ -51,13 +51,20 @@ export function AccountMenu() {
               </AvatarFallback>
             </Avatar>
             <div className="hidden lg:flex flex-col items-start pr-1">
-              <span className="text-xs font-semibold leading-none">{name || email.split('@')[0]}</span>
-              <span className="text-[10px] text-muted-foreground leading-none mt-1 uppercase tracking-tight font-medium">{role.toLowerCase()}</span>
+              <span className="text-xs font-semibold leading-none text-foreground">
+                {name || email.split("@")[0]}
+              </span>
+              <span className="text-[10px] text-muted-foreground/80 leading-none mt-1 uppercase tracking-tight font-medium">
+                {role.toLowerCase()}
+              </span>
             </div>
           </div>
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-[calc(100vw-32px)] sm:w-80 space-y-2 p-3">
+      <DropdownMenuContent
+        align="end"
+        className="w-[calc(100vw-32px)] sm:w-80 space-y-2 p-3"
+      >
         <DropdownMenuLabel className="font-normal">
           <div className="flex items-center gap-3 rounded-md bg-muted px-3 py-2">
             <Avatar className="h-10 w-10">
@@ -85,7 +92,7 @@ export function AccountMenu() {
 
         {/* Appearance controls: hide for INTERN, remove palette selector */}
         {user?.role !== "INTERN" && (
-          <div className="rounded-md border px-3 py-2 text-xs">
+          <div className="rounded-md border px-3 py-2 text-xs bg-background">
             <div className="mb-2 flex items-center justify-between">
               <span className="font-medium text-foreground">Appearance</span>
               <div className="inline-flex items-center gap-1 rounded-full border bg-background px-1 py-0.5 text-[10px]">
@@ -96,7 +103,7 @@ export function AccountMenu() {
                   className={`flex items-center gap-1 rounded-full px-2 py-0.5 h-6 ${
                     !isDark
                       ? "bg-primary text-primary-foreground"
-                      : "text-muted-foreground"
+                      : "text-muted-foreground/80"
                   }`}
                 >
                   <Sun className="h-3 w-3" />
@@ -109,7 +116,7 @@ export function AccountMenu() {
                   className={`flex items-center gap-1 rounded-full px-2 py-0.5 h-6 ${
                     isDark
                       ? "bg-primary text-primary-foreground"
-                      : "text-muted-foreground"
+                      : "text-muted-foreground/80"
                   }`}
                 >
                   <Moon className="h-3 w-3" />
@@ -125,7 +132,7 @@ export function AccountMenu() {
         <DropdownMenuItem asChild>
           <Link
             href="/dashboard/settings/password"
-            className="flex w-full items-center gap-2 px-2 py-1.5 text-sm font-medium transition-colors hover:bg-muted rounded-md mb-1"
+            className="flex w-full items-center gap-2 px-2 py-1.5 text-sm font-medium text-foreground transition-colors hover:bg-muted rounded-md mb-1"
           >
             <Key className="h-4 w-4" />
             <span>Change Password</span>

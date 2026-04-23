@@ -44,25 +44,25 @@
 :root {
   /* Default Light – Mineral palette */
   --background: 246 248 249;
-  --foreground: 34 38 43;
+  --foreground: 26 31 38;
 
   --card: 255 255 255;
-  --card-foreground: 34 38 43;
+  --card-foreground: 26 31 38;
 
   --popover: 255 255 255;
-  --popover-foreground: 34 38 43;
+  --popover-foreground: 26 31 38;
 
   --primary: 74 124 125; /* Soft Teal */
   --primary-foreground: 255 255 255;
 
   --secondary: 226 232 240;
-  --secondary-foreground: 34 38 43;
+  --secondary-foreground: 26 31 38;
 
   --muted: 241 243 245;
-  --muted-foreground: 100 110 120;
+  --muted-foreground: 77 87 100;
 
   --accent: 242 246 250;
-  --accent-foreground: 34 38 43;
+  --accent-foreground: 26 31 38;
 
   --destructive: 180 80 80;
   --destructive-foreground: 255 255 255;
@@ -73,40 +73,40 @@
   --warning: 180 120 70;
   --warning-foreground: 255 255 255;
 
-  --border: 210 215 220;
-  --input: 235 240 242;
+  --border: 202 209 216;
+  --input: 229 234 239;
   --ring: 74 124 125;
 
   --radius: 0.625rem;
 
   /* Font Fallbacks for build environments with restricted internet */
-  --font-geist-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-geist-sans: "Aptos", "Inter", ui-sans-serif, system-ui, sans-serif;
   --font-geist-mono: "JetBrains Mono", ui-mono, monospace;
-  --font-newsreader: "Georgia", ui-serif, serif;
+  --font-newsreader: "Aptos", "Inter", ui-sans-serif, system-ui, sans-serif;
 }
 
 .dark {
   /* Mineral Dark Palette */
   --background: 18 20 23;
-  --foreground: 224 229 235;
+  --foreground: 231 236 242;
 
   --card: 28 31 35;
-  --card-foreground: 224 229 235;
+  --card-foreground: 231 236 242;
 
   --popover: 36 40 45;
-  --popover-foreground: 230 235 241;
+  --popover-foreground: 231 236 242;
 
   --primary: 107 158 159;
   --primary-foreground: 18 20 23;
 
   --secondary: 58 63 69;
-  --secondary-foreground: 224 229 235;
+  --secondary-foreground: 231 236 242;
 
   --muted: 34 38 43;
-  --muted-foreground: 156 163 175;
+  --muted-foreground: 177 185 196;
 
   --accent: 184 134 107;
-  --accent-foreground: 18 20 23;
+  --accent-foreground: 231 236 242;
 
   --destructive: 184 107 107;
   --destructive-foreground: 18 20 23;
@@ -117,8 +117,8 @@
   --warning: 201 154 109;
   --warning-foreground: 18 20 23;
 
-  --border: 51 56 62;
-  --input: 36 40 45;
+  --border: 58 64 71;
+  --input: 34 38 43;
   --ring: 107 158 159;
 }
 
@@ -304,11 +304,21 @@
   border-color: rgb(var(--border));
 }
 
+html {
+  color-scheme: light;
+}
+
+.dark {
+  color-scheme: dark;
+}
+
 body {
   background-color: rgb(var(--background));
   color: rgb(var(--foreground));
   font-family: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
   font-feature-settings: "rlig" 1, "calt" 1;
+  text-rendering: optimizeLegibility;
+  line-height: 1.55;
 }
 
 h1,
@@ -317,13 +327,14 @@ h3,
 h4,
 h5,
 h6 {
-  font-family: var(--font-newsreader), ui-serif, Georgia, Cambria, "Times New Roman", Times, serif;
-  font-weight: 500;
-  letter-spacing: -0.02em;
+  font-family: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  font-weight: 700;
+  letter-spacing: -0.01em;
 }
 
 ::selection {
   background: rgb(var(--primary) / 0.25);
+  color: rgb(var(--primary-foreground));
 }
 
 /* Subtle elevation tokens */

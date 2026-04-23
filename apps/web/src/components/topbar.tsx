@@ -23,12 +23,15 @@ export function Topbar() {
   return (
     <header className="flex h-14 lg:h-16 items-center gap-4 border-b bg-background px-4 md:px-6 sticky top-0 z-30">
       <div className="flex w-full items-center justify-between gap-1 sm:gap-4">
-        
         {/* Mobile Sidebar & Breadcrumbs */}
         <div className="min-w-0 flex items-center gap-2 sm:gap-4">
           <Sheet>
             <SheetTrigger asChild>
-              <Button variant="outline" size="icon" className="shrink-0 md:hidden h-8 w-8">
+              <Button
+                variant="outline"
+                size="icon"
+                className="shrink-0 md:hidden h-8 w-8 bg-background shadow-sm"
+              >
                 <Menu className="h-4 w-4" />
                 <span className="sr-only">Toggle navigation menu</span>
               </Button>
@@ -40,34 +43,45 @@ export function Topbar() {
 
           {/* Breadcrumbs */}
           <div className="min-w-0 flex items-center gap-1 sm:gap-2 text-[11px] sm:text-sm">
-            <Link 
-              href="/dashboard" 
-              className="text-muted-foreground hover:text-foreground transition-all duration-200 shrink-0 hidden sm:inline"
+            <Link
+              href="/dashboard"
+              className="text-muted-foreground/80 hover:text-foreground transition-all duration-200 shrink-0 hidden sm:inline"
             >
               Dashboard
             </Link>
             <div className="flex items-center gap-1 min-w-0">
-              {segments.length > 1 && <span className="text-muted-foreground/30 hidden sm:inline">/</span>}
+              {segments.length > 1 && (
+                <span className="text-muted-foreground/55 hidden sm:inline">
+                  /
+                </span>
+              )}
               {segments.slice(1).map((seg, idx, arr) => {
                 const href = "/" + segments.slice(0, idx + 2).join("/");
-                const label = seg.replace(/-/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+                const label = seg
+                  .replace(/-/g, " ")
+                  .replace(/\b\w/g, (c) => c.toUpperCase());
                 const isLast = idx === arr.length - 1;
-                
+
                 const showOnMobile = isLast;
-                
+
                 return (
-                  <span key={href} className={cn(
-                    "flex items-center gap-1 min-w-0",
-                    !showOnMobile && "hidden sm:flex"
-                  )}>
-                    {idx > 0 && <span className="text-muted-foreground/30">/</span>}
-                    <Link 
-                      href={href} 
+                  <span
+                    key={href}
+                    className={cn(
+                      "flex items-center gap-1 min-w-0",
+                      !showOnMobile && "hidden sm:flex",
+                    )}
+                  >
+                    {idx > 0 && (
+                      <span className="text-muted-foreground/55">/</span>
+                    )}
+                    <Link
+                      href={href}
                       className={cn(
                         "truncate transition-all duration-200",
-                        isLast 
-                          ? "font-semibold text-foreground" 
-                          : "text-muted-foreground hover:text-foreground"
+                        isLast
+                          ? "font-semibold text-foreground"
+                          : "text-muted-foreground/80 hover:text-foreground",
                       )}
                     >
                       {label}

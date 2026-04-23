@@ -6,8 +6,21 @@ import { useAuth } from "@/components/auth-provider";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Eye, EyeOff, Lock, Mail, ChevronRight, ShieldCheck } from "lucide-react";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import {
+  Eye,
+  EyeOff,
+  Lock,
+  Mail,
+  ChevronRight,
+  ShieldCheck,
+} from "lucide-react";
 import { LogoBlock } from "@/components/logo-block";
 
 export default function LoginPage() {
@@ -35,7 +48,11 @@ export default function LoginPage() {
     try {
       await loginWithCredentials({ email: email.trim(), password });
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Invalid credentials. Please try again.");
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Invalid credentials. Please try again.",
+      );
     } finally {
       setIsSubmitting(false);
     }
@@ -72,25 +89,22 @@ export default function LoginPage() {
               <h1 className="font-bold text-xl leading-tight tracking-tight text-foreground max-w-[360px]">
                 Information Network Security Administration
               </h1>
-              <h2 className="text-lg font-medium text-muted-foreground/90 font-amharic">
+              <h2 className="text-lg font-medium text-foreground/85 font-amharic">
                 የኢንፎርሜሽን መረብ ደህንነት አስተዳደር
               </h2>
             </div>
           </div>
-
-
         </div>
 
         <div className="animate-slide-up-fade [animation-delay:300ms] [animation-fill-mode:both] flex justify-center">
-          <Card className="w-full max-w-lg border-border/50 shadow-[0_20px_50px_rgba(0,0,0,0.1)] bg-background/80 backdrop-blur-xl overflow-hidden rounded-[2.5rem] transition-all duration-500 hover:shadow-primary/10 hover:border-primary/20">
-
+          <Card className="w-full max-w-lg border-border/50 shadow-[0_20px_50px_rgba(0,0,0,0.1)] bg-card/95 backdrop-blur-xl overflow-hidden rounded-[2.5rem] transition-all duration-500 hover:shadow-primary/10 hover:border-primary/20">
             <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-primary/30 via-primary to-primary/30 animate-pulse" />
 
             <CardHeader className="space-y-1.5 pt-12 pb-8 text-center px-10">
-              <CardTitle className="text-4xl font-black tracking-tight bg-gradient-to-br from-foreground to-foreground/60 bg-clip-text text-transparent italic">
+              <CardTitle className="text-4xl font-black tracking-tight text-foreground">
                 Login
               </CardTitle>
-              <CardDescription className="text-base font-semibold text-muted-foreground/70">
+              <CardDescription className="text-base font-semibold text-muted-foreground">
                 Authenticate your credentials to continue
               </CardDescription>
             </CardHeader>
@@ -98,7 +112,10 @@ export default function LoginPage() {
             <CardContent className="px-8 sm:px-14 pb-14">
               <form onSubmit={onSubmit} className="space-y-6">
                 <div className="space-y-2.5 animate-slide-up-fade [animation-delay:600ms] [animation-fill-mode:both]">
-                  <Label htmlFor="email" className="text-[11px] font-black uppercase tracking-[0.15em] text-muted-foreground/60 ml-2">
+                  <Label
+                    htmlFor="email"
+                    className="text-[11px] font-black uppercase tracking-[0.15em] text-foreground/70 ml-2"
+                  >
                     Email
                   </Label>
                   <div className="relative group">
@@ -113,17 +130,19 @@ export default function LoginPage() {
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       disabled={isSubmitting}
-                      className="pl-12 h-14 bg-muted/20 border-border/40 focus-visible:ring-primary/20 focus-visible:border-primary/50 transition-all duration-300 rounded-2xl placeholder:text-muted-foreground/30 font-bold text-sm"
+                      className="pl-12 h-14 bg-muted/20 border-border/60 focus-visible:ring-primary/20 focus-visible:border-primary/50 transition-all duration-300 rounded-2xl placeholder:text-muted-foreground/60 font-semibold text-sm"
                     />
                   </div>
                 </div>
 
                 <div className="space-y-2.5 animate-slide-up-fade [animation-delay:700ms] [animation-fill-mode:both]">
                   <div className="flex items-center justify-between ml-2">
-                    <Label htmlFor="password" className="text-[11px] font-black uppercase tracking-[0.15em] text-muted-foreground/60">
+                    <Label
+                      htmlFor="password"
+                      className="text-[11px] font-black uppercase tracking-[0.15em] text-foreground/70"
+                    >
                       Password
                     </Label>
-
                   </div>
                   <div className="relative group">
                     <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none text-muted-foreground group-focus-within:text-primary transition-colors duration-300">
@@ -137,7 +156,7 @@ export default function LoginPage() {
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                       disabled={isSubmitting}
-                      className="pl-12 pr-12 h-14 bg-muted/20 border-border/40 focus-visible:ring-primary/20 focus-visible:border-primary/50 transition-all duration-300 rounded-2xl placeholder:text-muted-foreground/30 font-bold text-sm"
+                      className="pl-12 pr-12 h-14 bg-muted/20 border-border/60 focus-visible:ring-primary/20 focus-visible:border-primary/50 transition-all duration-300 rounded-2xl placeholder:text-muted-foreground/60 font-semibold text-sm"
                     />
                     <Button
                       type="button"
@@ -146,7 +165,11 @@ export default function LoginPage() {
                       onClick={() => setShowPassword((s) => !s)}
                       className="absolute right-2 top-1/2 -translate-y-1/2 h-10 w-10 text-muted-foreground hover:text-foreground hover:bg-transparent transition-transform active:scale-90"
                     >
-                      {showPassword ? <EyeOff className="size-5" /> : <Eye className="size-5" />}
+                      {showPassword ? (
+                        <EyeOff className="size-5" />
+                      ) : (
+                        <Eye className="size-5" />
+                      )}
                     </Button>
                   </div>
                 </div>
@@ -179,26 +202,25 @@ export default function LoginPage() {
                   </Button>
                 </div>
               </form>
-
-
             </CardContent>
           </Card>
         </div>
 
         <div className="mt-10 flex flex-col items-center gap-2 animate-fade-in [animation-delay:1200ms] [animation-fill-mode:both]">
-
-          <p className="text-[9px] text-muted-foreground/20 font-bold italic">
-            &copy; {new Date().getFullYear()} Information Network Security Administration
+          <p className="text-[9px] text-muted-foreground/80 font-semibold">
+            &copy; {new Date().getFullYear()} Information Network Security
+            Administration
           </p>
         </div>
       </div>
 
       <style jsx global>{`
         @keyframes shimmer {
-          100% { transform: translateX(100%); }
+          100% {
+            transform: translateX(100%);
+          }
         }
       `}</style>
     </div>
   );
 }
-
