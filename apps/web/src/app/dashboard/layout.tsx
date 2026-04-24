@@ -40,6 +40,10 @@ export default function DashboardLayout({
       return;
     }
 
+    if (pathname.startsWith("/dashboard/notifications")) {
+      return;
+    }
+
     if (!pathname.startsWith(expectedHome)) {
       router.replace(expectedHome);
     }
@@ -59,16 +63,14 @@ export default function DashboardLayout({
       <aside
         className={cn(
           "fixed inset-y-0 left-0 z-30 hidden md:flex flex-col transition-all duration-500 ease-[cubic-bezier(0.25,1,0.5,1)] peer/sidebar",
-          "w-[76px] hover:w-[260px]"
+          "w-[76px] hover:w-[260px]",
         )}
       >
         <Sidebar />
       </aside>
 
       {/* Main Content - Pushed by sidebar hover */}
-      <div
-        className="flex flex-col min-h-screen w-full transition-all duration-500 ease-[cubic-bezier(0.25,1,0.5,1)] md:ml-[76px] peer-hover/sidebar:md:ml-[260px]"
-      >
+      <div className="flex flex-col min-h-screen w-full transition-all duration-500 ease-[cubic-bezier(0.25,1,0.5,1)] md:ml-[76px] peer-hover/sidebar:md:ml-[260px]">
         <Topbar />
         <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8 lg:p-10 overflow-x-hidden">
           <div className="mx-auto w-full max-w-6xl animate-fade-in">

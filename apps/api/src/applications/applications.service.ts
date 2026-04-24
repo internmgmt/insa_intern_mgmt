@@ -12,6 +12,7 @@ import { ApplicationStatus } from '../common/enums/application-status.enum';
 import { StudentStatus } from '../common/enums/student-status.enum';
 import { UserRole } from '../common/enums/user-role.enum';
 import { DocumentEntity } from '../entities/document.entity';
+import { NotificationsService } from '../notifications/notifications.service';
 
 @Injectable()
 export class ApplicationsService {
@@ -22,7 +23,8 @@ export class ApplicationsService {
     private readonly studentRepository: Repository<StudentEntity>,
     @InjectRepository(DocumentEntity)
     private readonly documentRepository: Repository<DocumentEntity>,
-  ) { }
+    private readonly notificationsService: NotificationsService,
+  ) {}
 
   async createApplication(createApplicationDto: any) {
     const { academicYear, officialLetterUrl, universityId, students, name } =
@@ -86,6 +88,8 @@ export class ApplicationsService {
       relations: ['students', 'university'],
     });
 
+    await this.notificationsService.notifyApplicationCreated(saved.id);
+
     return {
       success: true,
       message: 'Application created successfully',
@@ -100,7 +104,7 @@ export class ApplicationsService {
         let existingMeta = {};
         try {
           existingMeta = doc.metadata ? JSON.parse(doc.metadata) : {};
-        } catch (e) { }
+        } catch (e) {}
 
         const newMeta = { ...existingMeta, ...meta };
         doc.metadata = JSON.stringify(newMeta);
@@ -147,6 +151,8 @@ export class ApplicationsService {
 
     Object.assign(application, updateApplicationDto);
     const updated = await this.applicationRepository.save(application);
+
+    await this.notificationsService.notifyApplicationUpdated(updated.id);
 
     // Link official letter if updated
     if (officialLetterUrl) {
@@ -202,6 +208,8 @@ export class ApplicationsService {
     application.status = ApplicationStatus.UNDER_REVIEW;
     const saved = await this.applicationRepository.save(application);
 
+    await this.notificationsService.notifyApplicationSubmitted(saved.id);
+
     return {
       success: true,
       message: 'Application submitted for review',
@@ -227,7 +235,9 @@ export class ApplicationsService {
 
     // Admins should not see PENDING (draft) applications
     if (userRole === UserRole.ADMIN) {
-      qb.andWhere('application.status != :pendingStatus', { pendingStatus: ApplicationStatus.PENDING });
+      qb.andWhere('application.status != :pendingStatus', {
+        pendingStatus: ApplicationStatus.PENDING,
+      });
     }
 
     qb.skip((page - 1) * limit);
@@ -241,8 +251,10 @@ export class ApplicationsService {
         const studentCount = await this.studentRepository.count({
           where: { applicationId: application.id },
         });
-        
-        console.log(`Application ${application.id} studentCount: ${studentCount}`);
+
+        console.log(
+          `Application ${application.id} studentCount: ${studentCount}`,
+        );
 
         // Return a plain object to ensure all virtual properties are serialized correctly
         // and ensure studentCount is explicitly a number
@@ -270,7 +282,10 @@ export class ApplicationsService {
     };
   }
 
-  async findById(id: string, currentUser: { id: string; role: string; universityId?: string }) {
+  async findById(
+    id: string,
+    currentUser: { id: string; role: string; universityId?: string },
+  ) {
     const qb = this.applicationRepository.createQueryBuilder('application');
     qb.leftJoinAndSelect('application.university', 'university');
     qb.leftJoinAndSelect('application.students', 'students');
@@ -286,7 +301,10 @@ export class ApplicationsService {
       });
     }
 
-    if (currentUser.role === UserRole.UNIVERSITY && application.universityId !== currentUser.universityId) {
+    if (
+      currentUser.role === UserRole.UNIVERSITY &&
+      application.universityId !== currentUser.universityId
+    ) {
       throw new ForbiddenException({
         success: false,
         message: 'You do not have permission to view this application',
@@ -318,7 +336,10 @@ export class ApplicationsService {
     });
   }
 
-  async deleteApplication(id: string, currentUser: { role: string; universityId?: string }) {
+  async deleteApplication(
+    id: string,
+    currentUser: { role: string; universityId?: string },
+  ) {
     const application = await this.applicationRepository.findOne({
       where: { id },
     });
@@ -331,7 +352,10 @@ export class ApplicationsService {
       });
     }
 
-    if (currentUser.role === UserRole.UNIVERSITY && application.universityId !== currentUser.universityId) {
+    if (
+      currentUser.role === UserRole.UNIVERSITY &&
+      application.universityId !== currentUser.universityId
+    ) {
       throw new ForbiddenException({
         success: false,
         message: 'Permission denied',
@@ -343,6 +367,8 @@ export class ApplicationsService {
       ...application,
       status: ApplicationStatus.ARCHIVED,
     });
+
+    await this.notificationsService.notifyApplicationArchived(id);
 
     return {
       success: true,
@@ -374,7 +400,8 @@ export class ApplicationsService {
     ) {
       throw new BadRequestException({
         success: false,
-        message: 'Only applications in UNDER_REVIEW or PENDING status can be reviewed',
+        message:
+          'Only applications in UNDER_REVIEW or PENDING status can be reviewed',
         error: { code: 'APPLICATION_NOT_REVIEWABLE', details: null },
       });
     }
@@ -389,6 +416,13 @@ export class ApplicationsService {
 
     const saved = await this.applicationRepository.save(application);
 
+    await this.notificationsService.notifyApplicationReviewed(
+      saved.id,
+      reviewerId,
+      body.decision,
+      body.rejectionReason,
+    );
+
     return {
       success: true,
       message: `Application ${body.decision.toLowerCase()}d successfully`,
@@ -397,12 +431,16 @@ export class ApplicationsService {
   }
 
   async isEditable(id: string): Promise<boolean> {
-    const application = await this.applicationRepository.findOne({ where: { id } });
+    const application = await this.applicationRepository.findOne({
+      where: { id },
+    });
     return application?.status === ApplicationStatus.PENDING;
   }
 
   async ensureEditable(id: string): Promise<ApplicationEntity> {
-    const application = await this.applicationRepository.findOne({ where: { id } });
+    const application = await this.applicationRepository.findOne({
+      where: { id },
+    });
     if (!application || application.status !== ApplicationStatus.PENDING) {
       throw new BadRequestException('Application is not in PENDING status');
     }
@@ -425,7 +463,9 @@ export class ApplicationsService {
       currentUser.role === UserRole.UNIVERSITY &&
       application.universityId !== currentUser.universityId
     ) {
-      throw new ForbiddenException('You do not have permission to modify this application');
+      throw new ForbiddenException(
+        'You do not have permission to modify this application',
+      );
     }
 
     return application;

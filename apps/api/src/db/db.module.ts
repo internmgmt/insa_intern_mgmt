@@ -9,6 +9,7 @@ import { StudentEntity } from '../entities/student.entity';
 import { InternEntity } from '../entities/intern.entity';
 import { SubmissionEntity } from '../entities/submission.entity';
 import { DocumentEntity } from '../entities/document.entity';
+import { NotificationEntity } from '../entities/notification.entity';
 
 @Module({
   imports: [
@@ -34,6 +35,7 @@ import { DocumentEntity } from '../entities/document.entity';
             InternEntity,
             SubmissionEntity,
             DocumentEntity,
+            NotificationEntity,
           ],
           synchronize: false,
           retryAttempts: 10,
