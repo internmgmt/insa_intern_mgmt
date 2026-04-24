@@ -231,7 +231,12 @@ export default function UniversitiesPage() {
   }
 
   async function handleAddUniversity() {
-    if (!newUni.name.trim()) return;
+    const name = newUni.name.trim();
+    const address = newUni.address.trim();
+    const contactEmail = newUni.contactEmail.trim();
+    const contactPhone = newUni.contactPhone.trim();
+
+    if (!name) return;
 
     try {
       const res = await fetch("/api/universities", {
@@ -241,10 +246,10 @@ export default function UniversitiesPage() {
           ...(token ? { Authorization: `Bearer ${token}` } : {}),
         },
         body: JSON.stringify({
-          name: newUni.name,
-          address: newUni.address || undefined,
-          contactEmail: newUni.contactEmail || undefined,
-          contactPhone: newUni.contactPhone || undefined,
+          name,
+          address: address || undefined,
+          contactEmail: contactEmail || undefined,
+          contactPhone: contactPhone || undefined,
           isActive: true,
         }),
       });
@@ -292,7 +297,7 @@ export default function UniversitiesPage() {
         <div>
           <h1 className="text-2xl font-bold">Universities</h1>
           <p className="text-muted-foreground text-sm mt-1">
-            Create and view partner universities
+            Create and view partner universities, or add a new one manually
           </p>
         </div>
         <Button onClick={() => setShowForm((prev) => !prev)}>
@@ -307,66 +312,73 @@ export default function UniversitiesPage() {
             <CardTitle className="text-sm">New university</CardTitle>
           </CardHeader>
           <CardContent className="grid gap-3 md:grid-cols-2">
-            <div className="space-y-1">
+            <div className="space-y-1 md:col-span-2">
               <label className="text-xs font-medium">Name</label>
-              <Popover open={openCombobox} onOpenChange={setOpenCombobox}>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    role="combobox"
-                    aria-expanded={openCombobox}
-                    className="w-full justify-between font-normal"
-                  >
-                    {newUni.name
-                      ? ETHIOPIAN_UNIVERSITIES.find(
-                          (u) => u.name === newUni.name,
-                        )?.name
-                      : "Select university..."}
-                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
-                  <Command>
-                    <CommandInput placeholder="Search university..." />
-                    <CommandList>
-                      <CommandEmpty>No university found.</CommandEmpty>
-                      <CommandGroup>
-                        {ETHIOPIAN_UNIVERSITIES.map((uni) => (
-                          <CommandItem
-                            key={uni.name}
-                            value={uni.name}
-                            onSelect={(currentValue) => {
-                              const selected = ETHIOPIAN_UNIVERSITIES.find(
-                                (u) =>
-                                  u.name.toLowerCase() ===
-                                  currentValue.toLowerCase(),
-                              );
-                              if (selected) {
-                                setNewUni((prev) => ({
-                                  ...prev,
-                                  name: selected.name,
-                                  address: selected.town,
-                                }));
-                              }
-                              setOpenCombobox(false);
-                            }}
-                          >
-                            <Check
-                              className={cn(
-                                "mr-2 h-4 w-4",
-                                newUni.name === uni.name
-                                  ? "opacity-100"
-                                  : "opacity-0",
-                              )}
-                            />
-                            {uni.name}
-                          </CommandItem>
-                        ))}
-                      </CommandGroup>
-                    </CommandList>
-                  </Command>
-                </PopoverContent>
-              </Popover>
+              <Input
+                placeholder="Type a university name manually"
+                value={newUni.name}
+                onChange={(e) => setNewUni({ ...newUni, name: e.target.value })}
+              />
+              <p className="text-[11px] text-muted-foreground">
+                Manual entry is allowed. Choosing from the list can prefill the
+                address.
+              </p>
+              <div className="pt-2">
+                <Popover open={openCombobox} onOpenChange={setOpenCombobox}>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      role="combobox"
+                      aria-expanded={openCombobox}
+                      className="w-full justify-between font-normal"
+                    >
+                      Choose from curated list
+                      <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-96 max-w-[calc(100vw-2rem)] p-0">
+                    <Command>
+                      <CommandInput placeholder="Search university..." />
+                      <CommandList>
+                        <CommandEmpty>No university found.</CommandEmpty>
+                        <CommandGroup>
+                          {ETHIOPIAN_UNIVERSITIES.map((uni) => (
+                            <CommandItem
+                              key={uni.name}
+                              value={uni.name}
+                              onSelect={(currentValue) => {
+                                const selected = ETHIOPIAN_UNIVERSITIES.find(
+                                  (u) =>
+                                    u.name.toLowerCase() ===
+                                    currentValue.toLowerCase(),
+                                );
+                                if (selected) {
+                                  setNewUni((prev) => ({
+                                    ...prev,
+                                    name: selected.name,
+                                    address: selected.town,
+                                  }));
+                                }
+                                setOpenCombobox(false);
+                              }}
+                            >
+                              <Check
+                                className={cn(
+                                  "mr-2 h-4 w-4",
+                                  newUni.name === uni.name
+                                    ? "opacity-100"
+                                    : "opacity-0",
+                                )}
+                              />
+                              {uni.name}
+                            </CommandItem>
+                          ))}
+                        </CommandGroup>
+                      </CommandList>
+                    </Command>
+                  </PopoverContent>
+                </Popover>
+              </div>
             </div>
             <div className="space-y-1">
               <label className="text-xs font-medium">Contact Email</label>
