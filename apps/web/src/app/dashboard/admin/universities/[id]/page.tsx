@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { useAuth } from "@/components/auth-provider";
 import { PageHeader } from "@/components/ui/page-header";
 import {
@@ -13,7 +14,16 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import {
   Table,
   TableBody,
@@ -32,11 +42,16 @@ import {
   Calendar,
   Users,
   ExternalLink,
+  Trash2,
 } from "lucide-react";
-import { getUniversityById } from "@/lib/services/universities";
+import {
+  deleteUniversityPermanently,
+  getUniversityById,
+} from "@/lib/services/universities";
 import { listUsers } from "@/lib/services/users";
 import { listApplications } from "@/lib/services/applications";
 import { listDocuments } from "@/lib/services/documents";
+import { toast } from "sonner";
 
 type UniversityDetail = {
   id: string;
@@ -68,7 +83,8 @@ function unwrapItems<T>(response: any): T[] {
 }
 
 export default function AdminUniversityDetailPage() {
-  const { token } = useAuth();
+  const { token, user } = useAuth();
+  const router = useRouter();
   const params = useParams<{ id: string }>();
 
   const [university, setUniversity] = useState<UniversityDetail | null>(null);
@@ -77,6 +93,9 @@ export default function AdminUniversityDetailPage() {
   const [documents, setDocuments] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [deleteConfirmText, setDeleteConfirmText] = useState("");
+  const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
     async function load() {
@@ -123,6 +142,26 @@ export default function AdminUniversityDetailPage() {
     return { total, approved, underReview, rejected };
   }, [applications]);
 
+  const canDelete = user?.role === "ADMIN";
+  const canConfirmDelete = deleteConfirmText.trim().toUpperCase() === "DELETE";
+
+  async function handleDeleteUniversity() {
+    if (!params?.id || !token) return;
+
+    try {
+      setIsDeleting(true);
+      await deleteUniversityPermanently(params.id, token);
+      toast.success("University deleted permanently");
+      router.push("/dashboard/admin/universities");
+    } catch (e: any) {
+      toast.error(e?.message ?? "Failed to delete university");
+    } finally {
+      setIsDeleting(false);
+      setShowDeleteDialog(false);
+      setDeleteConfirmText("");
+    }
+  }
+
   if (loading) {
     return (
       <div className="flex min-h-[50vh] items-center justify-center">
@@ -153,11 +192,22 @@ export default function AdminUniversityDetailPage() {
         title={university.name}
         description="University detail view with related users, applications, and documents."
         right={
-          <Button asChild variant="outline" size="sm">
-            <Link href="/dashboard/admin/universities">
-              <ArrowLeft className="mr-2 h-4 w-4" /> Back to universities
-            </Link>
-          </Button>
+          <div className="flex flex-wrap items-center gap-2">
+            {canDelete ? (
+              <Button
+                variant="destructive"
+                size="sm"
+                onClick={() => setShowDeleteDialog(true)}
+              >
+                <Trash2 className="mr-2 h-4 w-4" /> Delete permanently
+              </Button>
+            ) : null}
+            <Button asChild variant="outline" size="sm">
+              <Link href="/dashboard/admin/universities">
+                <ArrowLeft className="mr-2 h-4 w-4" /> Back to universities
+              </Link>
+            </Button>
+          </div>
         }
       />
 
@@ -514,6 +564,49 @@ export default function AdminUniversityDetailPage() {
           )}
         </CardContent>
       </Card>
+
+      <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <DialogContent className="sm:max-w-[480px]">
+          <DialogHeader>
+            <DialogTitle>Delete university permanently</DialogTitle>
+            <DialogDescription>
+              This will permanently remove {university.name}. Related
+              applications will be removed by the database, while linked users
+              will be detached from the university.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-2 py-2">
+            <div className="text-sm font-medium text-muted-foreground">
+              Type DELETE to confirm
+            </div>
+            <Input
+              value={deleteConfirmText}
+              onChange={(e) => setDeleteConfirmText(e.target.value)}
+              placeholder="DELETE"
+              autoComplete="off"
+            />
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setShowDeleteDialog(false);
+                setDeleteConfirmText("");
+              }}
+              disabled={isDeleting}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={() => void handleDeleteUniversity()}
+              disabled={!canConfirmDelete || isDeleting}
+            >
+              {isDeleting ? "Deleting..." : "Delete permanently"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

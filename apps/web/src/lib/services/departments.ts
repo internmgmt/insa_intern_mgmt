@@ -124,3 +124,10 @@ export async function updateDepartment(
     token,
   });
 }
+
+export async function deleteDepartmentPermanently(id: string, token?: string) {
+  return apiFetch<ApiSuccess<null>>(`/departments/${id}/permanent`, {
+    method: "DELETE",
+    token,
+  });
+}

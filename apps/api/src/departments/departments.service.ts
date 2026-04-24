@@ -29,7 +29,7 @@ export class DepartmentsService {
     private readonly userRepository: Repository<UserEntity>,
     @InjectRepository(InternEntity)
     private readonly internRepository: Repository<InternEntity>,
-  ) { }
+  ) {}
 
   async findAll() {
     const departments = await this.departmentRepository.find({
@@ -53,9 +53,10 @@ export class DepartmentsService {
           take: 1,
         });
 
-        const head = supervisors.length > 0 
-          ? `${supervisors[0].firstName} ${supervisors[0].lastName}`
-          : 'Not Assigned';
+        const head =
+          supervisors.length > 0
+            ? `${supervisors[0].firstName} ${supervisors[0].lastName}`
+            : 'Not Assigned';
 
         return {
           ...dept,
@@ -246,18 +247,18 @@ export class DepartmentsService {
           isActive: intern.isActive,
           supervisor: intern.supervisor
             ? {
-              id: intern.supervisor.id,
-              firstName: intern.supervisor.firstName,
-              lastName: intern.supervisor.lastName,
-            }
+                id: intern.supervisor.id,
+                firstName: intern.supervisor.firstName,
+                lastName: intern.supervisor.lastName,
+              }
             : null,
           student: intern.student
             ? {
-              id: intern.student.id,
-              firstName: intern.student.firstName,
-              lastName: intern.student.lastName,
-              studentId: intern.student.studentId,
-            }
+                id: intern.student.id,
+                firstName: intern.student.firstName,
+                lastName: intern.student.lastName,
+                studentId: intern.student.studentId,
+              }
             : null,
         })),
         pagination: {
@@ -320,6 +321,28 @@ export class DepartmentsService {
       data: {
         items: supervisorData,
       },
+    };
+  }
+
+  async hardDelete(id: string) {
+    const department = await this.departmentRepository.findOne({
+      where: { id },
+    });
+
+    if (!department) {
+      throw new NotFoundException({
+        success: false,
+        message: 'Department not found',
+        error: { code: DEPARTMENT_NOT_FOUND, details: null },
+      });
+    }
+
+    await this.departmentRepository.delete(id);
+
+    return {
+      success: true,
+      message: 'Department deleted permanently',
+      data: null,
     };
   }
 }

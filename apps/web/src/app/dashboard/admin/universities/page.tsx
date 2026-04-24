@@ -6,10 +6,19 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
+  CardFooter,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import {
   Table,
   TableBody,
@@ -27,11 +36,13 @@ import {
   MapPin,
   Check,
   ChevronsUpDown,
+  Trash2,
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import {
   listUniversities,
   getUniversityById,
+  deleteUniversityPermanently,
 } from "@/lib/services/universities";
 import { useAuth } from "@/components/auth-provider";
 import { cn } from "@/lib/utils";
@@ -49,6 +60,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import { toast } from "sonner";
 
 const ETHIOPIAN_UNIVERSITIES = [
   { name: "Adama Science and Technology University", town: "Adama" },
@@ -120,6 +132,12 @@ export default function UniversitiesPage() {
     contactPhone: "",
     address: "",
   });
+  const [selectedUniversity, setSelectedUniversity] = useState<any | null>(
+    null,
+  );
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [deleteConfirmText, setDeleteConfirmText] = useState("");
+  const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
     // Always fetch public list immediately so UI has data.
@@ -243,6 +261,27 @@ export default function UniversitiesPage() {
       }
     } catch (error) {
       console.error("Failed to add university:", error);
+    }
+  }
+
+  const canDelete = user?.role === "ADMIN";
+  const canConfirmDelete = deleteConfirmText.trim().toUpperCase() === "DELETE";
+
+  async function handleDeleteUniversity() {
+    if (!selectedUniversity?.id || !token) return;
+
+    try {
+      setIsDeleting(true);
+      await deleteUniversityPermanently(selectedUniversity.id, token);
+      toast.success("University deleted permanently");
+      setShowDeleteDialog(false);
+      setDeleteConfirmText("");
+      setSelectedUniversity(null);
+      await fetchUniversities();
+    } catch (error: any) {
+      toast.error(error?.message || "Failed to delete university");
+    } finally {
+      setIsDeleting(false);
     }
   }
 
@@ -400,55 +439,114 @@ export default function UniversitiesPage() {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {filtered.map((uni) => (
-            <Link
+            <Card
               key={uni.id}
-              href={`/dashboard/admin/universities/${uni.id}`}
-              className="block"
+              className="h-full transition-all duration-300 hover:border-primary/30 hover:shadow-md"
             >
-              <Card className="h-full transition-all duration-300 hover:border-primary/30 hover:shadow-md">
-                <CardHeader>
-                  <div className="flex items-start justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className="p-2 rounded-lg bg-primary/10 text-primary">
-                        <Building2 className="h-5 w-5" />
-                      </div>
-                      <div>
-                        <CardTitle className="text-lg">{uni.name}</CardTitle>
-                        <CardDescription>{uni.address}</CardDescription>
-                      </div>
+              <CardHeader>
+                <div className="flex items-start justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 rounded-lg bg-primary/10 text-primary">
+                      <Building2 className="h-5 w-5" />
                     </div>
-                    <Badge
-                      variant={
-                        uni.status === "active" ? "success" : "secondary"
-                      }
+                    <div>
+                      <CardTitle className="text-lg">{uni.name}</CardTitle>
+                      <CardDescription>{uni.address}</CardDescription>
+                    </div>
+                  </div>
+                  <Badge
+                    variant={uni.status === "active" ? "success" : "secondary"}
+                  >
+                    {uni.status}
+                  </Badge>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2 text-sm">
+                    <Mail className="h-4 w-4 text-muted-foreground" />
+                    <span className="text-muted-foreground">{uni.email}</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-sm">
+                    <Phone className="h-4 w-4 text-muted-foreground" />
+                    <span className="text-muted-foreground">{uni.phone}</span>
+                  </div>
+                </div>
+              </CardContent>
+              <CardFooter className="flex items-center justify-between gap-3 border-t pt-4">
+                <span className="text-sm text-muted-foreground">
+                  University record
+                </span>
+                <div className="flex items-center gap-2">
+                  <Button asChild variant="ghost" size="sm">
+                    <Link href={`/dashboard/admin/universities/${uni.id}`}>
+                      View details
+                    </Link>
+                  </Button>
+                  {canDelete ? (
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      onClick={() => {
+                        setSelectedUniversity(uni);
+                        setDeleteConfirmText("");
+                        setShowDeleteDialog(true);
+                      }}
                     >
-                      {uni.status}
-                    </Badge>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-3">
-                    <div className="flex items-center gap-2 text-sm">
-                      <Mail className="h-4 w-4 text-muted-foreground" />
-                      <span className="text-muted-foreground">{uni.email}</span>
-                    </div>
-                    <div className="flex items-center gap-2 text-sm">
-                      <Phone className="h-4 w-4 text-muted-foreground" />
-                      <span className="text-muted-foreground">{uni.phone}</span>
-                    </div>
-                    <div className="flex items-center justify-between pt-3 border-t">
-                      <span className="text-sm text-muted-foreground">
-                        University record
-                      </span>
-                      {/* <div className="text-xs text-muted-foreground">Edit/Delete not supported</div> */}
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </Link>
+                      <Trash2 className="mr-2 h-4 w-4" /> Delete
+                    </Button>
+                  ) : null}
+                </div>
+              </CardFooter>
+            </Card>
           ))}
         </div>
       )}
+
+      <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <DialogContent className="sm:max-w-[480px]">
+          <DialogHeader>
+            <DialogTitle>Delete university permanently</DialogTitle>
+            <DialogDescription>
+              This will permanently remove{" "}
+              {selectedUniversity?.name || "this university"}. Related
+              applications will be removed and linked users will be detached
+              from the university.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-2 py-2">
+            <div className="text-sm font-medium text-muted-foreground">
+              Type DELETE to confirm
+            </div>
+            <Input
+              value={deleteConfirmText}
+              onChange={(e) => setDeleteConfirmText(e.target.value)}
+              placeholder="DELETE"
+              autoComplete="off"
+            />
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setShowDeleteDialog(false);
+                setDeleteConfirmText("");
+                setSelectedUniversity(null);
+              }}
+              disabled={isDeleting}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={() => void handleDeleteUniversity()}
+              disabled={!canConfirmDelete || isDeleting}
+            >
+              {isDeleting ? "Deleting..." : "Delete permanently"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

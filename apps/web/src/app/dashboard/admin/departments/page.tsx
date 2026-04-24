@@ -42,6 +42,7 @@ import {
   listDepartments,
   createDepartment,
   updateDepartment,
+  deleteDepartmentPermanently,
 } from "@/lib/services/departments";
 import { useAuth } from "@/components/auth-provider";
 import { toast } from "sonner";
@@ -63,6 +64,12 @@ export default function DepartmentsPage() {
     name: string;
     description: string;
   } | null>(null);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [selectedDepartment, setSelectedDepartment] = useState<any | null>(
+    null,
+  );
+  const [deleteConfirmText, setDeleteConfirmText] = useState("");
+  const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
     void fetchDepartments();
@@ -150,6 +157,29 @@ export default function DepartmentsPage() {
       void fetchDepartments();
     } catch (err: any) {
       toast.error(err?.message || "Failed to update department");
+    }
+  }
+
+  const canConfirmDelete = deleteConfirmText.trim().toUpperCase() === "DELETE";
+
+  async function handleDeleteDepartment() {
+    if (!selectedDepartment?.id) return;
+
+    try {
+      setIsDeleting(true);
+      await deleteDepartmentPermanently(
+        selectedDepartment.id,
+        token || undefined,
+      );
+      toast.success("Department deleted permanently");
+      setShowDeleteDialog(false);
+      setSelectedDepartment(null);
+      setDeleteConfirmText("");
+      void fetchDepartments();
+    } catch (err: any) {
+      toast.error(err?.message || "Failed to delete department");
+    } finally {
+      setIsDeleting(false);
     }
   }
 
@@ -316,6 +346,18 @@ export default function DepartmentsPage() {
                     >
                       <Edit className="h-4 w-4" />
                     </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8 hover:bg-destructive/10 hover:text-destructive transition-colors"
+                      onClick={() => {
+                        setSelectedDepartment(dept);
+                        setDeleteConfirmText("");
+                        setShowDeleteDialog(true);
+                      }}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
                   </div>
                 </div>
               </CardContent>
@@ -372,6 +414,51 @@ export default function DepartmentsPage() {
               Cancel
             </Button>
             <Button onClick={saveEditDialog}>Save Changes</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <DialogContent className="sm:max-w-[480px]">
+          <DialogHeader>
+            <DialogTitle>Delete department permanently</DialogTitle>
+            <DialogDescription>
+              This will permanently remove{" "}
+              {selectedDepartment?.name || "this department"}. Linked interns
+              and supervisors will remain in the system but become unassigned
+              from the department.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-2 py-2">
+            <div className="text-sm font-medium text-muted-foreground">
+              Type DELETE to confirm
+            </div>
+            <Input
+              value={deleteConfirmText}
+              onChange={(e) => setDeleteConfirmText(e.target.value)}
+              placeholder="DELETE"
+              autoComplete="off"
+            />
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setShowDeleteDialog(false);
+                setSelectedDepartment(null);
+                setDeleteConfirmText("");
+              }}
+              disabled={isDeleting}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={() => void handleDeleteDepartment()}
+              disabled={!canConfirmDelete || isDeleting}
+            >
+              {isDeleting ? "Deleting..." : "Delete permanently"}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

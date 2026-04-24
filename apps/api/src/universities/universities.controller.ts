@@ -127,7 +127,10 @@ export class UniversitiesController {
     @Req() req: any,
   ) {
     // Allow ADMIN to update any, UNIVERSITY only their own
-    if (req.user?.role === UserRole.UNIVERSITY && req.user.universityId !== id) {
+    if (
+      req.user?.role === UserRole.UNIVERSITY &&
+      req.user.universityId !== id
+    ) {
       throw new ForbiddenException({
         success: false,
         message: 'Access denied',
@@ -153,5 +156,23 @@ export class UniversitiesController {
   })
   async delete(@Param('id') id: string) {
     return this.universitiesService.deactivate(id);
+  }
+
+  @Delete(':id/permanent')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN)
+  @ApiBearerAuth()
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Permanently delete university' })
+  @ApiResponse({
+    status: 200,
+    description: 'University deleted permanently',
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'University not found',
+  })
+  async hardDelete(@Param('id') id: string) {
+    return this.universitiesService.hardDelete(id);
   }
 }

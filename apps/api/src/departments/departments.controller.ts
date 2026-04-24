@@ -3,6 +3,7 @@ import {
   Get,
   Post,
   Patch,
+  Delete,
   Body,
   Param,
   Query,
@@ -117,6 +118,24 @@ export class DepartmentsController {
     @Body() updateDepartmentDto: UpdateDepartmentDto,
   ) {
     return this.departmentsService.update(id, updateDepartmentDto);
+  }
+
+  @Delete(':id/permanent')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN)
+  @ApiBearerAuth()
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Permanently delete department' })
+  @ApiResponse({
+    status: 200,
+    description: 'Department deleted permanently',
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Department not found',
+  })
+  async hardDelete(@Param('id') id: string) {
+    return this.departmentsService.hardDelete(id);
   }
 
   @Get(':id/interns')

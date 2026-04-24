@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { useAuth } from "@/components/auth-provider";
 import { PageHeader } from "@/components/ui/page-header";
 import {
@@ -13,7 +14,16 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import {
   Table,
   TableBody,
@@ -29,12 +39,15 @@ import {
   Users,
   Calendar,
   FileText,
+  Trash2,
 } from "lucide-react";
 import {
+  deleteDepartmentPermanently,
   getDepartmentDetail,
   getDepartmentInterns,
   getDepartmentSupervisors,
 } from "@/lib/services/departments";
+import { toast } from "sonner";
 
 type DepartmentDetail = {
   id: string;
@@ -62,7 +75,8 @@ function unwrapItems<T>(response: any): T[] {
 }
 
 export default function AdminDepartmentDetailPage() {
-  const { token } = useAuth();
+  const { token, user } = useAuth();
+  const router = useRouter();
   const params = useParams<{ id: string }>();
 
   const [department, setDepartment] = useState<DepartmentDetail | null>(null);
@@ -70,6 +84,9 @@ export default function AdminDepartmentDetailPage() {
   const [interns, setInterns] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [deleteConfirmText, setDeleteConfirmText] = useState("");
+  const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
     async function load() {
@@ -103,6 +120,26 @@ export default function AdminDepartmentDetailPage() {
     [interns],
   );
 
+  const canDelete = user?.role === "ADMIN";
+  const canConfirmDelete = deleteConfirmText.trim().toUpperCase() === "DELETE";
+
+  async function handleDeleteDepartment() {
+    if (!params?.id || !token) return;
+
+    try {
+      setIsDeleting(true);
+      await deleteDepartmentPermanently(params.id, token);
+      toast.success("Department deleted permanently");
+      router.push("/dashboard/admin/departments");
+    } catch (e: any) {
+      toast.error(e?.message ?? "Failed to delete department");
+    } finally {
+      setIsDeleting(false);
+      setShowDeleteDialog(false);
+      setDeleteConfirmText("");
+    }
+  }
+
   if (loading) {
     return (
       <div className="flex min-h-[50vh] items-center justify-center">
@@ -133,11 +170,22 @@ export default function AdminDepartmentDetailPage() {
         title={department.name}
         description="Department detail view with supervisors and intern roster."
         right={
-          <Button asChild variant="outline" size="sm">
-            <Link href="/dashboard/admin/departments">
-              <ArrowLeft className="mr-2 h-4 w-4" /> Back to departments
-            </Link>
-          </Button>
+          <div className="flex flex-wrap items-center gap-2">
+            {canDelete ? (
+              <Button
+                variant="destructive"
+                size="sm"
+                onClick={() => setShowDeleteDialog(true)}
+              >
+                <Trash2 className="mr-2 h-4 w-4" /> Delete permanently
+              </Button>
+            ) : null}
+            <Button asChild variant="outline" size="sm">
+              <Link href="/dashboard/admin/departments">
+                <ArrowLeft className="mr-2 h-4 w-4" /> Back to departments
+              </Link>
+            </Button>
+          </div>
         }
       />
 
@@ -417,6 +465,49 @@ export default function AdminDepartmentDetailPage() {
           )}
         </CardContent>
       </Card>
+
+      <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <DialogContent className="sm:max-w-[480px]">
+          <DialogHeader>
+            <DialogTitle>Delete department permanently</DialogTitle>
+            <DialogDescription>
+              This will permanently remove {department.name}. Linked interns and
+              supervisors will remain in the system but become unassigned from
+              this department.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-2 py-2">
+            <div className="text-sm font-medium text-muted-foreground">
+              Type DELETE to confirm
+            </div>
+            <Input
+              value={deleteConfirmText}
+              onChange={(e) => setDeleteConfirmText(e.target.value)}
+              placeholder="DELETE"
+              autoComplete="off"
+            />
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setShowDeleteDialog(false);
+                setDeleteConfirmText("");
+              }}
+              disabled={isDeleting}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={() => void handleDeleteDepartment()}
+              disabled={!canConfirmDelete || isDeleting}
+            >
+              {isDeleting ? "Deleting..." : "Delete permanently"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

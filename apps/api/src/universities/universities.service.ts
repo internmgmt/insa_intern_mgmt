@@ -241,6 +241,28 @@ export class UniversitiesService {
     };
   }
 
+  async hardDelete(id: string) {
+    const university = await this.universityRepository.findOne({
+      where: { id },
+    });
+
+    if (!university) {
+      throw new NotFoundException({
+        success: false,
+        message: 'University not found',
+        error: { code: 'UNIVERSITY_NOT_FOUND', details: null },
+      });
+    }
+
+    await this.universityRepository.delete(id);
+
+    return {
+      success: true,
+      message: 'University deleted permanently',
+      data: null,
+    };
+  }
+
   private generateTemporaryPassword(): string {
     const length = 12;
     const upper = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
