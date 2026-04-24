@@ -13,11 +13,13 @@ import { Button } from "@/components/ui/button";
 import {
   Users,
   School,
+  Building2,
   FileText,
   GraduationCap,
   TrendingUp,
   CheckCircle2,
   Clock,
+  FolderOpen,
 } from "lucide-react";
 import Link from "next/link";
 import { useAuth } from "@/components/auth-provider";
@@ -58,7 +60,14 @@ export default function AdminDashboardPage() {
   }
 
   const {
-    counts = { universities: 0, students: 0, interns: 0, applications: 0 },
+    counts = {
+      users: 0,
+      universities: 0,
+      students: 0,
+      interns: 0,
+      applications: 0,
+      submissions: 0,
+    },
     distributions = {
       applications: [],
       students: [],
@@ -72,11 +81,63 @@ export default function AdminDashboardPage() {
     metrics = { placementRate: 0 },
   } = data || {};
 
+  const browseCards = [
+    {
+      title: "Universities",
+      description:
+        "Start with the institutional root and drill into each campus.",
+      href: "/dashboard/admin/universities",
+      icon: School,
+      tone: "text-[#5ba1a2]",
+      bg: "bg-[#5ba1a2]/10",
+    },
+    {
+      title: "Departments",
+      description: "Open a department to reach its supervisors and interns.",
+      href: "/dashboard/admin/departments",
+      icon: Building2,
+      tone: "text-[#8bac99]",
+      bg: "bg-[#8bac99]/10",
+    },
+    {
+      title: "Applications",
+      description: "Review an application before jumping to its students.",
+      href: "/dashboard/admin/applications",
+      icon: FileText,
+      tone: "text-[#b28b71]",
+      bg: "bg-[#b28b71]/10",
+    },
+    {
+      title: "Students",
+      description: "Browse students within the selected university context.",
+      href: "/dashboard/admin/students",
+      icon: GraduationCap,
+      tone: "text-[#5ba1a2]",
+      bg: "bg-[#5ba1a2]/10",
+    },
+    {
+      title: "Interns",
+      description: "Move from department scope into active internship records.",
+      href: "/dashboard/admin/interns",
+      icon: Users,
+      tone: "text-[#b28b71]",
+      bg: "bg-[#b28b71]/10",
+    },
+    {
+      title: "Documents",
+      description: "Find documents after selecting the owning record.",
+      href: "/dashboard/admin/documents",
+      icon: FolderOpen,
+      tone: "text-[#8bac99]",
+      bg: "bg-[#8bac99]/10",
+    },
+  ];
+
   return (
     <div className="space-y-4 sm:space-y-6">
       <PageHeader
         title="Executive Overview"
-        description="Strategic institutional intelligence and performance metrics"
+        description="Start with the institution, then drill into the records it owns."
       />
 
       {/* KPI Cards */}
@@ -142,6 +203,46 @@ export default function AdminDashboardPage() {
           </Card>
         ))}
       </div>
+
+      <Card className="border-primary/15 bg-primary/2">
+        <CardHeader className="pb-3">
+          <CardTitle>Browse the hierarchy</CardTitle>
+          <CardDescription>
+            Choose the parent context first. Filters stay available inside each
+            area, but these links are the primary way into the data.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+          {browseCards.map((item) => (
+            <Link key={item.href} href={item.href} className="group">
+              <div className="flex h-full flex-col justify-between rounded-2xl border border-border/60 bg-background p-4 transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/30 hover:shadow-md">
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-muted-foreground">
+                      Entry point
+                    </p>
+                    <h3 className="mt-1 text-base font-semibold">
+                      {item.title}
+                    </h3>
+                    <p className="mt-1 text-sm text-muted-foreground">
+                      {item.description}
+                    </p>
+                  </div>
+                  <div className={`rounded-xl p-3 ${item.bg} ${item.tone}`}>
+                    <item.icon className="h-5 w-5" />
+                  </div>
+                </div>
+                <div className="mt-4 flex items-center gap-2 text-sm font-medium text-primary">
+                  Open {item.title}
+                  <span className="transition-transform duration-200 group-hover:translate-x-1">
+                    →
+                  </span>
+                </div>
+              </div>
+            </Link>
+          ))}
+        </CardContent>
+      </Card>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
         {/* Reporting Pulse - Replacing Intake Velocity */}

@@ -178,9 +178,35 @@ export default function UniversityDashboardPage() {
     recentApplications.length - visibleApplications.length,
   );
 
+  const browseCards = [
+    {
+      title: "Applications",
+      description:
+        "Start here to open a batch, review its status, and drill into students.",
+      href: "/dashboard/university/applications",
+      stat: `${stats.totalApplications} total`,
+    },
+    {
+      title: "Students",
+      description: "Manage students inside the selected application context.",
+      href: "/dashboard/university/students",
+      stat: `${stats.totalStudents} tracked`,
+    },
+    {
+      title: "Documents",
+      description:
+        "Review uploaded files after the parent application is selected.",
+      href: "/dashboard/university/documents",
+      stat: `${stats.approved} approved apps`,
+    },
+  ];
+
   return (
     <div className="space-y-5 sm:space-y-8">
-      <PageHeader title="University Dashboard" />
+      <PageHeader
+        title="University Dashboard"
+        description="Start with applications, then drill into students and documents for this university."
+      />
 
       {/* Quick Actions */}
       <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
@@ -265,6 +291,41 @@ export default function UniversityDashboardPage() {
           </Card>
         </Link>
       </div>
+
+      <Card className="border-primary/15 bg-primary/2">
+        <CardHeader className="pb-3">
+          <CardTitle>Browse your university context</CardTitle>
+          <CardDescription>
+            The application is the parent record here. Open it first, then move
+            into the student roster or supporting documents.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="grid gap-3 lg:grid-cols-3">
+          {browseCards.map((item) => (
+            <Link key={item.href} href={item.href} className="group">
+              <div className="flex h-full flex-col justify-between rounded-2xl border border-border/60 bg-background p-4 transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/30 hover:shadow-md">
+                <div>
+                  <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-muted-foreground">
+                    Context entry
+                  </p>
+                  <h3 className="mt-1 text-base font-semibold">{item.title}</h3>
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    {item.description}
+                  </p>
+                </div>
+                <div className="mt-4 flex items-center justify-between gap-3">
+                  <span className="text-xs font-semibold uppercase tracking-[0.18em] text-primary">
+                    {item.stat}
+                  </span>
+                  <span className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-primary/15 bg-primary/5 text-primary transition-transform duration-200 group-hover:translate-x-1">
+                    <ArrowRight className="h-4 w-4" />
+                  </span>
+                </div>
+              </div>
+            </Link>
+          ))}
+        </CardContent>
+      </Card>
 
       {/* Statistics Overview */}
       <div>
