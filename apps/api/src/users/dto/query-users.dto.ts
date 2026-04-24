@@ -78,4 +78,13 @@ export class QueryUsersDto {
   @IsOptional()
   @IsUUID()
   departmentId?: string;
+
+  @ApiProperty({
+    example: '550e8400-e29b-41d4-a716-446655440001',
+    description: 'Filter by university ID',
+    required: false,
+  })
+  @IsOptional()
+  @IsUUID()
+  universityId?: string;
 }

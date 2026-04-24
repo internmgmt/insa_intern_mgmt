@@ -4,13 +4,38 @@ import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import { useAuth } from "@/components/auth-provider";
 import { getApplication, updateApplication } from "@/lib/services/applications";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { AlertCircle, FileText, CheckCircle, XCircle, Clock } from "lucide-react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  AlertCircle,
+  FileText,
+  CheckCircle,
+  XCircle,
+  Clock,
+} from "lucide-react";
 import Link from "next/link";
 import { getAcademicYears } from "@/lib/utils";
 
@@ -48,7 +73,11 @@ export default function AdminApplicationDetailPage() {
     if (!token || !app) return;
     setError(null);
     try {
-      const res: any = await updateApplication(app.id, { academicYear, name }, token);
+      const res: any = await updateApplication(
+        app.id,
+        { academicYear, name },
+        token,
+      );
       const data = res?.data ?? res;
       setApp(data);
     } catch (e: any) {
@@ -63,12 +92,19 @@ export default function AdminApplicationDetailPage() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">{app.name || 'Application Detail'}</h1>
-        <Link href="/dashboard/admin/applications" className="text-sm underline">Back to list</Link>
+        <h1 className="text-2xl font-bold">
+          {app.name || "Application Detail"}
+        </h1>
+        <Link
+          href="/dashboard/admin/applications"
+          className="text-sm underline"
+        >
+          Back to list
+        </Link>
       </div>
 
       <div className="grid gap-6 md:grid-cols-2">
-        {app.status === 'REJECTED' && app.reviewNotes && (
+        {app.status === "REJECTED" && app.reviewNotes && (
           <Card className="md:col-span-2 border-destructive/20 bg-destructive/5">
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-bold text-destructive flex items-center gap-2">
@@ -90,12 +126,30 @@ export default function AdminApplicationDetailPage() {
             <CardDescription>Core application details</CardDescription>
           </CardHeader>
           <CardContent className="space-y-2">
-            <div><span className="text-muted-foreground">Name:</span> <span className="font-semibold">{app.name || "-"}</span></div>
-            <div><span className="text-muted-foreground">ID:</span> <span className="font-mono">{app.id}</span></div>
-            <div><span className="text-muted-foreground">Status:</span> {app.status}</div>
-            <div><span className="text-muted-foreground">University:</span> {app.university?.name ?? "-"}</div>
-            <div><span className="text-muted-foreground">Created:</span> {app.createdAt ? new Date(app.createdAt).toLocaleString() : "-"}</div>
-            <div><span className="text-muted-foreground">Updated:</span> {app.updatedAt ? new Date(app.updatedAt).toLocaleString() : "-"}</div>
+            <div>
+              <span className="text-muted-foreground">Name:</span>{" "}
+              <span className="font-semibold">{app.name || "-"}</span>
+            </div>
+            <div>
+              <span className="text-muted-foreground">ID:</span>{" "}
+              <span className="font-mono">{app.id}</span>
+            </div>
+            <div>
+              <span className="text-muted-foreground">Status:</span>{" "}
+              {app.status}
+            </div>
+            <div>
+              <span className="text-muted-foreground">University:</span>{" "}
+              {app.university?.name ?? "-"}
+            </div>
+            <div>
+              <span className="text-muted-foreground">Created:</span>{" "}
+              {app.createdAt ? new Date(app.createdAt).toLocaleString() : "-"}
+            </div>
+            <div>
+              <span className="text-muted-foreground">Updated:</span>{" "}
+              {app.updatedAt ? new Date(app.updatedAt).toLocaleString() : "-"}
+            </div>
           </CardContent>
         </Card>
 
@@ -106,18 +160,28 @@ export default function AdminApplicationDetailPage() {
           </CardHeader>
           <CardContent className="space-y-3">
             <div className="space-y-1">
-              <label htmlFor="appName" className="text-sm font-medium">Name</label>
-              <Input id="appName" value={name} onChange={(e) => setName(e.target.value)} />
+              <label htmlFor="appName" className="text-sm font-medium">
+                Name
+              </label>
+              <Input
+                id="appName"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+              />
             </div>
             <div className="space-y-1">
-              <label htmlFor="academicYear" className="text-sm font-medium">Academic Year</label>
+              <label htmlFor="academicYear" className="text-sm font-medium">
+                Academic Year
+              </label>
               <Select value={academicYear} onValueChange={setAcademicYear}>
                 <SelectTrigger id="academicYear">
                   <SelectValue placeholder="Select year" />
                 </SelectTrigger>
                 <SelectContent>
-                  {getAcademicYears().map(year => (
-                    <SelectItem key={year} value={year}>{year}</SelectItem>
+                  {getAcademicYears().map((year) => (
+                    <SelectItem key={year} value={year}>
+                      {year}
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -129,10 +193,15 @@ export default function AdminApplicationDetailPage() {
         <Card className="md:col-span-2">
           <CardHeader>
             <CardTitle>Student Roster</CardTitle>
-            <CardDescription>Qualified students included in this application batch ({app.students?.length || 0})</CardDescription>
+            <CardDescription>
+              Qualified students included in this application cycle (
+              {app.students?.length || 0})
+            </CardDescription>
           </CardHeader>
           <CardContent>
-            {app.students && Array.isArray(app.students) && app.students.length > 0 ? (
+            {app.students &&
+            Array.isArray(app.students) &&
+            app.students.length > 0 ? (
               <div className="rounded-md border">
                 <Table>
                   <TableHeader>
@@ -148,17 +217,38 @@ export default function AdminApplicationDetailPage() {
                   <TableBody>
                     {app.students.map((student: any) => (
                       <TableRow key={student.id}>
-                        <TableCell className="font-medium text-sm">{student.firstName} {student.lastName}</TableCell>
-                        <TableCell className="font-mono text-[10px] text-muted-foreground">{student.studentId || "N/A"}</TableCell>
-                        <TableCell className="text-sm">{student.fieldOfStudy}</TableCell>
-                        <TableCell className="text-sm">{student.academicYear}</TableCell>
+                        <TableCell className="font-medium text-sm">
+                          {student.firstName} {student.lastName}
+                        </TableCell>
+                        <TableCell className="font-mono text-[10px] text-muted-foreground">
+                          {student.studentId || "N/A"}
+                        </TableCell>
+                        <TableCell className="text-sm">
+                          {student.fieldOfStudy}
+                        </TableCell>
+                        <TableCell className="text-sm">
+                          {student.academicYear}
+                        </TableCell>
                         <TableCell>
-                          <Badge variant={student.status === "ACCOUNT_CREATED" || student.status === "ACCEPTED" ? "success" : "outline"} className="text-[10px]">
+                          <Badge
+                            variant={
+                              student.status === "ACCOUNT_CREATED" ||
+                              student.status === "ACCEPTED"
+                                ? "success"
+                                : "outline"
+                            }
+                            className="text-[10px]"
+                          >
                             {student.status.replace("_", " ")}
                           </Badge>
                         </TableCell>
                         <TableCell className="text-right">
-                          <Button asChild variant="ghost" size="sm" className="h-8 text-xs">
+                          <Button
+                            asChild
+                            variant="ghost"
+                            size="sm"
+                            className="h-8 text-xs"
+                          >
                             <Link href="/dashboard/admin/students">Manage</Link>
                           </Button>
                         </TableCell>

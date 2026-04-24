@@ -1,5 +1,11 @@
 import { apiFetch } from "@/lib/api";
-import type { ApiSuccess, DocumentInfo, DocumentType, EntityType, Paginated } from "@/lib/types";
+import type {
+  ApiSuccess,
+  DocumentInfo,
+  DocumentType,
+  EntityType,
+  Paginated,
+} from "@/lib/types";
 
 export async function uploadDocument(
   file: File,
@@ -10,9 +16,9 @@ export async function uploadDocument(
     entityType?: EntityType;
     applicationId?: string;
     studentId?: string;
-    title?: string
+    title?: string;
   },
-  token?: string
+  token?: string,
 ) {
   const fd = new FormData();
   fd.append("file", file);
@@ -29,18 +35,32 @@ export async function uploadDocument(
     token,
   });
 }
-export async function listDocuments(params: { page?: number; limit?: number; type?: string; entityId?: string; entityType?: string } = {}, token?: string) {
+export async function listDocuments(
+  params: {
+    page?: number;
+    limit?: number;
+    type?: string;
+    entityId?: string;
+    entityType?: string;
+    universityId?: string;
+  } = {},
+  token?: string,
+) {
   const qs = new URLSearchParams();
   if (params.page) qs.set("page", String(params.page));
   if (params.limit) qs.set("limit", String(params.limit));
   if (params.type) qs.set("type", params.type);
   if (params.entityId) qs.set("entityId", params.entityId);
   if (params.entityType) qs.set("entityType", params.entityType);
+  if (params.universityId) qs.set("universityId", params.universityId);
   const query = qs.toString();
-  return apiFetch<ApiSuccess<Paginated<DocumentInfo>>>(`/documents${query ? `?${query}` : ""}`, {
-    method: "GET",
-    token,
-  });
+  return apiFetch<ApiSuccess<Paginated<DocumentInfo>>>(
+    `/documents${query ? `?${query}` : ""}`,
+    {
+      method: "GET",
+      token,
+    },
+  );
 }
 
 export async function deleteDocument(id: string, token?: string) {

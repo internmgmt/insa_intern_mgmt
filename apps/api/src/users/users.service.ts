@@ -24,7 +24,7 @@ export class UsersService {
     @InjectRepository(UserEntity)
     private readonly userRepository: Repository<UserEntity>,
     private readonly mailService: MailService,
-  ) { }
+  ) {}
 
   async findAll(query: QueryUsersDto, currentUser?: any) {
     const {
@@ -33,6 +33,7 @@ export class UsersService {
       search,
       isActive,
       departmentId,
+      universityId,
     } = query;
     const limit = 100; // Enforce strict 100 limit as requested
 
@@ -51,6 +52,10 @@ export class UsersService {
 
     if (role) {
       whereConditions.role = role;
+    }
+
+    if (universityId) {
+      whereConditions.universityId = universityId;
     }
 
     if (isActive !== undefined) {
@@ -76,7 +81,7 @@ export class UsersService {
     const [items, totalItems] = await queryBuilder.getManyAndCount();
 
     // Map to remove sensitive data
-    const mappedItems = items.map(user => {
+    const mappedItems = items.map((user) => {
       const { passwordHash, ...safeUser } = user;
       return safeUser as any;
     });
@@ -183,7 +188,8 @@ export class UsersService {
     if (role === UserRole.INTERN) {
       throw new BadRequestException({
         success: false,
-        message: 'Intern accounts must be created through the physical arrival workflow',
+        message:
+          'Intern accounts must be created through the physical arrival workflow',
         error: { code: 'INVALID_ROLE', details: null },
       });
     }

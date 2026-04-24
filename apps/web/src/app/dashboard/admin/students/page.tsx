@@ -2,7 +2,13 @@
 
 import { useEffect, useState, useCallback, useMemo } from "react";
 import { useAuth } from "@/components/auth-provider";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -44,7 +50,7 @@ import {
   FileText,
   ArrowRight,
   RotateCcw,
-  FileDown
+  FileDown,
 } from "lucide-react";
 import Link from "next/link";
 import {
@@ -54,9 +60,12 @@ import {
   updateApplicationStudent,
   removeApplicationStudent,
   reviewStudent,
-  markStudentArrived
+  markStudentArrived,
 } from "@/lib/services/students";
-import { listApplications, type ApplicationListItem as Application } from "@/lib/services/applications";
+import {
+  listApplications,
+  type ApplicationListItem as Application,
+} from "@/lib/services/applications";
 import { listUniversities } from "@/lib/services/universities";
 import { listDepartments } from "@/lib/services/departments";
 import { listUsers } from "@/lib/services/users";
@@ -70,7 +79,9 @@ import { getAcademicYears } from "@/lib/utils";
 export default function AdminStudentsPage() {
   const { token } = useAuth();
 
-  const [universities, setUniversities] = useState<{ id: string; name: string }[]>([]);
+  const [universities, setUniversities] = useState<
+    { id: string; name: string }[]
+  >([]);
   const [selectedUniId, setSelectedUniId] = useState<string>("ALL");
   const [applications, setApplications] = useState<Application[]>([]);
   const [selectedBatch, setSelectedBatch] = useState<string>("ALL");
@@ -149,13 +160,13 @@ export default function AdminStudentsPage() {
   }, [token, selectedUniId]);
 
   const academicYears = useMemo(() => {
-    const years = new Set(applications.map(a => a.academicYear));
+    const years = new Set(applications.map((a) => a.academicYear));
     return Array.from(years).sort();
   }, [applications]);
 
   useEffect(() => {
     if (showAssignDialog && token) {
-      listDepartments({}, token).then(res => {
+      listDepartments({}, token).then((res) => {
         const items = (res as any)?.data?.items ?? (res as any)?.data ?? [];
         setDepartments(Array.isArray(items) ? items : []);
       });
@@ -186,7 +197,7 @@ export default function AdminStudentsPage() {
 
   const filteredStudents = useMemo(() => {
     if (!searchQuery) return students;
-    return students.filter(s => {
+    return students.filter((s) => {
       const matchesSearch =
         s.firstName.toLowerCase().includes(searchQuery.toLowerCase()) ||
         s.lastName.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -196,12 +207,18 @@ export default function AdminStudentsPage() {
     });
   }, [students, searchQuery]);
 
-  function validateFile(file: File | null, allowedMimes: string[] = ["application/pdf"], maxSize = 10 * 1024 * 1024) {
+  function validateFile(
+    file: File | null,
+    allowedMimes: string[] = ["application/pdf"],
+    maxSize = 10 * 1024 * 1024,
+  ) {
     if (!file) return true;
     const name = sanitizeInput(file.name || "");
     const type = file.type || "";
     if (file.size > maxSize) {
-      toast.error(`${name} exceeds maximum allowed size of ${Math.round(maxSize / 1024 / 1024)}MB`);
+      toast.error(
+        `${name} exceeds maximum allowed size of ${Math.round(maxSize / 1024 / 1024)}MB`,
+      );
       return false;
     }
     const lower = name.toLowerCase();
@@ -222,12 +239,15 @@ export default function AdminStudentsPage() {
 
   const handleAddStudent = async () => {
     if (!token) return;
-    const targetApp = applications.find(a =>
-      (selectedUniId === "ALL" ? true : a.university?.id === selectedUniId) &&
-      (selectedBatch === "ALL" ? true : a.academicYear === selectedBatch)
+    const targetApp = applications.find(
+      (a) =>
+        (selectedUniId === "ALL" ? true : a.university?.id === selectedUniId) &&
+        (selectedBatch === "ALL" ? true : a.academicYear === selectedBatch),
     );
     if (!targetApp) {
-      toast.error("Please select or ensure a specific University and Application Batch exists to add a student.");
+      toast.error(
+        "Please select or ensure a specific University and Academic Year exists to add a student.",
+      );
       return;
     }
     if (!validateFile(cvFile) || !validateFile(transcriptFile)) return;
@@ -237,24 +257,32 @@ export default function AdminStudentsPage() {
       const res = await addStudentToApplication(targetApp.id, cleanForm, token);
       const newStudent = res.data;
       if (cvFile) {
-        await uploadDocument(cvFile, {
-          documentType: "CV",
-          studentId: newStudent.id,
-          applicationId: targetApp.id,
-          entityType: "STUDENT",
-          entityId: newStudent.id,
-          title: `CV - ${sanitizeInput(newStudent.firstName)} ${sanitizeInput(newStudent.lastName)}`
-        }, token);
+        await uploadDocument(
+          cvFile,
+          {
+            documentType: "CV",
+            studentId: newStudent.id,
+            applicationId: targetApp.id,
+            entityType: "STUDENT",
+            entityId: newStudent.id,
+            title: `CV - ${sanitizeInput(newStudent.firstName)} ${sanitizeInput(newStudent.lastName)}`,
+          },
+          token,
+        );
       }
       if (transcriptFile) {
-        await uploadDocument(transcriptFile, {
-          documentType: "TRANSCRIPT",
-          studentId: newStudent.id,
-          applicationId: targetApp.id,
-          entityType: "STUDENT",
-          entityId: newStudent.id,
-          title: `Transcript - ${sanitizeInput(newStudent.firstName)} ${sanitizeInput(newStudent.lastName)}`
-        }, token);
+        await uploadDocument(
+          transcriptFile,
+          {
+            documentType: "TRANSCRIPT",
+            studentId: newStudent.id,
+            applicationId: targetApp.id,
+            entityType: "STUDENT",
+            entityId: newStudent.id,
+            title: `Transcript - ${sanitizeInput(newStudent.firstName)} ${sanitizeInput(newStudent.lastName)}`,
+          },
+          token,
+        );
       }
       toast.success("Student added successfully");
       setShowAddDialog(false);
@@ -278,26 +306,39 @@ export default function AdminStudentsPage() {
     try {
       setIsSubmitting(true);
       const cleanForm = sanitizeFormData(formData);
-      await updateApplicationStudent(appId, selectedStudent.id, cleanForm, token);
+      await updateApplicationStudent(
+        appId,
+        selectedStudent.id,
+        cleanForm,
+        token,
+      );
       if (cvFile) {
-        await uploadDocument(cvFile, {
-          documentType: "CV",
-          studentId: selectedStudent.id,
-          applicationId: appId,
-          entityType: "STUDENT",
-          entityId: selectedStudent.id,
-          title: `CV - ${sanitizeInput(cleanForm.firstName)} ${sanitizeInput(cleanForm.lastName)}`
-        }, token);
+        await uploadDocument(
+          cvFile,
+          {
+            documentType: "CV",
+            studentId: selectedStudent.id,
+            applicationId: appId,
+            entityType: "STUDENT",
+            entityId: selectedStudent.id,
+            title: `CV - ${sanitizeInput(cleanForm.firstName)} ${sanitizeInput(cleanForm.lastName)}`,
+          },
+          token,
+        );
       }
       if (transcriptFile) {
-        await uploadDocument(transcriptFile, {
-          documentType: "TRANSCRIPT",
-          studentId: selectedStudent.id,
-          applicationId: appId,
-          entityType: "STUDENT",
-          entityId: selectedStudent.id,
-          title: `Transcript - ${sanitizeInput(cleanForm.firstName)} ${sanitizeInput(cleanForm.lastName)}`
-        }, token);
+        await uploadDocument(
+          transcriptFile,
+          {
+            documentType: "TRANSCRIPT",
+            studentId: selectedStudent.id,
+            applicationId: appId,
+            entityType: "STUDENT",
+            entityId: selectedStudent.id,
+            title: `Transcript - ${sanitizeInput(cleanForm.firstName)} ${sanitizeInput(cleanForm.lastName)}`,
+          },
+          token,
+        );
       }
       toast.success("Student updated successfully");
       setShowEditDialog(false);
@@ -349,12 +390,15 @@ export default function AdminStudentsPage() {
     try {
       setIsSubmitting(true);
       await reviewStudent(selectedStudent.id, { decision: "ACCEPT" }, token);
-      await createIntern({
-        studentId: selectedStudent.id,
-        departmentId: assignmentData.departmentId,
-        startDate: assignmentData.startDate || undefined,
-        endDate: assignmentData.endDate || undefined,
-      }, token);
+      await createIntern(
+        {
+          studentId: selectedStudent.id,
+          departmentId: assignmentData.departmentId,
+          startDate: assignmentData.startDate || undefined,
+          endDate: assignmentData.endDate || undefined,
+        },
+        token,
+      );
       toast.success("Student approved and intern account created");
       setShowAssignDialog(false);
       fetchStudentsData();
@@ -375,12 +419,16 @@ export default function AdminStudentsPage() {
     if (!selectedStudent || !rejectReason.trim()) return;
     try {
       setIsSubmitting(true);
-      await reviewStudent(selectedStudent.id, { decision: "REJECT", rejectionReason: rejectReason.trim() }, token || undefined);
+      await reviewStudent(
+        selectedStudent.id,
+        { decision: "REJECT", rejectionReason: rejectReason.trim() },
+        token || undefined,
+      );
       toast.success("Student rejected");
       setShowRejectDialog(false);
       fetchStudentsData();
     } catch (error: any) {
-      toast.error(error?.message || 'Failed to reject student');
+      toast.error(error?.message || "Failed to reject student");
     } finally {
       setIsSubmitting(false);
     }
@@ -392,7 +440,7 @@ export default function AdminStudentsPage() {
       toast.success("Marked as ARRIVED");
       fetchStudentsData();
     } catch (error: any) {
-      toast.error(error?.message || 'Failed to mark arrived');
+      toast.error(error?.message || "Failed to mark arrived");
     }
   };
 
@@ -434,36 +482,56 @@ export default function AdminStudentsPage() {
 
   const getStatusBadge = (status: string) => {
     switch (status) {
-      case "PENDING_REVIEW": return <Badge variant="warning">Pending Review</Badge>;
-      case "AWAITING_ARRIVAL": return <Badge variant="secondary">Awaiting Arrival</Badge>;
-      case "ARRIVED": return <Badge variant="success">Arrived</Badge>;
-      case "ACCOUNT_CREATED": return <Badge variant="success">Account Created</Badge>;
-      case "REJECTED": return <Badge variant="destructive">Rejected</Badge>;
-      default: return <Badge variant="outline">{status}</Badge>;
+      case "PENDING_REVIEW":
+        return <Badge variant="warning">Pending Review</Badge>;
+      case "AWAITING_ARRIVAL":
+        return <Badge variant="secondary">Awaiting Arrival</Badge>;
+      case "ARRIVED":
+        return <Badge variant="success">Arrived</Badge>;
+      case "ACCOUNT_CREATED":
+        return <Badge variant="success">Account Created</Badge>;
+      case "REJECTED":
+        return <Badge variant="destructive">Rejected</Badge>;
+      default:
+        return <Badge variant="outline">{status}</Badge>;
     }
   };
 
-  async function handleDownload(docIdOrType: string, studentName: string, type: string, studentId?: string) {
+  async function handleDownload(
+    docIdOrType: string,
+    studentName: string,
+    type: string,
+    studentId?: string,
+  ) {
     if (!token) return;
     const normalizedType = type.toUpperCase();
     try {
       let finalDocId = docIdOrType;
-      if (studentId && (docIdOrType.toLowerCase().includes('cv') || docIdOrType.toLowerCase().includes('transcript'))) {
-        const res = await listDocuments({
-          entityId: studentId,
-          entityType: 'STUDENT'
-        }, token);
+      if (
+        studentId &&
+        (docIdOrType.toLowerCase().includes("cv") ||
+          docIdOrType.toLowerCase().includes("transcript"))
+      ) {
+        const res = await listDocuments(
+          {
+            entityId: studentId,
+            entityType: "STUDENT",
+          },
+          token,
+        );
         const docs = (res as any)?.data?.items || [];
         const found = docs.find((d: any) => {
           try {
-            const meta = JSON.parse(d.metadata || '{}');
+            const meta = JSON.parse(d.metadata || "{}");
             return meta.documentType === normalizedType;
-          } catch (e) { return false; }
+          } catch (e) {
+            return false;
+          }
         });
         if (found) {
           finalDocId = found.id;
         } else {
-          if (!docIdOrType.includes('_') && docIdOrType.length > 30) {
+          if (!docIdOrType.includes("_") && docIdOrType.length > 30) {
             finalDocId = docIdOrType;
           } else {
             toast.error(`${type} document not found`);
@@ -472,7 +540,11 @@ export default function AdminStudentsPage() {
         }
       }
       const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || "/api";
-      await downloadFile(`${baseUrl}/documents/${finalDocId}/download`, token, `${studentName}_${type}.pdf`);
+      await downloadFile(
+        `${baseUrl}/documents/${finalDocId}/download`,
+        token,
+        `${studentName}_${type}.pdf`,
+      );
     } catch (error: any) {
       toast.error("Failed to download document");
     }
@@ -482,15 +554,25 @@ export default function AdminStudentsPage() {
     <div className="space-y-10 px-4 py-8">
       <div className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between px-2">
         <div>
-          <h1 className="text-4xl font-bold tracking-tight">Student Management</h1>
-          <p className="text-muted-foreground text-lg">Review and manage students from all partnered universities.</p>
+          <h1 className="text-4xl font-bold tracking-tight">
+            Student Management
+          </h1>
+          <p className="text-muted-foreground text-lg">
+            Review and manage students from all partnered universities.
+          </p>
         </div>
         <div className="flex gap-2">
           <Button variant="outline" size="sm" onClick={resetFilters}>
             <RotateCcw className="mr-2 h-4 w-4" />
             Reset Filters
           </Button>
-          <Button onClick={() => { resetForm(); setShowAddDialog(true); }} disabled={selectedUniId === "ALL" && selectedBatch === "ALL"}>
+          <Button
+            onClick={() => {
+              resetForm();
+              setShowAddDialog(true);
+            }}
+            disabled={selectedUniId === "ALL" && selectedBatch === "ALL"}
+          >
             <UserPlus className="mr-2 h-4 w-4" />
             Add Student
           </Button>
@@ -501,7 +583,9 @@ export default function AdminStudentsPage() {
         <CardHeader className="pb-4">
           <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-4">
             <div className="space-y-2">
-              <Label className="text-xs font-bold uppercase text-muted-foreground">University</Label>
+              <Label className="text-xs font-bold uppercase text-muted-foreground">
+                University
+              </Label>
               <Select value={selectedUniId} onValueChange={setSelectedUniId}>
                 <SelectTrigger className="h-9">
                   <SelectValue placeholder="All Universities" />
@@ -509,27 +593,35 @@ export default function AdminStudentsPage() {
                 <SelectContent>
                   <SelectItem value="ALL">All Universities</SelectItem>
                   {universities.map((uni) => (
-                    <SelectItem key={uni.id} value={uni.id}>{uni.name}</SelectItem>
+                    <SelectItem key={uni.id} value={uni.id}>
+                      {uni.name}
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
             <div className="space-y-2">
-              <Label className="text-xs font-bold uppercase text-muted-foreground">Application Batch</Label>
+              <Label className="text-xs font-bold uppercase text-muted-foreground">
+                Academic Year
+              </Label>
               <Select value={selectedBatch} onValueChange={setSelectedBatch}>
                 <SelectTrigger className="h-9">
-                  <SelectValue placeholder="All Applications" />
+                  <SelectValue placeholder="All academic years" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="ALL">All Applications</SelectItem>
-                  {applications.map((app) => (
-                    <SelectItem key={app.id} value={app.academicYear}>{app.name || app.academicYear}</SelectItem>
+                  <SelectItem value="ALL">All academic years</SelectItem>
+                  {academicYears.map((year) => (
+                    <SelectItem key={year} value={year}>
+                      {year}
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
             <div className="space-y-2">
-              <Label className="text-xs font-bold uppercase text-muted-foreground">Status</Label>
+              <Label className="text-xs font-bold uppercase text-muted-foreground">
+                Status
+              </Label>
               <Select value={statusFilter} onValueChange={setStatusFilter}>
                 <SelectTrigger className="h-9">
                   <SelectValue placeholder="All Statuses" />
@@ -537,15 +629,21 @@ export default function AdminStudentsPage() {
                 <SelectContent>
                   <SelectItem value="ALL">All Statuses</SelectItem>
                   <SelectItem value="PENDING_REVIEW">Pending Review</SelectItem>
-                  <SelectItem value="AWAITING_ARRIVAL">Awaiting Arrival</SelectItem>
+                  <SelectItem value="AWAITING_ARRIVAL">
+                    Awaiting Arrival
+                  </SelectItem>
                   <SelectItem value="ARRIVED">Arrived</SelectItem>
-                  <SelectItem value="ACCOUNT_CREATED">Account Created</SelectItem>
+                  <SelectItem value="ACCOUNT_CREATED">
+                    Account Created
+                  </SelectItem>
                   <SelectItem value="REJECTED">Rejected</SelectItem>
                 </SelectContent>
               </Select>
             </div>
             <div className="space-y-2">
-              <Label className="text-xs font-bold uppercase text-muted-foreground">Search</Label>
+              <Label className="text-xs font-bold uppercase text-muted-foreground">
+                Search
+              </Label>
               <div className="relative">
                 <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                 <Input
@@ -566,38 +664,72 @@ export default function AdminStudentsPage() {
           ) : filteredStudents.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-12 text-center text-muted-foreground border-2 border-dashed rounded-lg">
               <Users className="h-12 w-12 mb-4 opacity-20" />
-              <p className="font-medium">No students found for this selection.</p>
+              <p className="font-medium">
+                No students found for this selection.
+              </p>
             </div>
           ) : (
             <div className="rounded-xl border overflow-hidden shadow-sm">
               <Table>
                 <TableHeader>
                   <TableRow className="bg-muted/30 hover:bg-muted/30">
-                    <TableHead className="font-bold text-[10px] uppercase">Student</TableHead>
-                    <TableHead className="font-bold text-[10px] uppercase">ID</TableHead>
-                    <TableHead className="font-bold text-[10px] uppercase">University</TableHead>
-                    <TableHead className="font-bold text-[10px] uppercase">Batch</TableHead>
-                    <TableHead className="font-bold text-[10px] uppercase">Status</TableHead>
-                    <TableHead className="text-right font-bold text-[10px] uppercase">Actions</TableHead>
+                    <TableHead className="font-bold text-[10px] uppercase">
+                      Student
+                    </TableHead>
+                    <TableHead className="font-bold text-[10px] uppercase">
+                      ID
+                    </TableHead>
+                    <TableHead className="font-bold text-[10px] uppercase">
+                      University
+                    </TableHead>
+                    <TableHead className="font-bold text-[10px] uppercase">
+                      Batch
+                    </TableHead>
+                    <TableHead className="font-bold text-[10px] uppercase">
+                      Status
+                    </TableHead>
+                    <TableHead className="text-right font-bold text-[10px] uppercase">
+                      Actions
+                    </TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {filteredStudents.map((student) => (
-                    <TableRow key={student.id} className="group hover:bg-muted/10 transition-colors">
+                    <TableRow
+                      key={student.id}
+                      className="group hover:bg-muted/10 transition-colors"
+                    >
                       <TableCell>
                         <div className="flex flex-col">
-                          <span className="font-semibold text-foreground text-sm">{student.firstName} {student.lastName}</span>
-                          <span className="text-[10px] text-muted-foreground">{student.email}</span>
+                          <span className="font-semibold text-foreground text-sm">
+                            {student.firstName} {student.lastName}
+                          </span>
+                          <span className="text-[10px] text-muted-foreground">
+                            {student.email}
+                          </span>
                         </div>
                       </TableCell>
-                      <TableCell className="font-mono text-[11px] text-muted-foreground">{student.studentId}</TableCell>
+                      <TableCell className="font-mono text-[11px] text-muted-foreground">
+                        {student.studentId}
+                      </TableCell>
                       <TableCell className="text-xs">
                         <div className="flex flex-col">
-                          <span className="font-semibold text-foreground">{universities.find(u => u.id === (student as any).universityId)?.name || (student as any).universityId || "—"}</span>
-                          <span className="text-[10px] text-primary/80">{(student as any).applicationName || 'Untitled Application'}</span>
+                          <span className="font-semibold text-foreground">
+                            {universities.find(
+                              (u) => u.id === (student as any).universityId,
+                            )?.name ||
+                              (student as any).universityId ||
+                              "—"}
+                          </span>
+                          <span className="text-[10px] text-primary/80">
+                            {(student as any).applicationName ||
+                              "Untitled Application"}
+                          </span>
                         </div>
                       </TableCell>
-                      <TableCell className="text-xs font-medium text-muted-foreground uppercase text-[10px]">{student.academicYear}</TableCell>
+                      <TableCell className="text-xs font-medium text-muted-foreground uppercase text-[10px]">
+                        {student.academicYear}
+                      </TableCell>
                       <TableCell>{getStatusBadge(student.status)}</TableCell>
                       <TableCell className="text-right">
                         <div className="flex justify-end gap-1">
@@ -633,25 +765,50 @@ export default function AdminStudentsPage() {
                               Mark Arrived
                             </Button>
                           )}
-                          {(student.status === "ARRIVED" || student.status === "ACCOUNT_CREATED") && (
+                          {(student.status === "ARRIVED" ||
+                            student.status === "ACCOUNT_CREATED") && (
                             <Button
                               asChild
                               variant="ghost"
                               size="sm"
                               className="h-7 text-[10px] text-primary"
                             >
-                              <Link href={`/dashboard/admin/interns?studentId=${student.id}`}>
-                                To Intern <ArrowRight className="ml-1 h-3 w-3" />
+                              <Link
+                                href={`/dashboard/admin/interns?studentId=${student.id}`}
+                              >
+                                To Intern{" "}
+                                <ArrowRight className="ml-1 h-3 w-3" />
                               </Link>
                             </Button>
                           )}
-                          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => { setSelectedStudent(student); setShowViewDialog(true); }}>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8"
+                            onClick={() => {
+                              setSelectedStudent(student);
+                              setShowViewDialog(true);
+                            }}
+                          >
                             <Eye className="h-4 w-4" />
                           </Button>
-                          <Button variant="ghost" size="icon" className="h-8 w-8 transition-opacity group-hover:opacity-100" onClick={() => openEdit(student)}>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 transition-opacity group-hover:opacity-100"
+                            onClick={() => openEdit(student)}
+                          >
                             <Pencil className="h-4 w-4" />
                           </Button>
-                          <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:bg-destructive/10 transition-opacity group-hover:opacity-100" onClick={() => { setSelectedStudent(student); setShowDeleteDialog(true); }}>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 text-destructive hover:bg-destructive/10 transition-opacity group-hover:opacity-100"
+                            onClick={() => {
+                              setSelectedStudent(student);
+                              setShowDeleteDialog(true);
+                            }}
+                          >
                             <Trash2 className="h-4 w-4" />
                           </Button>
                         </div>
@@ -665,10 +822,21 @@ export default function AdminStudentsPage() {
         </CardContent>
       </Card>
 
-      <Dialog open={showAddDialog || showEditDialog} onOpenChange={(open) => { if (!open) { setShowAddDialog(false); setShowEditDialog(false); resetForm(); } }}>
+      <Dialog
+        open={showAddDialog || showEditDialog}
+        onOpenChange={(open) => {
+          if (!open) {
+            setShowAddDialog(false);
+            setShowEditDialog(false);
+            resetForm();
+          }
+        }}
+      >
         <DialogContent className="sm:max-w-[600px] overflow-y-auto max-h-[90vh]">
           <DialogHeader>
-            <DialogTitle>{showAddDialog ? "Add New Student" : "Edit Student"}</DialogTitle>
+            <DialogTitle>
+              {showAddDialog ? "Add New Student" : "Edit Student"}
+            </DialogTitle>
             <DialogDescription>
               {showAddDialog
                 ? "Enter student details and upload necessary documents."
@@ -678,49 +846,112 @@ export default function AdminStudentsPage() {
           <div className="grid gap-4 py-4">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-1">
-                <Label htmlFor="firstName" className="text-xs">First Name *</Label>
-                <Input id="firstName" className="h-8 text-sm" value={formData.firstName} onChange={(e) => setFormData({ ...formData, firstName: e.target.value })} />
+                <Label htmlFor="firstName" className="text-xs">
+                  First Name *
+                </Label>
+                <Input
+                  id="firstName"
+                  className="h-8 text-sm"
+                  value={formData.firstName}
+                  onChange={(e) =>
+                    setFormData({ ...formData, firstName: e.target.value })
+                  }
+                />
               </div>
               <div className="space-y-1">
-                <Label htmlFor="lastName" className="text-xs">Last Name *</Label>
-                <Input id="lastName" className="h-8 text-sm" value={formData.lastName} onChange={(e) => setFormData({ ...formData, lastName: e.target.value })} />
+                <Label htmlFor="lastName" className="text-xs">
+                  Last Name *
+                </Label>
+                <Input
+                  id="lastName"
+                  className="h-8 text-sm"
+                  value={formData.lastName}
+                  onChange={(e) =>
+                    setFormData({ ...formData, lastName: e.target.value })
+                  }
+                />
               </div>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-1">
-                <Label htmlFor="studentId" className="text-xs">Student ID *</Label>
-                <Input id="studentId" className="h-8 text-sm" value={formData.studentId} disabled={showEditDialog} onChange={(e) => setFormData({ ...formData, studentId: e.target.value })} />
+                <Label htmlFor="studentId" className="text-xs">
+                  Student ID *
+                </Label>
+                <Input
+                  id="studentId"
+                  className="h-8 text-sm"
+                  value={formData.studentId}
+                  disabled={showEditDialog}
+                  onChange={(e) =>
+                    setFormData({ ...formData, studentId: e.target.value })
+                  }
+                />
               </div>
               <div className="space-y-1">
-                <Label htmlFor="email" className="text-xs">Email *</Label>
-                <Input id="email" type="email" className="h-8 text-sm" value={formData.email} onChange={(e) => setFormData({ ...formData, email: e.target.value })} />
+                <Label htmlFor="email" className="text-xs">
+                  Email *
+                </Label>
+                <Input
+                  id="email"
+                  type="email"
+                  className="h-8 text-sm"
+                  value={formData.email}
+                  onChange={(e) =>
+                    setFormData({ ...formData, email: e.target.value })
+                  }
+                />
               </div>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-1">
-                <Label htmlFor="fieldOfStudy" className="text-xs">Field of Study *</Label>
-                <Input id="fieldOfStudy" className="h-8 text-sm" value={formData.fieldOfStudy} onChange={(e) => setFormData({ ...formData, fieldOfStudy: e.target.value })} />
+                <Label htmlFor="fieldOfStudy" className="text-xs">
+                  Field of Study *
+                </Label>
+                <Input
+                  id="fieldOfStudy"
+                  className="h-8 text-sm"
+                  value={formData.fieldOfStudy}
+                  onChange={(e) =>
+                    setFormData({ ...formData, fieldOfStudy: e.target.value })
+                  }
+                />
               </div>
               <div className="space-y-1">
-                <Label htmlFor="academicYear" className="text-xs">Academic Year *</Label>
+                <Label htmlFor="academicYear" className="text-xs">
+                  Academic Year *
+                </Label>
                 <Select
                   value={formData.academicYear}
-                  onValueChange={(val) => setFormData({ ...formData, academicYear: val })}
+                  onValueChange={(val) =>
+                    setFormData({ ...formData, academicYear: val })
+                  }
                 >
                   <SelectTrigger id="academicYear" className="h-8 text-sm">
                     <SelectValue placeholder="Select year" />
                   </SelectTrigger>
                   <SelectContent>
-                    {getAcademicYears().map(year => (
-                      <SelectItem key={year} value={year}>{year}</SelectItem>
+                    {getAcademicYears().map((year) => (
+                      <SelectItem key={year} value={year}>
+                        {year}
+                      </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               </div>
             </div>
             <div className="space-y-1">
-              <Label htmlFor="phone" className="text-xs">Phone Number *</Label>
-              <Input id="phone" type="tel" className="h-8 text-sm" value={formData.phone} onChange={(e) => setFormData({ ...formData, phone: e.target.value })} />
+              <Label htmlFor="phone" className="text-xs">
+                Phone Number *
+              </Label>
+              <Input
+                id="phone"
+                type="tel"
+                className="h-8 text-sm"
+                value={formData.phone}
+                onChange={(e) =>
+                  setFormData({ ...formData, phone: e.target.value })
+                }
+              />
             </div>
 
             <div className="border-t pt-4 mt-2">
@@ -729,7 +960,9 @@ export default function AdminStudentsPage() {
               </h4>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-1">
-                  <Label className="text-xs text-muted-foreground italic">CV (PDF)</Label>
+                  <Label className="text-xs text-muted-foreground italic">
+                    CV (PDF)
+                  </Label>
                   <Input
                     type="file"
                     className="text-xs h-9 cursor-pointer"
@@ -738,25 +971,52 @@ export default function AdminStudentsPage() {
                   />
                 </div>
                 <div className="space-y-1">
-                  <Label className="text-xs text-muted-foreground italic">Transcript (PDF)</Label>
+                  <Label className="text-xs text-muted-foreground italic">
+                    Transcript (PDF)
+                  </Label>
                   <Input
                     type="file"
                     className="text-xs h-9 cursor-pointer"
                     accept=".pdf"
-                    onChange={(e) => setTranscriptFile(e.target.files?.[0] || null)}
+                    onChange={(e) =>
+                      setTranscriptFile(e.target.files?.[0] || null)
+                    }
                   />
                 </div>
               </div>
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" size="sm" onClick={() => { setShowAddDialog(false); setShowEditDialog(false); resetForm(); }}>Cancel</Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                setShowAddDialog(false);
+                setShowEditDialog(false);
+                resetForm();
+              }}
+            >
+              Cancel
+            </Button>
             <Button
               size="sm"
               onClick={showAddDialog ? handleAddStudent : handleUpdateStudent}
-              disabled={isSubmitting || !formData.firstName || !formData.lastName || !formData.studentId || !formData.email || !formData.fieldOfStudy || !formData.academicYear || !formData.phone}
+              disabled={
+                isSubmitting ||
+                !formData.firstName ||
+                !formData.lastName ||
+                !formData.studentId ||
+                !formData.email ||
+                !formData.fieldOfStudy ||
+                !formData.academicYear ||
+                !formData.phone
+              }
             >
-              {isSubmitting ? "Processing..." : (showAddDialog ? "Add Student" : "Save Changes")}
+              {isSubmitting
+                ? "Processing..."
+                : showAddDialog
+                  ? "Add Student"
+                  : "Save Changes"}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -772,13 +1032,23 @@ export default function AdminStudentsPage() {
             <div className="space-y-6 pt-4">
               <div className="grid grid-cols-2 gap-y-4 text-sm">
                 <div className="text-muted-foreground">Student ID:</div>
-                <div className="font-mono font-medium">{selectedStudent.studentId}</div>
+                <div className="font-mono font-medium">
+                  {selectedStudent.studentId}
+                </div>
                 <div className="text-muted-foreground">Name:</div>
-                <div className="font-semibold">{selectedStudent.firstName} {selectedStudent.lastName}</div>
+                <div className="font-semibold">
+                  {selectedStudent.firstName} {selectedStudent.lastName}
+                </div>
                 <div className="text-muted-foreground">University:</div>
-                <div>{universities.find(u => u.id === (selectedStudent as any).universityId)?.name || "Unknown"}</div>
+                <div>
+                  {universities.find(
+                    (u) => u.id === (selectedStudent as any).universityId,
+                  )?.name || "Unknown"}
+                </div>
                 <div className="text-muted-foreground">Email:</div>
-                <div className="text-primary">{selectedStudent.email || "—"}</div>
+                <div className="text-primary">
+                  {selectedStudent.email || "—"}
+                </div>
                 <div className="text-muted-foreground">Phone:</div>
                 <div>{selectedStudent.phone || "—"}</div>
                 <div className="text-muted-foreground">Field of Study:</div>
@@ -789,35 +1059,51 @@ export default function AdminStudentsPage() {
                 <div>{getStatusBadge(selectedStudent.status)}</div>
               </div>
 
-              {selectedStudent.status === "REJECTED" && selectedStudent.rejectionReason && (
-                <Card className="border-destructive/20 bg-destructive/5">
-                  <CardContent className="p-3">
-                    <div className="flex items-start gap-2">
-                      <XCircle className="h-4 w-4 text-destructive shrink-0 mt-0.5" />
-                      <div className="space-y-1">
-                        <p className="text-[10px] font-bold uppercase text-destructive/70">Rejection Reason</p>
-                        <p className="text-sm text-destructive/90">{selectedStudent.rejectionReason}</p>
+              {selectedStudent.status === "REJECTED" &&
+                selectedStudent.rejectionReason && (
+                  <Card className="border-destructive/20 bg-destructive/5">
+                    <CardContent className="p-3">
+                      <div className="flex items-start gap-2">
+                        <XCircle className="h-4 w-4 text-destructive shrink-0 mt-0.5" />
+                        <div className="space-y-1">
+                          <p className="text-[10px] font-bold uppercase text-destructive/70">
+                            Rejection Reason
+                          </p>
+                          <p className="text-sm text-destructive/90">
+                            {selectedStudent.rejectionReason}
+                          </p>
+                        </div>
                       </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
+                    </CardContent>
+                  </Card>
+                )}
 
               <div className="space-y-3 border-t pt-4">
-                <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Associated Documents</h4>
+                <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                  Associated Documents
+                </h4>
                 <div className="grid gap-2">
                   <div className="flex items-center justify-between p-2.5 rounded-lg bg-muted/30 border border-muted group">
                     <div className="flex items-center gap-2">
                       <div className="p-1.5 rounded bg-primary/10 text-primary">
                         <FileText className="h-4 w-4" />
                       </div>
-                      <span className="text-xs font-medium">Curriculum Vitae</span>
+                      <span className="text-xs font-medium">
+                        Curriculum Vitae
+                      </span>
                     </div>
                     <Button
                       variant="ghost"
                       size="sm"
                       className="h-7 w-7 opacity-50 group-hover:opacity-100 transition-opacity"
-                      onClick={() => handleDownload("CV", selectedStudent.firstName, "CV", selectedStudent.id)}
+                      onClick={() =>
+                        handleDownload(
+                          "CV",
+                          selectedStudent.firstName,
+                          "CV",
+                          selectedStudent.id,
+                        )
+                      }
                     >
                       <FileDown className="h-3.5 w-3.5" />
                     </Button>
@@ -827,13 +1113,22 @@ export default function AdminStudentsPage() {
                       <div className="p-1.5 rounded bg-primary/10 text-primary">
                         <FileText className="h-4 w-4" />
                       </div>
-                      <span className="text-xs font-medium">Academic Transcript</span>
+                      <span className="text-xs font-medium">
+                        Academic Transcript
+                      </span>
                     </div>
                     <Button
                       variant="ghost"
                       size="sm"
                       className="h-7 w-7 opacity-50 group-hover:opacity-100 transition-opacity"
-                      onClick={() => handleDownload("TRANSCRIPT", selectedStudent.firstName, "Transcript", selectedStudent.id)}
+                      onClick={() =>
+                        handleDownload(
+                          "TRANSCRIPT",
+                          selectedStudent.firstName,
+                          "Transcript",
+                          selectedStudent.id,
+                        )
+                      }
                     >
                       <FileDown className="h-3.5 w-3.5" />
                     </Button>
@@ -843,7 +1138,13 @@ export default function AdminStudentsPage() {
             </div>
           )}
           <DialogFooter>
-            <Button variant="outline" size="sm" onClick={() => setShowViewDialog(false)}>Close</Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowViewDialog(false)}
+            >
+              Close
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -853,7 +1154,12 @@ export default function AdminStudentsPage() {
           <DialogHeader>
             <DialogTitle>Assign Department & Activate Intern</DialogTitle>
             <DialogDescription>
-              Assign <strong>{selectedStudent?.firstName} {selectedStudent?.lastName}</strong> to a department and supervisor. An email will be sent with their login credentials.
+              Assign{" "}
+              <strong>
+                {selectedStudent?.firstName} {selectedStudent?.lastName}
+              </strong>{" "}
+              to a department and supervisor. An email will be sent with their
+              login credentials.
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-6 py-4">
@@ -861,15 +1167,20 @@ export default function AdminStudentsPage() {
               <Label htmlFor="dept">Department</Label>
               <Select
                 value={assignmentData.departmentId}
-                onValueChange={(val) => setAssignmentData(prev => ({ ...prev, departmentId: val }))}
+                onValueChange={(val) =>
+                  setAssignmentData((prev) => ({ ...prev, departmentId: val }))
+                }
               >
                 <SelectTrigger id="dept">
                   <SelectValue placeholder="Select Department" />
                 </SelectTrigger>
                 <SelectContent>
-                  {Array.isArray(departments) && departments.map(d => (
-                    <SelectItem key={d.id} value={d.id}>{d.name}</SelectItem>
-                  ))}
+                  {Array.isArray(departments) &&
+                    departments.map((d) => (
+                      <SelectItem key={d.id} value={d.id}>
+                        {d.name}
+                      </SelectItem>
+                    ))}
                 </SelectContent>
               </Select>
             </div>
@@ -881,7 +1192,12 @@ export default function AdminStudentsPage() {
                   id="startDate"
                   type="date"
                   value={assignmentData.startDate}
-                  onChange={(e) => setAssignmentData(prev => ({ ...prev, startDate: e.target.value }))}
+                  onChange={(e) =>
+                    setAssignmentData((prev) => ({
+                      ...prev,
+                      startDate: e.target.value,
+                    }))
+                  }
                 />
               </div>
               <div className="grid gap-2">
@@ -890,14 +1206,29 @@ export default function AdminStudentsPage() {
                   id="endDate"
                   type="date"
                   value={assignmentData.endDate}
-                  onChange={(e) => setAssignmentData(prev => ({ ...prev, endDate: e.target.value }))}
+                  onChange={(e) =>
+                    setAssignmentData((prev) => ({
+                      ...prev,
+                      endDate: e.target.value,
+                    }))
+                  }
                 />
               </div>
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" size="sm" onClick={() => setShowAssignDialog(false)}>Cancel</Button>
-            <Button size="sm" disabled={isSubmitting || !assignmentData.departmentId} onClick={handleAssignAndApprove}>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowAssignDialog(false)}
+            >
+              Cancel
+            </Button>
+            <Button
+              size="sm"
+              disabled={isSubmitting || !assignmentData.departmentId}
+              onClick={handleAssignAndApprove}
+            >
               {isSubmitting ? "Processing..." : "Approve & Create Account"}
             </Button>
           </DialogFooter>
@@ -907,14 +1238,32 @@ export default function AdminStudentsPage() {
       <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle className="text-destructive">Remove Student Record</DialogTitle>
+            <DialogTitle className="text-destructive">
+              Remove Student Record
+            </DialogTitle>
             <DialogDescription>
-              Are you sure you want to remove <strong>{selectedStudent?.firstName} {selectedStudent?.lastName}</strong>? This action will permanently delete all metadata and document links.
+              Are you sure you want to remove{" "}
+              <strong>
+                {selectedStudent?.firstName} {selectedStudent?.lastName}
+              </strong>
+              ? This action will permanently delete all metadata and document
+              links.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
-            <Button variant="outline" size="sm" onClick={() => setShowDeleteDialog(false)}>Cancel</Button>
-            <Button variant="destructive" size="sm" disabled={isSubmitting} onClick={handleDeleteStudent}>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowDeleteDialog(false)}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              size="sm"
+              disabled={isSubmitting}
+              onClick={handleDeleteStudent}
+            >
               {isSubmitting ? "Removing..." : "Delete Permanently"}
             </Button>
           </DialogFooter>
@@ -927,7 +1276,11 @@ export default function AdminStudentsPage() {
           <DialogHeader>
             <DialogTitle>Reject Student</DialogTitle>
             <DialogDescription>
-              Provide a reason for rejecting <strong>{selectedStudent?.firstName} {selectedStudent?.lastName}</strong>.
+              Provide a reason for rejecting{" "}
+              <strong>
+                {selectedStudent?.firstName} {selectedStudent?.lastName}
+              </strong>
+              .
             </DialogDescription>
           </DialogHeader>
           <div className="py-2">
@@ -940,7 +1293,12 @@ export default function AdminStudentsPage() {
             />
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setShowRejectDialog(false)}>Cancel</Button>
+            <Button
+              variant="outline"
+              onClick={() => setShowRejectDialog(false)}
+            >
+              Cancel
+            </Button>
             <Button
               variant="destructive"
               onClick={confirmReject}

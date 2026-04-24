@@ -103,7 +103,15 @@ export class DocumentsController {
   @ApiOperation({ summary: 'List documents with pagination' })
   @ApiResponse({ status: 200, description: 'Documents retrieved successfully' })
   async list(
-    @Query() query: { page?: number; limit?: number },
+    @Query()
+    query: {
+      page?: number;
+      limit?: number;
+      type?: string;
+      entityId?: string;
+      entityType?: string;
+      universityId?: string;
+    },
     @Req() req: any,
   ) {
     const res: any = await this.documentsService.list(query, req.user);

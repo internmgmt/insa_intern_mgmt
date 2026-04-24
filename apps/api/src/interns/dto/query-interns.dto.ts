@@ -32,6 +32,15 @@ export class QueryInternsDto {
   departmentId?: string;
 
   @ApiPropertyOptional({
+    example: '550e8400-e29b-41d4-a716-446655440002',
+    description: 'Filter interns by university ID',
+    required: false,
+  })
+  @IsOptional()
+  @IsUUID()
+  universityId?: string;
+
+  @ApiPropertyOptional({
     example: '550e8400-e29b-41d4-a716-446655440001',
     description: 'Filter interns by supervisor ID',
     required: false,

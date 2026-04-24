@@ -40,12 +40,11 @@ export class InternsService {
     @InjectRepository(InternEntity)
     private readonly internRepository: Repository<InternEntity>,
     private readonly mailService: MailService,
-  ) { }
+  ) {}
 
   async list(query: QueryInternsDto, currentUser: any) {
     const page = query?.page && query.page > 0 ? query.page : 1;
-    const requestedLimit =
-      query?.limit && query.limit > 0 ? query.limit : 50;
+    const requestedLimit = query?.limit && query.limit > 0 ? query.limit : 50;
     const limit = Math.min(requestedLimit, 50);
 
     const qb = this.internRepository
@@ -97,6 +96,12 @@ export class InternsService {
     if (query?.departmentId) {
       qb.andWhere('intern.departmentId = :departmentId', {
         departmentId: query.departmentId,
+      });
+    }
+
+    if (query?.universityId) {
+      qb.andWhere('application.universityId = :universityId', {
+        universityId: query.universityId,
       });
     }
 
@@ -158,7 +163,14 @@ export class InternsService {
   async getById(id: string, currentUser: any) {
     const intern = await this.internRepository.findOne({
       where: { id },
-      relations: ['student', 'user', 'department', 'supervisor', 'mentor', 'submissions'],
+      relations: [
+        'student',
+        'user',
+        'department',
+        'supervisor',
+        'mentor',
+        'submissions',
+      ],
     });
 
     if (!intern) {
@@ -209,7 +221,14 @@ export class InternsService {
   async getMyProfile(currentUser: any) {
     const intern = await this.internRepository.findOne({
       where: { userId: currentUser.id },
-      relations: ['student', 'user', 'department', 'supervisor', 'mentor', 'submissions'],
+      relations: [
+        'student',
+        'user',
+        'department',
+        'supervisor',
+        'mentor',
+        'submissions',
+      ],
     });
 
     if (!intern) {
@@ -275,8 +294,8 @@ export class InternsService {
             where: {
               id: dto.assignedMentorId,
               role: UserRole.MENTOR,
-              departmentId: currentUser.departmentId
-            }
+              departmentId: currentUser.departmentId,
+            },
           });
           if (!mentor) {
             throw new BadRequestException({
@@ -357,7 +376,14 @@ export class InternsService {
 
     const reloaded = await this.internRepository.findOne({
       where: { id: saved.id },
-      relations: ['student', 'user', 'department', 'supervisor', 'mentor', 'submissions'],
+      relations: [
+        'student',
+        'user',
+        'department',
+        'supervisor',
+        'mentor',
+        'submissions',
+      ],
     });
 
     return {
@@ -633,7 +659,8 @@ export class InternsService {
           error: { code: 'INVALID_SUPERVISOR', details: null },
         });
       }
-      userPayload.departmentId = supervisor.departmentId ?? userPayload.departmentId;
+      userPayload.departmentId =
+        supervisor.departmentId ?? userPayload.departmentId;
       (userPayload as any).supervisorId = supervisor.id;
       supervisorName = `${supervisor.firstName} ${supervisor.lastName}`;
     }
@@ -744,12 +771,12 @@ export class InternsService {
 
     const student = intern.studentId
       ? await this.studentRepository.findOne({
-        where: { id: intern.studentId },
-      })
+          where: { id: intern.studentId },
+        })
       : intern.user?.email
         ? await this.studentRepository.findOne({
-          where: { email: intern.user.email },
-        })
+            where: { email: intern.user.email },
+          })
         : null;
 
     if (!student) {
@@ -785,12 +812,12 @@ export class InternsService {
 
     const student = intern.studentId
       ? await this.studentRepository.findOne({
-        where: { id: intern.studentId },
-      })
+          where: { id: intern.studentId },
+        })
       : intern.user?.email
         ? await this.studentRepository.findOne({
-          where: { email: intern.user.email },
-        })
+            where: { email: intern.user.email },
+          })
         : null;
 
     if (!student) {
@@ -830,12 +857,12 @@ export class InternsService {
 
     const student = intern.studentId
       ? await this.studentRepository.findOne({
-        where: { id: intern.studentId },
-      })
+          where: { id: intern.studentId },
+        })
       : intern.user?.email
         ? await this.studentRepository.findOne({
-          where: { email: intern.user.email },
-        })
+            where: { email: intern.user.email },
+          })
         : null;
 
     if (student) {

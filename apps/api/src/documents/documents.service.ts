@@ -161,7 +161,6 @@ export class DocumentsService {
       finalMetadata.applicationId = applicationIdForMetadata;
     }
 
-
     const document = this.documentRepository.create({
       title,
       url,
@@ -171,7 +170,6 @@ export class DocumentsService {
       studentId: student ? student.id : null,
     });
     const saved = await this.documentRepository.save(document);
-
 
     return {
       success: true,
@@ -260,7 +258,6 @@ export class DocumentsService {
         const meta = document.metadata ? JSON.parse(document.metadata) : {};
         if (meta.uploadedBy === currentUser.id) {
           isAllowed = true;
-      
         }
       } catch (e) {}
 
@@ -269,7 +266,6 @@ export class DocumentsService {
         document.student?.application?.universityId === currentUser.universityId
       ) {
         isAllowed = true;
-     
       }
 
       if (!isAllowed && document.metadata) {
@@ -281,7 +277,6 @@ export class DocumentsService {
             });
             if (app?.universityId === currentUser.universityId) {
               isAllowed = true;
-          
             }
           }
           if (!isAllowed && meta.applicationId) {
@@ -290,7 +285,6 @@ export class DocumentsService {
             });
             if (app?.universityId === currentUser.universityId) {
               isAllowed = true;
-            
             }
           }
         } catch (e) {
@@ -315,7 +309,9 @@ export class DocumentsService {
       let allowedForMentor = false;
       try {
         if (document.studentId) {
-          const intern = await this.internRepository.findOne({ where: { studentId: document.studentId } });
+          const intern = await this.internRepository.findOne({
+            where: { studentId: document.studentId },
+          });
           if (intern && intern.assignedMentorId === currentUser.id) {
             allowedForMentor = true;
           }
@@ -326,7 +322,9 @@ export class DocumentsService {
           try {
             const meta = JSON.parse(document.metadata);
             if (meta.uploadedBy) {
-              const intern = await this.internRepository.findOne({ where: { userId: meta.uploadedBy } });
+              const intern = await this.internRepository.findOne({
+                where: { userId: meta.uploadedBy },
+              });
               if (intern && intern.assignedMentorId === currentUser.id) {
                 allowedForMentor = true;
               }
@@ -340,7 +338,9 @@ export class DocumentsService {
       }
 
       if (!allowedForMentor) {
-        this.logger.error(`DEBUG: Access denied for document ${id} - mentorId: ${currentUser.id}`);
+        this.logger.error(
+          `DEBUG: Access denied for document ${id} - mentorId: ${currentUser.id}`,
+        );
         throw new ForbiddenException({
           success: false,
           message: 'Access denied',
@@ -461,72 +461,128 @@ export class DocumentsService {
   }
 
   async list(
-    query?: { page?: number; limit?: number },
+    query?: {
+      page?: number;
+      limit?: number;
+      type?: string;
+      entityId?: string;
+      entityType?: string;
+      universityId?: string;
+    },
     currentUser?: { role?: UserRole; id?: string; universityId?: string },
   ) {
     const page = query?.page && Number(query.page) > 0 ? Number(query.page) : 1;
-    const limit = 100;
+    const limit =
+      query?.limit && Number(query.limit) > 0
+        ? Math.min(Number(query.limit), 100)
+        : 100;
 
-    const [items, totalItems] = await this.documentRepository.findAndCount({
+    const [items] = await this.documentRepository.findAndCount({
       relations: ['student', 'student.application'],
       order: { createdAt: 'DESC' },
       skip: (page - 1) * limit,
       take: limit,
     });
+    const requestedUniversityId =
+      query?.universityId ??
+      (currentUser?.role === UserRole.UNIVERSITY
+        ? currentUser.universityId
+        : undefined);
 
-
-    if (currentUser?.role !== UserRole.UNIVERSITY) {
-      return {
-        success: true,
-        message: 'Documents retrieved successfully',
-        data: {
-          items,
-          pagination: {
-            page,
-            limit,
-            totalItems,
-            totalPages: Math.max(1, Math.ceil(totalItems / limit)),
-          },
-        },
-      };
+    if (
+      currentUser?.role === UserRole.UNIVERSITY &&
+      query?.universityId &&
+      query.universityId !== currentUser.universityId
+    ) {
+      throw new ForbiddenException({
+        success: false,
+        message: 'You can only access documents for your own university',
+        error: { code: 'AUTH_INSUFFICIENT_PERMISSIONS', details: null },
+      });
     }
 
-    const filterResults = await Promise.all(
+    const filteredResults = await Promise.all(
       items.map(async (doc: any) => {
-        if (
-          doc.student?.application?.universityId === currentUser.universityId
-        ) {
-         
-          return doc;
+        let meta: any = {};
+        try {
+          meta = doc.metadata ? JSON.parse(doc.metadata) : {};
+        } catch (e) {
+          this.logger.warn(`Failed to parse metadata for document ${doc.id}`);
         }
 
-        try {
-          const meta = doc.metadata ? JSON.parse(doc.metadata) : {};
+        if (query?.type && meta.documentType !== query.type) {
+          return null;
+        }
 
-          if (meta.uploadedBy === currentUser.id) {
-          
+        if (query?.entityType && meta.entityType !== query.entityType) {
+          return null;
+        }
+
+        if (query?.entityId) {
+          const matchesEntity =
+            meta.entityId === query.entityId ||
+            meta.applicationId === query.entityId ||
+            doc.studentId === query.entityId;
+          if (!matchesEntity) {
+            return null;
+          }
+        }
+
+        if (requestedUniversityId) {
+          if (
+            doc.student?.application?.universityId === requestedUniversityId
+          ) {
             return doc;
           }
 
-          if (meta.entityType === 'APPLICATION' && meta.applicationId) {
+          if (meta.applicationId) {
             const app = await this.applicationRepository.findOne({
               where: { id: meta.applicationId },
             });
-            if (app?.universityId === currentUser.universityId) {
-           
+            if (app?.universityId === requestedUniversityId) {
               return doc;
             }
           }
-        } catch (e) {
-          console.error(`DEBUG: Error parsing metadata for doc ${doc.id}:`, e);
+
+          if (meta.uploadedBy === currentUser?.id) {
+            return doc;
+          }
+
+          return null;
+        }
+
+        if (
+          currentUser?.role === UserRole.UNIVERSITY &&
+          doc.student?.application?.universityId === currentUser.universityId
+        ) {
+          return doc;
+        }
+
+        if (
+          currentUser?.role === UserRole.UNIVERSITY &&
+          meta.uploadedBy === currentUser.id
+        ) {
+          return doc;
+        }
+
+        if (currentUser?.role !== UserRole.UNIVERSITY) {
+          return doc;
+        }
+
+        if (meta.applicationId) {
+          const app = await this.applicationRepository.findOne({
+            where: { id: meta.applicationId },
+          });
+          if (app?.universityId === currentUser.universityId) {
+            return doc;
+          }
         }
 
         return null;
       }),
     );
 
-    const filtered = filterResults.filter((doc) => doc !== null);
-
+    const filtered = filteredResults.filter((doc) => doc !== null);
 
     return {
       success: true,
