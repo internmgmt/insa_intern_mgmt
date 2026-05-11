@@ -114,6 +114,8 @@ export type Student = {
 
 export type InternStatus = "ACTIVE" | "COMPLETED" | "TERMINATED";
 
+export type GradingStatus = "PENDING_APPROVAL" | "APPROVED" | "REJECTED";
+
 export type InternListItem = {
   id: string;
   internId: string;
@@ -123,6 +125,8 @@ export type InternListItem = {
   status: InternStatus;
   startDate: string | null;
   endDate: string | null;
+  finalEvaluation?: number | null;
+  gradingStatus?: GradingStatus | null;
   department: { id: string; name: string; type: string } | null;
   supervisor:
     | { id: string; firstName: string; lastName: string; email?: string | null }

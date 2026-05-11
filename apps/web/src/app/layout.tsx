@@ -6,6 +6,9 @@ import ToasterClient from "@/components/toaster-client";
 export const metadata: Metadata = {
   title: "INSA Intern Management System",
   description: "Intern management portal",
+  icons: {
+    icon: "/icon.png",
+  },
 };
 
 export default function RootLayout({

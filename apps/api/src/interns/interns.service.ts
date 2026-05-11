@@ -10,6 +10,7 @@ import { Repository } from 'typeorm';
 import { UserEntity } from '../entities/user.entity';
 import { StudentEntity } from '../entities/student.entity';
 import { InternEntity } from '../entities/intern.entity';
+import { SubmissionEntity, SubmissionStatus } from '../entities/submission.entity';
 import { UserRole } from '../common/enums/user-role.enum';
 import { StudentStatus } from '../common/enums/student-status.enum';
 import { InternStatus } from '../common/enums/intern-status.enum';
@@ -21,6 +22,7 @@ import { IssueCertificateDto } from './dto/issue-certificate.dto';
 import { SuspendInternDto } from './dto/suspend-intern.dto';
 import { InternMapper } from './intern.mapper';
 import { MailService } from '../global/services/mail/mail.service';
+import { SupervisorFinalEvaluationDto } from './dto/supervisor-final-evaluation.dto';
 import {
   AUTH_INSUFFICIENT_PERMISSIONS,
   INTERN_NOT_ACTIVE,
@@ -29,6 +31,7 @@ import {
   INVALID_CERTIFICATE_URL,
 } from '../common/filters/http-exception.filter';
 import * as bcrypt from 'bcryptjs';
+import { GradingStatus } from '../common/enums/grading-status.enum';
 
 @Injectable()
 export class InternsService {
@@ -39,6 +42,8 @@ export class InternsService {
     private readonly studentRepository: Repository<StudentEntity>,
     @InjectRepository(InternEntity)
     private readonly internRepository: Repository<InternEntity>,
+    @InjectRepository(SubmissionEntity)
+    private readonly submissionRepository: Repository<SubmissionEntity>,
     private readonly mailService: MailService,
   ) { }
 
@@ -67,6 +72,19 @@ export class InternsService {
       .addGroupBy('mentor.id')
       .addGroupBy('application.id')
       .addGroupBy('university.id');
+
+    if (currentUser?.role === UserRole.UNIVERSITY) {
+      // Restrict university coordinators to interns from their own university
+      const universityId = currentUser.university?.id || currentUser.universityId;
+      if (!universityId) {
+        throw new ForbiddenException({
+          success: false,
+          message: 'Missing university context for current user',
+          error: { code: AUTH_INSUFFICIENT_PERMISSIONS, details: null },
+        });
+      }
+      qb.andWhere('university.id = :universityId', { universityId });
+    }
 
     if (currentUser?.role === UserRole.SUPERVISOR) {
       if (
@@ -203,6 +221,106 @@ export class InternsService {
       success: true,
       message: 'Intern retrieved successfully',
       data: InternMapper.toDetailResponse(intern),
+    };
+  }
+
+  async setFinalEvaluationAsSupervisor(
+    id: string,
+    dto: SupervisorFinalEvaluationDto,
+    currentUser: any,
+  ) {
+    const intern = await this.internRepository.findOne({ where: { id } });
+
+    if (!intern) {
+      throw new NotFoundException({
+        success: false,
+        message: 'Intern not found',
+        error: { code: 'INTERN_NOT_FOUND', details: null },
+      });
+    }
+
+    if (currentUser?.role !== UserRole.SUPERVISOR) {
+      throw new ForbiddenException({
+        success: false,
+        message: 'Only supervisors can submit final evaluations via this endpoint',
+        error: { code: AUTH_INSUFFICIENT_PERMISSIONS, details: null },
+      });
+    }
+
+    if (!currentUser.departmentId || intern.departmentId !== currentUser.departmentId) {
+      throw new ForbiddenException({
+        success: false,
+        message: 'You can only evaluate interns in your own department',
+        error: { code: AUTH_INSUFFICIENT_PERMISSIONS, details: null },
+      });
+    }
+
+    if (intern.status !== InternStatus.ACTIVE && intern.status !== InternStatus.COMPLETED) {
+      throw new BadRequestException({
+        success: false,
+        message: 'Intern must be ACTIVE or COMPLETED to record a final evaluation',
+        error: { code: 'INTERN_INVALID_STATUS_FOR_EVALUATION', details: { status: intern.status } },
+      });
+    }
+
+    // Derive mentor aggregate from approved submissions when available
+    const submissions = await this.submissionRepository.find({
+      where: { intern: { id }, status: SubmissionStatus.APPROVED },
+    });
+
+    let mentorAggregatePercent: number | null = null;
+    if (submissions.length > 0) {
+      const scored = submissions.filter((s) => typeof s.score === 'number');
+      if (scored.length > 0) {
+        const total = scored.reduce((acc, s) => acc + (s.score || 0), 0);
+        mentorAggregatePercent = total / scored.length;
+      }
+    }
+
+    if (mentorAggregatePercent === null) {
+      mentorAggregatePercent =
+        typeof dto.mentorAggregate === 'number' ? dto.mentorAggregate : 0;
+    }
+
+    const supervisorComponents = [
+      dto.attendance,
+      dto.protocol,
+      dto.conduct,
+      dto.workFinished,
+    ];
+    const supervisorAverage =
+      supervisorComponents.reduce((acc, v) => acc + v, 0) /
+      (supervisorComponents.length || 1);
+
+    const finalPercent =
+      0.5 * mentorAggregatePercent + 0.5 * supervisorAverage;
+
+    let finalEvaluation = Number((finalPercent / 25).toFixed(2));
+    if (finalEvaluation < 0) finalEvaluation = 0;
+    if (finalEvaluation > 4) finalEvaluation = 4;
+
+    (intern as any).finalEvaluation = finalEvaluation;
+    (intern as any).supervisorAttendance = dto.attendance;
+    (intern as any).supervisorProtocol = dto.protocol;
+    (intern as any).supervisorConduct = dto.conduct;
+    (intern as any).supervisorWorkFinished = dto.workFinished;
+    intern.gradingStatus = GradingStatus.PENDING_APPROVAL;
+
+    if (dto.notes !== undefined) {
+      (intern as any).completionNotes = dto.notes;
+    }
+
+    const saved = await this.internRepository.save(intern);
+
+    const reloaded = await this.internRepository.findOne({
+      where: { id: saved.id },
+      relations: ['student', 'user', 'department', 'supervisor', 'mentor', 'submissions'],
+    });
+
+    return {
+      success: true,
+      message: 'Final evaluation recorded by supervisor',
+      data: InternMapper.toDetailResponse(reloaded as InternEntity),
     };
   }
 
@@ -906,5 +1024,54 @@ export class InternsService {
     } catch {
       return false;
     }
+  }
+
+  async approveGrading(id: string) {
+    const intern = await this.internRepository.findOne({
+      where: { id },
+      relations: ['user', 'supervisor', 'student.application.university'],
+    });
+
+    if (!intern) {
+      throw new NotFoundException('Intern not found');
+    }
+
+    if (intern.finalEvaluation === null) {
+      throw new BadRequestException('Intern has no final evaluation');
+    }
+
+    intern.gradingStatus = GradingStatus.APPROVED;
+
+    const saved = await this.internRepository.save(intern);
+    return {
+      success: true,
+      message: 'Intern grading approved',
+      data: InternMapper.toDetailResponse(saved),
+    };
+  }
+
+  async rejectGrading(id: string, reason: string) {
+    const intern = await this.internRepository.findOne({
+      where: { id },
+      relations: ['user', 'supervisor'],
+    });
+
+    if (!intern) {
+      throw new NotFoundException('Intern not found');
+    }
+
+    if (intern.finalEvaluation === null) {
+      throw new BadRequestException('Intern has no final evaluation');
+    }
+
+    intern.gradingStatus = GradingStatus.REJECTED;
+    intern.completionNotes = `Rejected by admin: ${reason}`;
+
+    const saved = await this.internRepository.save(intern);
+    return {
+      success: true,
+      message: 'Intern grading rejected',
+      data: InternMapper.toDetailResponse(saved),
+    };
   }
 }

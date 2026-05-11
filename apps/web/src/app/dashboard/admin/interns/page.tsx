@@ -101,6 +101,11 @@ export default function AdminInternsPage() {
         reason: ""
     });
 
+    const [editForm, setEditForm] = useState({
+        startDate: "",
+        endDate: "",
+    });
+
     // Helper to render text/objects
     function renderText(v: any): string {
         if (v === null || v === undefined) return '—';
@@ -234,6 +239,38 @@ export default function AdminInternsPage() {
         } catch (err: any) {
             console.error('Delete failed', err);
             toast.error(err?.message || 'Failed to delete intern');
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+
+    const openEditIntern = (intern: any) => {
+        setSelectedIntern(intern);
+        setEditForm({
+            startDate: intern.startDate ? String(intern.startDate).split('T')[0] : "",
+            endDate: intern.endDate ? String(intern.endDate).split('T')[0] : "",
+        });
+        setShowEditDialog(true);
+    };
+
+    const handleSaveEditIntern = async () => {
+        if (!selectedIntern) return;
+        try {
+            setIsSubmitting(true);
+            await InternService.updateIntern(
+                selectedIntern.id,
+                {
+                    startDate: editForm.startDate || null,
+                    endDate: editForm.endDate || null,
+                },
+                token || undefined,
+            );
+            toast.success("Intern details updated");
+            setShowEditDialog(false);
+            await fetchData();
+        } catch (error: any) {
+            console.error('Failed to update intern', error);
+            toast.error(error?.message || 'Failed to update intern');
         } finally {
             setIsSubmitting(false);
         }
@@ -507,7 +544,12 @@ export default function AdminInternsPage() {
                                                         <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => { setSelectedIntern(intern); setShowViewDialog(true); }}>
                                                             <Eye className="h-4 w-4" />
                                                         </Button>
-                                                        <Button variant="ghost" size="icon" className="h-8 w-8 transition-opacity group-hover:opacity-100" onClick={() => { setSelectedIntern(intern); setShowEditDialog(true); }}>
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="icon"
+                                                            className="h-8 w-8 transition-opacity group-hover:opacity-100"
+                                                            onClick={() => openEditIntern(intern)}
+                                                        >
                                                             <Pencil className="h-4 w-4" />
                                                         </Button>
                                                         {user?.role === 'ADMIN' && (
@@ -658,22 +700,26 @@ export default function AdminInternsPage() {
                                 <div className="text-muted-foreground">University:</div>
                                 <div>{universities.find(u => u.id === selectedIntern.universityId)?.name || selectedIntern.university?.name || "—"}</div>
                                 <div className="text-muted-foreground">Status:</div>
-                                <div>{getStatusBadge(selectedIntern.status)}</div>
+                                <div>{getStatusBadge(selectedIntern)}</div>
                             </div>
                             <div className="space-y-3">
                                 <div className="flex flex-col gap-1">
                                     <Label className="text-[10px] uppercase font-bold text-muted-foreground">Supervisor</Label>
-                                    {showEditDialog ? (
-                                        <Input defaultValue={selectedIntern.supervisorName} />
-                                    ) : (
-                                        <span>{selectedIntern.supervisorName || "Unassigned"}</span>
-                                    )}
+                                    <span>
+                                        {selectedIntern.supervisor
+                                            ? `${selectedIntern.supervisor.firstName} ${selectedIntern.supervisor.lastName}`
+                                            : "Unassigned"}
+                                    </span>
                                 </div>
                                 <div className="grid grid-cols-2 gap-4">
                                     <div className="flex flex-col gap-1">
                                         <Label className="text-[10px] uppercase font-bold text-muted-foreground">Start Date</Label>
                                         {showEditDialog ? (
-                                            <Input type="date" defaultValue={selectedIntern.startDate?.split('T')[0]} />
+                                            <Input
+                                                type="date"
+                                                value={editForm.startDate}
+                                                onChange={(e) => setEditForm((prev) => ({ ...prev, startDate: e.target.value }))}
+                                            />
                                         ) : (
                                             <span>{selectedIntern.startDate?.split('T')[0] || "—"}</span>
                                         )}
@@ -681,7 +727,11 @@ export default function AdminInternsPage() {
                                     <div className="flex flex-col gap-1">
                                         <Label className="text-[10px] uppercase font-bold text-muted-foreground">End Date</Label>
                                         {showEditDialog ? (
-                                            <Input type="date" defaultValue={selectedIntern.endDate?.split('T')[0]} />
+                                            <Input
+                                                type="date"
+                                                value={editForm.endDate}
+                                                onChange={(e) => setEditForm((prev) => ({ ...prev, endDate: e.target.value }))}
+                                            />
                                         ) : (
                                             <span>{selectedIntern.endDate?.split('T')[0] || "—"}</span>
                                         )}
@@ -695,8 +745,8 @@ export default function AdminInternsPage() {
                             {showEditDialog ? "Cancel" : "Close"}
                         </Button>
                         {showEditDialog && (
-                            <Button size="sm" onClick={() => { toast.info("Full intern update coming in next iteration"); setShowEditDialog(false); }}>
-                                Save Changes
+                            <Button size="sm" onClick={handleSaveEditIntern} disabled={isSubmitting}>
+                                {isSubmitting ? "Saving..." : "Save Changes"}
                             </Button>
                         )}
                     </DialogFooter>

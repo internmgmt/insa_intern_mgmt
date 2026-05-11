@@ -16,6 +16,7 @@ export default function DashboardLayout({
   const pathname = usePathname();
   const { user, isLoading, roleHome } = useAuth();
 
+
   useEffect(() => {
     if (isLoading) return;
     if (!user) {
@@ -58,16 +59,16 @@ export default function DashboardLayout({
       {/* Sidebar - Fixed Position */}
       <aside
         className={cn(
-          "fixed inset-y-0 left-0 z-30 hidden md:flex flex-col transition-all duration-500 ease-[cubic-bezier(0.25,1,0.5,1)] peer/sidebar",
+          "fixed inset-y-0 left-0 z-30 hidden md:flex flex-col bg-background border-r peer/sidebar group transition-[width] duration-200 ease-out",
           "w-[76px] hover:w-[260px]"
         )}
       >
         <Sidebar />
       </aside>
 
-      {/* Main Content - Pushed by sidebar hover */}
+      {/* Main Content - Margin adjusts smoothly with sidebar hover */}
       <div
-        className="flex flex-col min-h-screen w-full transition-all duration-500 ease-[cubic-bezier(0.25,1,0.5,1)] md:ml-[76px] peer-hover/sidebar:md:ml-[260px]"
+        className="flex flex-col min-h-screen w-full transition-[margin] duration-200 ease-out md:ml-[76px] peer-hover/sidebar:md:ml-[260px]"
       >
         <Topbar />
         <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8 lg:p-10 overflow-x-hidden">

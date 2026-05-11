@@ -11,6 +11,11 @@ import {
   studentRejectedTemplate,
   internCreatedTemplate,
 } from 'src/templates';
+import {
+  internGradingApprovedTemplate,
+  internGradingRejectedTemplate,
+} from 'src/interns/templates/grading-emails.template';
+import { InternEntity } from 'src/entities/intern.entity';
 
 type MailOptions = Mail.Options;
 
@@ -201,6 +206,40 @@ export class MailService {
     return this.send({
       from: this.from(),
       to: payload.email,
+      subject,
+      html,
+      text,
+    });
+  }
+
+  public async sendInternGradingApproved(
+    email: string,
+    intern: InternEntity,
+  ): Promise<string> {
+    const { subject, html, text } = internGradingApprovedTemplate(intern);
+
+    return this.send({
+      from: this.from(),
+      to: email,
+      subject,
+      html,
+      text,
+    });
+  }
+
+  public async sendInternGradingRejected(
+    email: string,
+    intern: InternEntity,
+    reason: string,
+  ): Promise<string> {
+    const { subject, html, text } = internGradingRejectedTemplate(
+      intern,
+      reason,
+    );
+
+    return this.send({
+      from: this.from(),
+      to: email,
       subject,
       html,
       text,

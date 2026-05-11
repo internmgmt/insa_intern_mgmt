@@ -16,11 +16,11 @@ import {
     FolderOpen,
     Key,
     LogOut,
+    ClipboardList,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { LogoBlock } from "@/components/logo-block";
 import { useAuth } from "@/components/auth-provider";
-import { useState } from "react";
 
 export type NavItem = {
     title: string;
@@ -37,6 +37,7 @@ export const roleNavItems: Record<string, NavItem[]> = {
         { title: "Applications", href: "/dashboard/admin/applications", icon: FileText },
         { title: "Students", href: "/dashboard/admin/students", icon: GraduationCap },
         { title: "Interns", href: "/dashboard/admin/interns", icon: Users },
+        { title: "Grades", href: "/dashboard/admin/grades", icon: ClipboardList },
         { title: "Submissions", href: "/dashboard/admin/submissions", icon: FileCheck },
         { title: "Documents", href: "/dashboard/admin/documents", icon: FolderOpen },
     ],
@@ -44,12 +45,14 @@ export const roleNavItems: Record<string, NavItem[]> = {
         { title: "Dashboard", href: "/dashboard/university", icon: LayoutDashboard },
         { title: "Applications", href: "/dashboard/university/applications", icon: FilePlus },
         { title: "Students", href: "/dashboard/university/students", icon: GraduationCap },
+        { title: "Grades", href: "/dashboard/university/grades", icon: ClipboardList },
         { title: "Documents", href: "/dashboard/university/documents", icon: FolderOpen },
     ],
     SUPERVISOR: [
         { title: "Dashboard", href: "/dashboard/supervisor", icon: LayoutDashboard },
         { title: "Mentors", href: "/dashboard/supervisor/mentors", icon: Users },
         { title: "Interns", href: "/dashboard/supervisor/interns", icon: GraduationCap },
+        { title: "Grades", href: "/dashboard/supervisor/grades", icon: ClipboardList },
         { title: "Submissions", href: "/dashboard/supervisor/submissions", icon: FileCheck },
     ],
     MENTOR: [
@@ -74,11 +77,8 @@ interface SidebarProps {
 export function Sidebar({ isMobile = false }: SidebarProps) {
     const pathname = usePathname();
     const { user, logout } = useAuth();
-    const [isHovered, setIsHovered] = useState(false);
 
     if (!user) return null;
-
-    const showExpanded = isMobile || isHovered;
 
     const navItems = user.isFirstLogin
         ? [{ title: "Change Password", href: "/dashboard/settings/password", icon: Key }]
@@ -87,25 +87,29 @@ export function Sidebar({ isMobile = false }: SidebarProps) {
     return (
         <div
             className={cn(
-                "group/sidebar flex flex-col h-full border-r bg-background transition-all duration-500 ease-[cubic-bezier(0.25,1,0.5,1)] z-40 relative group-hover:shadow-[20px_0_40px_-15px_rgba(0,0,0,0.1)]",
-                isMobile ? "w-full border-none" : "w-[76px] hover:w-[260px]"
+                "group/sidebar flex flex-col h-full border-r bg-background z-40 relative transition-[width] duration-200 ease-out",
+                isMobile ? "w-full border-none" : "w-full"
             )}
-            onMouseEnter={() => !isMobile && setIsHovered(true)}
-            onMouseLeave={() => !isMobile && setIsHovered(false)}
         >
             {/* Header / Logo */}
             <div className="flex h-[64px] shrink-0 items-center px-[18px] mb-2">
                 <div className="flex items-center gap-2 overflow-hidden">
-                    <LogoBlock showText={showExpanded} />
+                    <LogoBlock showText={isMobile} />
                 </div>
             </div>
 
             {/* Navigation */}
-            <div className="flex-1 overflow-y-auto overflow-x-hidden px-3 no-scrollbar space-y-4">
+            <div
+                className={cn(
+                    "flex-1 overflow-x-hidden px-3 space-y-4",
+                    isMobile && "overflow-y-auto no-scrollbar"
+                )}
+            >
                 <nav className="space-y-1">
                     <p className={cn(
-                        "px-3 text-[9px] font-bold tracking-[0.2em] text-muted-foreground/40 uppercase transition-all duration-500",
-                        showExpanded ? "opacity-100 mb-1.5 translate-x-0" : "opacity-0 mb-0 -translate-x-4 pointer-events-none h-0"
+                        "px-3 text-[9px] font-bold tracking-[0.2em] text-muted-foreground/40 uppercase transition-all duration-200",
+                        "opacity-0 mb-0 -translate-x-3 pointer-events-none h-0",
+                        "group-hover/sidebar:opacity-100 group-hover/sidebar:mb-1.5 group-hover/sidebar:translate-x-0 group-hover/sidebar:pointer-events-auto group-hover/sidebar:h-auto"
                     )}>
                         Portal
                     </p>
@@ -136,10 +140,9 @@ export function Sidebar({ isMobile = false }: SidebarProps) {
                                     </div>
 
                                     <span className={cn(
-                                        "text-[13px] font-medium tracking-tight whitespace-nowrap transition-all duration-500",
-                                        showExpanded
-                                            ? "opacity-100 translate-x-0 visible"
-                                            : "opacity-0 -translate-x-4 invisible pointer-events-none"
+                                        "text-[13px] font-medium tracking-tight whitespace-nowrap transition-all duration-200",
+                                        "opacity-0 -translate-x-3 invisible pointer-events-none",
+                                        "group-hover/sidebar:opacity-100 group-hover/sidebar:translate-x-0 group-hover/sidebar:visible group-hover/sidebar:pointer-events-auto"
                                     )}>
                                         {item.title}
                                     </span>
@@ -154,44 +157,36 @@ export function Sidebar({ isMobile = false }: SidebarProps) {
                 </nav>
             </div>
 
-            {/* Footer / Profile & Logout */}
-            <div className="mt-auto px-3 py-4 space-y-1 border-t border-border/40">
-                <div
-                    className={cn(
-                        "flex items-center h-[40px] rounded-xl px-2 transition-all duration-200",
-                        showExpanded ? "bg-muted/30" : ""
-                    )}
-                >
-                    <div className="flex w-[36px] items-center justify-center shrink-0">
-                        <div className="h-7 w-7 rounded-full bg-gradient-to-tr from-primary/20 to-primary/10 flex items-center justify-center text-primary font-bold text-[10px] border border-primary/20">
+            {/* Footer / Profile & Logout (compact to avoid forcing sidebar scroll) */}
+            <div className="mt-auto px-3 py-2 space-y-1 border-t border-border/40 text-xs">
+                <div className={cn("flex items-center h-[32px] rounded-lg px-2 transition-all duration-200", "group-hover/sidebar:bg-muted/30")}>
+                    <div className="flex w-[30px] items-center justify-center shrink-0">
+                        <div className="h-6 w-6 rounded-full bg-gradient-to-tr from-primary/20 to-primary/10 flex items-center justify-center text-primary font-bold text-[10px] border border-primary/20">
                             {user.email[0].toUpperCase()}
                         </div>
                     </div>
-                    {showExpanded && (
-                        <div className="ml-2 flex flex-col min-w-0 animate-in fade-in slide-in-from-left-2 duration-500">
-                            <span className="text-[12px] font-semibold truncate text-foreground leading-tight">
-                                {user.role.charAt(0) + user.role.slice(1).toLowerCase()}
-                            </span>
-                            <span className="text-[10px] text-muted-foreground truncate leading-tight">
-                                {user.email}
-                            </span>
-                        </div>
-                    )}
+                    <div className={cn("ml-2 flex flex-col min-w-0 transition-all duration-200", "opacity-0 -translate-x-3 invisible pointer-events-none", "group-hover/sidebar:opacity-100 group-hover/sidebar:translate-x-0 group-hover/sidebar:visible group-hover/sidebar:pointer-events-auto") }>
+                        <span className="text-[11px] font-semibold truncate text-foreground leading-tight">
+                            {user.role.charAt(0) + user.role.slice(1).toLowerCase()}
+                        </span>
+                        <span className="text-[9px] text-muted-foreground truncate leading-tight">
+                            {user.email}
+                        </span>
+                    </div>
                 </div>
 
                 <button
                     type="button"
                     onClick={() => logout()}
-                    className="group/logout flex items-center h-[40px] w-full rounded-xl transition-all duration-200 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
+                    className="group/logout flex items-center h-[32px] w-full rounded-lg transition-all duration-200 text-muted-foreground hover:bg-destructive/10 hover:text-destructive text-[11px]"
                 >
-                    <div className="flex w-[52px] h-full items-center justify-center shrink-0">
-                        <LogOut className="h-[18px] w-[18px] group-hover/logout:scale-110 transition-transform" strokeWidth={2} />
+                    <div className="flex w-[30px] h-full items-center justify-center shrink-0">
+                        <LogOut className="h-[16px] w-[16px] group-hover/logout:scale-110 transition-transform" strokeWidth={2} />
                     </div>
                     <span className={cn(
-                        "text-[13px] font-medium transition-all duration-500",
-                        showExpanded
-                            ? "opacity-100 translate-x-0 visible"
-                            : "opacity-0 -translate-x-4 invisible pointer-events-none"
+                        "font-medium transition-all duration-200",
+                        "opacity-0 -translate-x-3 invisible pointer-events-none",
+                        "group-hover/sidebar:opacity-100 group-hover/sidebar:translate-x-0 group-hover/sidebar:visible group-hover/sidebar:pointer-events-auto"
                     )}>
                         Log out
                     </span>

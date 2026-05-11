@@ -47,7 +47,20 @@ export async function getMyProfile(token?: string) {
   return apiFetch<ApiSuccess<any>>(`/interns/me`, { method: "GET", token });
 }
 
-export async function updateIntern(internId: string, body: { assignedMentorId?: string | null; status?: string }, token?: string) {
+export async function updateIntern(
+  internId: string,
+  body: {
+    departmentId?: string;
+    supervisorId?: string;
+    assignedMentorId?: string | null;
+    startDate?: string | null;
+    endDate?: string | null;
+    skills?: string[];
+    interviewNotes?: string;
+    finalEvaluation?: number;
+  },
+  token?: string,
+) {
   return apiFetch<ApiSuccess<any>>(`/interns/${internId}`, { method: "PATCH", body, token });
 }
 
@@ -77,4 +90,38 @@ export async function issueCertificate(internId: string, body: { certificateUrl:
 
 export async function deleteIntern(internId: string, token?: string) {
   return apiFetch<ApiSuccess<null>>(`/interns/${internId}`, { method: "DELETE", token });
+}
+
+export async function setSupervisorFinalEvaluation(
+  internId: string,
+  body: {
+    attendance: number;
+    protocol: number;
+    conduct: number;
+    workFinished: number;
+    mentorAggregate?: number;
+    notes?: string;
+  },
+  token?: string,
+) {
+  return apiFetch<ApiSuccess<any>>(`/interns/${internId}/final-evaluation`, {
+    method: "POST",
+    body,
+    token,
+  });
+}
+
+export async function approveInternGrading(internId: string, token?: string) {
+  return apiFetch<ApiSuccess<any>>(`/interns/${internId}/approve-grading`, {
+    method: "POST",
+    token,
+  });
+}
+
+export async function rejectInternGrading(internId: string, reason: string, token?: string) {
+  return apiFetch<ApiSuccess<any>>(`/interns/${internId}/reject-grading`, {
+    method: "POST",
+    body: { reason },
+    token,
+  });
 }

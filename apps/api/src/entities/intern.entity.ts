@@ -12,6 +12,7 @@ import { UserEntity } from './user.entity';
 import { StudentEntity } from './student.entity';
 import { DepartmentEntity } from './department.entity';
 import { SubmissionEntity } from './submission.entity';
+import { GradingStatus } from '../common/enums/grading-status.enum';
 
 @Entity({
   name: 'interns',
@@ -117,6 +118,34 @@ export class InternEntity {
   finalEvaluation?: number;
 
   @Column({
+    name: 'supervisor_attendance',
+    type: 'int',
+    nullable: true,
+  })
+  supervisorAttendance?: number | null;
+
+  @Column({
+    name: 'supervisor_protocol',
+    type: 'int',
+    nullable: true,
+  })
+  supervisorProtocol?: number | null;
+
+  @Column({
+    name: 'supervisor_conduct',
+    type: 'int',
+    nullable: true,
+  })
+  supervisorConduct?: number | null;
+
+  @Column({
+    name: 'supervisor_work_finished',
+    type: 'int',
+    nullable: true,
+  })
+  supervisorWorkFinished?: number | null;
+
+  @Column({
     name: 'certificate_url',
     type: 'varchar',
     length: 500,
@@ -158,6 +187,13 @@ export class InternEntity {
     nullable: true,
   })
   suspensionReason?: string | null;
+
+  @Column({
+    type: 'enum',
+    enum: GradingStatus,
+    nullable: true,
+  })
+  gradingStatus: GradingStatus;
 
   @CreateDateColumn({
     name: 'created_at',

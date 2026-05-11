@@ -3,6 +3,7 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { 
     Dialog, 
@@ -55,6 +56,8 @@ export default function MentorSubmissionsPage() {
     const [isGeneratingPreviewPdf, setIsGeneratingPreviewPdf] = useState(false);
     const [previewPdfUrl, setPreviewPdfUrl] = useState<string | null>(null);
     const previewRef = useRef<HTMLDivElement>(null);
+    const [personFilter, setPersonFilter] = useState<string>("ALL");
+    const [typeFilter, setTypeFilter] = useState<string>("ALL");
 
     const searchParams = useSearchParams();
     const internIdFilter = searchParams.get("internId");
@@ -139,9 +142,27 @@ export default function MentorSubmissionsPage() {
         }
     }
 
-    const filteredSubmissions = internIdFilter
+    const baseSubmissions = internIdFilter
         ? submissions.filter((s) => s.intern?.id === internIdFilter || s.student?.id === internIdFilter)
         : submissions;
+    const personOptions = Array.from(
+        new Set(
+            baseSubmissions
+                .map((s) => `${s.intern?.user?.firstName || s.student?.firstName || ""} ${s.intern?.user?.lastName || s.student?.lastName || ""}`.trim())
+                .filter((name) => !!name)
+        )
+    ) as string[];
+
+    const typeOptions = Array.from(new Set(baseSubmissions.map((s) => s.type).filter(Boolean)));
+
+    const filteredSubmissions = baseSubmissions.filter((s) => {
+        const fullName = `${s.intern?.user?.firstName || s.student?.firstName || ""} ${s.intern?.user?.lastName || s.student?.lastName || ""}`.trim();
+        const matchesPerson = personFilter === "ALL" || !personFilter || fullName === personFilter;
+
+        const matchesType = typeFilter === "ALL" || !typeFilter || s.type === typeFilter;
+
+        return matchesPerson && matchesType;
+    });
 
     const handleGeneratePdf = (submission: any) => {
         setPreviewSubmission(submission);
@@ -320,7 +341,43 @@ export default function MentorSubmissionsPage() {
                 ))}
             </div>
 
-            <div className="pb-4 px-1">
+            <div className="pb-4 px-1 space-y-3">
+                <Card className="border-border/60">
+                    <CardContent className="p-3 sm:p-4">
+                        <div className="flex flex-col lg:flex-row gap-3 sm:gap-4 lg:items-center lg:justify-between">
+                            <div className="flex flex-wrap gap-2 sm:gap-3">
+                                <Select value={personFilter} onValueChange={(value) => setPersonFilter(value)}>
+                                    <SelectTrigger className="h-8 sm:h-9 w-[170px] text-xs sm:text-sm">
+                                        <SelectValue placeholder="Intern" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="ALL">All interns</SelectItem>
+                                        {personOptions.map((name) => (
+                                            <SelectItem key={name} value={name}>
+                                                {name}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+
+                                <Select value={typeFilter} onValueChange={(value) => setTypeFilter(value)}>
+                                    <SelectTrigger className="h-8 sm:h-9 w-[150px] text-xs sm:text-sm">
+                                        <SelectValue placeholder="Task type" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="ALL">All types</SelectItem>
+                                        {typeOptions.map((type) => (
+                                            <SelectItem key={type} value={type}>
+                                                {type}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                        </div>
+                    </CardContent>
+                </Card>
+
                 <Tabs defaultValue="pending" className="w-full">
                     <TabsList className="grid w-full grid-cols-3 mb-6 bg-muted/50 p-1 rounded-xl">
                         <TabsTrigger value="pending" className="rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm">

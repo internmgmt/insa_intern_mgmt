@@ -1,14 +1,13 @@
 "use client";
 
-import React, { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type ChangeEvent, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/components/auth-provider";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Eye, EyeOff, Lock, Mail, ChevronRight, ShieldCheck } from "lucide-react";
-import { LogoBlock } from "@/components/logo-block";
+import { Eye, EyeOff, Loader2, Lock, Mail } from "lucide-react";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -20,7 +19,7 @@ export default function LoginPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const canSubmit = useMemo(() => email.trim() && password, [email, password]);
+  const canSubmit = useMemo(() => Boolean(email.trim() && password), [email, password]);
 
   useEffect(() => {
     if (!isLoading && user) {
@@ -28,10 +27,11 @@ export default function LoginPage() {
     }
   }, [isLoading, user, router, roleHome]);
 
-  async function onSubmit(e: React.FormEvent) {
+  async function onSubmit(e: FormEvent) {
     e.preventDefault();
     setIsSubmitting(true);
     setError(null);
+
     try {
       await loginWithCredentials({ email: email.trim(), password });
     } catch (err) {
@@ -42,163 +42,134 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="relative min-h-screen w-full flex items-center justify-center bg-background p-4 overflow-hidden">
-      {/* Premium Animated Background Elements */}
-      <div className="absolute inset-0 z-0 pointer-events-none">
-        <div className="absolute top-[-10%] left-[-10%] w-[45%] h-[45%] rounded-full bg-primary/10 blur-[120px] animate-pulse transition-all duration-[10s]" />
-        <div className="absolute bottom-[-10%] right-[-10%] w-[45%] h-[45%] rounded-full bg-primary/10 blur-[120px] animate-pulse [animation-delay:2s] duration-[8s]" />
+    <div className="relative min-h-screen overflow-hidden bg-background">
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(var(--primary),0.12),transparent_28%),radial-gradient(circle_at_bottom_right,rgba(15,23,42,0.10),transparent_24%)]" />
+      <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(255,255,255,0.05)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,0.05)_1px,transparent_1px)] bg-[size:32px_32px] opacity-40" />
 
-        {/* Animated Mesh Gradients */}
-        <div className="absolute top-1/2 left-1/4 w-[20%] h-[20%] bg-accent/10 blur-[100px] animate-fade-in [animation-duration:5s] repeat-infinite alternate" />
-        <div className="absolute bottom-1/4 right-1/4 w-[15%] h-[15%] bg-primary/5 blur-[80px] animate-fade-in [animation-delay:3s] [animation-duration:7s] repeat-infinite alternate" />
-
-        {/* Pattern Overlay */}
-        <div className="absolute inset-0 opacity-[0.02] bg-[radial-gradient(#000_1px,transparent_1px)] [background-size:32px_32px]" />
-      </div>
-
-      <div className="w-full max-w-2xl relative z-10 transition-all duration-700">
-        {/* Main Branding Header - Specialized for Login Page */}
-        <div className="flex flex-col items-center mb-10 animate-slide-up-fade [animation-duration:600ms]">
-          <div className="flex items-center gap-6 text-left">
-            <div className="relative flex h-20 w-20 shrink-0 items-center justify-center bg-transparent">
-              <img
-                src="/logo.png"
-                alt="INSA Logo"
-                className="h-full w-full object-contain"
-              />
+      <div className="relative z-10 grid min-h-screen lg:grid-cols-2">
+        <div className="hidden lg:flex items-center justify-center border-r border-border/60 bg-muted/20 p-10 xl:p-16">
+          <div className="max-w-xl space-y-10 text-left">
+            <div className="flex items-center gap-4">
+              <div className="relative flex h-16 w-16 items-center justify-center overflow-hidden rounded-2xl border border-border/70 bg-background shadow-sm">
+                <img src="/logo.png" alt="INSA Logo" className="h-full w-full object-contain p-1" />
+              </div>
+              <div className="space-y-2">
+                <h1 className="max-w-md text-2xl font-semibold leading-tight tracking-tight text-foreground xl:text-3xl">
+                  Information Network Security Administration Intern Management System
+                </h1>
+              </div>
             </div>
 
-            <div className="flex flex-col items-start gap-0.5">
-              <h1 className="font-bold text-xl leading-tight tracking-tight text-foreground max-w-[360px]">
-                Information Network Security Administration
-              </h1>
-              <h2 className="text-lg font-medium text-muted-foreground/90 font-amharic">
-                የኢንፎርሜሽን መረብ ደህንነት አስተዳደር
-              </h2>
-            </div>
+           
           </div>
-
-
         </div>
 
-        <div className="animate-slide-up-fade [animation-delay:300ms] [animation-fill-mode:both] flex justify-center">
-          <Card className="w-full max-w-lg border-border/50 shadow-[0_20px_50px_rgba(0,0,0,0.1)] bg-background/80 backdrop-blur-xl overflow-hidden rounded-[2.5rem] transition-all duration-500 hover:shadow-primary/10 hover:border-primary/20">
+        <div className="flex items-center justify-center p-4 sm:p-8 lg:p-12">
+          <div className="w-full max-w-md">
+            <div className="mb-6 flex items-center gap-3 lg:hidden">
+              <div className="relative flex h-12 w-12 items-center justify-center overflow-hidden rounded-xl border border-border/70 bg-background shadow-sm">
+                <img src="/logo.png" alt="INSA Logo" className="h-full w-full object-contain p-1" />
+              </div>
+              <div>
+                <h1 className="max-w-xs text-base font-semibold leading-tight tracking-tight text-foreground sm:text-lg">
+                  Information Network Security Administration Intern Management System
+                </h1>
+              </div>
+            </div>
 
-            <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-primary/30 via-primary to-primary/30 animate-pulse" />
+            <Card className="border-border/70 shadow-[0_20px_60px_rgba(0,0,0,0.08)] backdrop-blur supports-[backdrop-filter]:bg-background/90">
+              <CardHeader className="space-y-2 pb-6 pt-8 text-center sm:text-left sm:px-8">
+                <CardTitle className="text-2xl font-semibold tracking-tight">
+                  Welcome back
+                </CardTitle>
+                <CardDescription className="text-sm text-muted-foreground">
+                </CardDescription>
+              </CardHeader>
 
-            <CardHeader className="space-y-1.5 pt-12 pb-8 text-center px-10">
-              <CardTitle className="text-4xl font-black tracking-tight bg-gradient-to-br from-foreground to-foreground/60 bg-clip-text text-transparent italic">
-                Login
-              </CardTitle>
-              <CardDescription className="text-base font-semibold text-muted-foreground/70">
-                Authenticate your credentials to continue
-              </CardDescription>
-            </CardHeader>
-
-            <CardContent className="px-8 sm:px-14 pb-14">
-              <form onSubmit={onSubmit} className="space-y-6">
-                <div className="space-y-2.5 animate-slide-up-fade [animation-delay:600ms] [animation-fill-mode:both]">
-                  <Label htmlFor="email" className="text-[11px] font-black uppercase tracking-[0.15em] text-muted-foreground/60 ml-2">
-                    Email
-                  </Label>
-                  <div className="relative group">
-                    <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none text-muted-foreground group-focus-within:text-primary transition-colors duration-300">
-                      <Mail className="size-5" />
-                    </div>
-                    <Input
-                      id="email"
-                      type="email"
-                      placeholder="username@insa.gov.et"
-                      required
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      disabled={isSubmitting}
-                      className="pl-12 h-14 bg-muted/20 border-border/40 focus-visible:ring-primary/20 focus-visible:border-primary/50 transition-all duration-300 rounded-2xl placeholder:text-muted-foreground/30 font-bold text-sm"
-                    />
-                  </div>
-                </div>
-
-                <div className="space-y-2.5 animate-slide-up-fade [animation-delay:700ms] [animation-fill-mode:both]">
-                  <div className="flex items-center justify-between ml-2">
-                    <Label htmlFor="password" className="text-[11px] font-black uppercase tracking-[0.15em] text-muted-foreground/60">
-                      Password
+              <CardContent className="space-y-6 px-6 pb-8 sm:px-8">
+                <form onSubmit={onSubmit} className="space-y-5">
+                  <div className="space-y-2">
+                    <Label htmlFor="email" className="text-xs font-medium text-muted-foreground">
+                      Email
                     </Label>
-
-                  </div>
-                  <div className="relative group">
-                    <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none text-muted-foreground group-focus-within:text-primary transition-colors duration-300">
-                      <Lock className="size-5" />
+                    <div className="relative">
+                      <Mail className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                      <Input
+                        id="email"
+                        type="email"
+                        placeholder="username@insa.gov.et"
+                        autoComplete="email"
+                        required
+                        value={email}
+                        onChange={(e: ChangeEvent<HTMLInputElement>) => setEmail(e.target.value)}
+                        disabled={isSubmitting}
+                        className="h-11 pl-10"
+                      />
                     </div>
-                    <Input
-                      id="password"
-                      type={showPassword ? "text" : "password"}
-                      required
-                      placeholder="••••••••••••"
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      disabled={isSubmitting}
-                      className="pl-12 pr-12 h-14 bg-muted/20 border-border/40 focus-visible:ring-primary/20 focus-visible:border-primary/50 transition-all duration-300 rounded-2xl placeholder:text-muted-foreground/30 font-bold text-sm"
-                    />
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => setShowPassword((s) => !s)}
-                      className="absolute right-2 top-1/2 -translate-y-1/2 h-10 w-10 text-muted-foreground hover:text-foreground hover:bg-transparent transition-transform active:scale-90"
-                    >
-                      {showPassword ? <EyeOff className="size-5" /> : <Eye className="size-5" />}
-                    </Button>
                   </div>
-                </div>
 
-                {error && (
-                  <div className="rounded-2xl bg-destructive/5 border border-destructive/20 p-5 text-sm font-bold text-destructive flex items-center gap-4 animate-in fade-in slide-in-from-top-3 duration-500 shadow-sm">
-                    <div className="size-2 rounded-full bg-destructive animate-pulse shrink-0" />
-                    {error}
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <Label htmlFor="password" className="text-xs font-medium text-muted-foreground">
+                        Password
+                      </Label>
+                    </div>
+                    <div className="relative">
+                      <Lock className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                      <Input
+                        id="password"
+                        type={showPassword ? "text" : "password"}
+                        placeholder="Enter your password"
+                        autoComplete="current-password"
+                        required
+                        value={password}
+                        onChange={(e: ChangeEvent<HTMLInputElement>) => setPassword(e.target.value)}
+                        disabled={isSubmitting}
+                        className="h-11 pl-10 pr-11"
+                      />
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        aria-label={showPassword ? "Hide password" : "Show password"}
+                        onClick={() => setShowPassword((value: boolean) => !value)}
+                        className="absolute right-1 top-1/2 h-9 w-9 -translate-y-1/2 text-muted-foreground hover:bg-transparent hover:text-foreground"
+                      >
+                        {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                      </Button>
+                    </div>
                   </div>
-                )}
 
-                <div className="pt-4 animate-slide-up-fade [animation-delay:800ms] [animation-fill-mode:both]">
+                  {error && (
+                    <div className="rounded-xl border border-destructive/20 bg-destructive/5 px-4 py-3 text-sm text-destructive">
+                      {error}
+                    </div>
+                  )}
+
                   <Button
                     type="submit"
-                    size="lg"
-                    className="w-full h-14 text-sm font-black uppercase tracking-[0.2em] bg-primary hover:bg-primary/90 text-primary-foreground shadow-[0_10px_30px_rgba(var(--primary),0.3)] transition-all active:scale-[0.97] rounded-2xl flex items-center justify-center gap-3 group relative overflow-hidden"
+                    className="h-11 w-full"
                     disabled={!canSubmit || isLoading || isSubmitting}
                   >
                     {isSubmitting ? (
-                      <div className="size-6 border-4 border-primary-foreground/30 border-t-white rounded-full animate-spin" />
-                    ) : (
                       <>
-                        <span className="relative z-10 flex items-center gap-3">
-                          Login
-                          <ChevronRight className="size-5 group-hover:translate-x-1.5 transition-transform duration-300" />
-                        </span>
-                        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:animate-[shimmer_2s_infinite] pointer-events-none" />
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Signing in
                       </>
+                    ) : (
+                      "Login"
                     )}
                   </Button>
-                </div>
-              </form>
+                </form>
 
-
-            </CardContent>
-          </Card>
-        </div>
-
-        <div className="mt-10 flex flex-col items-center gap-2 animate-fade-in [animation-delay:1200ms] [animation-fill-mode:both]">
-
-          <p className="text-[9px] text-muted-foreground/20 font-bold italic">
-            &copy; {new Date().getFullYear()} Information Network Security Administration
-          </p>
+                <p className="text-center text-xs text-muted-foreground">
+                  Only authorized accounts can access the portal.
+                </p>
+              </CardContent>
+            </Card>
+          </div>
         </div>
       </div>
-
-      <style jsx global>{`
-        @keyframes shimmer {
-          100% { transform: translateX(100%); }
-        }
-      `}</style>
     </div>
   );
 }
-

@@ -4,6 +4,7 @@ import { PageHeader } from "@/components/ui/page-header";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { FileText, Download, Eye, Clock, Loader2, User, XCircle } from "lucide-react";
 import { useEffect, useState, useRef } from "react";
@@ -41,6 +42,9 @@ export default function AdminSubmissionsPage() {
     const [submissions, setSubmissions] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [selectedSubmission, setSelectedSubmission] = useState<any | null>(null);
+    const [personFilter, setPersonFilter] = useState<string>("ALL");
+    const [typeFilter, setTypeFilter] = useState<string>("ALL");
+    const [departmentFilter, setDepartmentFilter] = useState<string>("ALL");
     
     // PDF Generation State
     const [previewSubmission, setPreviewSubmission] = useState<any>(null);
@@ -138,9 +142,37 @@ export default function AdminSubmissionsPage() {
         setCaptureRequest(submission);
     };
 
-    const filteredSubmissions = internFilter
+    const baseSubmissions = internFilter
         ? submissions.filter((s) => (s.internName || s.intern?.user?.firstName + ' ' + s.intern?.user?.lastName) === internFilter || s.internId === internFilter)
         : submissions;
+    const personOptions = Array.from(
+        new Set(
+            baseSubmissions
+                .map((s) => s.internName || `${s.intern?.user?.firstName || ""} ${s.intern?.user?.lastName || ""}`.trim())
+                .filter((name) => !!name)
+        )
+    ) as string[];
+
+    const typeOptions = Array.from(new Set(baseSubmissions.map((s) => s.type).filter(Boolean)));
+    const departmentOptions = Array.from(
+        new Set(
+            baseSubmissions
+                .map((s) => s.intern?.department?.name || s.student?.department?.name || s.departmentName || null)
+                .filter(Boolean)
+        )
+    ) as string[];
+
+    const filteredSubmissions = baseSubmissions.filter((s) => {
+        const fullName = (s.internName || `${s.intern?.user?.firstName || ""} ${s.intern?.user?.lastName || ""}`).trim();
+        const matchesPerson = personFilter === "ALL" || !personFilter || fullName === personFilter;
+
+        const matchesType = typeFilter === "ALL" || !typeFilter || s.type === typeFilter;
+
+        const deptName = (s.intern?.department?.name || s.student?.department?.name || s.departmentName || "").toString();
+        const matchesDept = departmentFilter === "ALL" || !departmentFilter || deptName === departmentFilter;
+
+        return matchesPerson && matchesType && matchesDept;
+    });
 
     const renderSubmissionList = (filterFn: (s: any) => boolean, emptyMsg: string) => {
         const items = filteredSubmissions.filter(filterFn);
@@ -247,7 +279,57 @@ export default function AdminSubmissionsPage() {
                 )}
             </div>
 
-            <div className="pb-4 px-1">
+            <div className="pb-4 px-1 space-y-3">
+                <Card className="border-border/60">
+                    <CardContent className="p-3 sm:p-4">
+                        <div className="flex flex-col lg:flex-row gap-3 sm:gap-4 lg:items-center lg:justify-between">
+                            <div className="flex flex-wrap gap-2 sm:gap-3">
+                                <Select value={personFilter} onValueChange={(value) => setPersonFilter(value)}>
+                                    <SelectTrigger className="h-8 sm:h-9 w-[170px] text-xs sm:text-sm">
+                                        <SelectValue placeholder="Intern" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="ALL">All interns</SelectItem>
+                                        {personOptions.map((name) => (
+                                            <SelectItem key={name} value={name}>
+                                                {name}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+
+                                <Select value={typeFilter} onValueChange={(value) => setTypeFilter(value)}>
+                                    <SelectTrigger className="h-8 sm:h-9 w-[150px] text-xs sm:text-sm">
+                                        <SelectValue placeholder="Task type" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="ALL">All types</SelectItem>
+                                        {typeOptions.map((type) => (
+                                            <SelectItem key={type} value={type}>
+                                                {type}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+
+                                <Select value={departmentFilter} onValueChange={(value) => setDepartmentFilter(value)}>
+                                    <SelectTrigger className="h-8 sm:h-9 w-[160px] text-xs sm:text-sm">
+                                        <SelectValue placeholder="Department" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="ALL">All departments</SelectItem>
+                                        {departmentOptions.map((dept) => (
+                                            <SelectItem key={dept} value={dept}>
+                                                {dept}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                        </div>
+                    </CardContent>
+                </Card>
+
                 <Tabs defaultValue="pending" className="w-full">
                     <TabsList className="grid w-full grid-cols-3 mb-6 bg-muted/50 p-1 rounded-xl">
                         <TabsTrigger value="pending" className="rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm">

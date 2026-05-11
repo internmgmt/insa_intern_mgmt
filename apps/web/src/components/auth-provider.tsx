@@ -52,7 +52,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setUser(null);
       setToken(null);
       if (typeof window !== "undefined" && window.location.pathname.startsWith("/dashboard")) {
-        router.replace("/auth/login");
+        router.replace("/login");
       }
     }
   }, [router]);
@@ -145,6 +145,6 @@ export function roleHome(role: UserRole) {
     case "INTERN":
       return "/dashboard/intern";
     default:
-      return "/auth/login";
+      return "/login";
   }
 }

@@ -77,11 +77,17 @@ function toSubmissionResponse(submission: SubmissionEntity) {
 
 export class InternMapper {
   static toListResponse(intern: InternEntity & { submissionCount?: number }) {
+    const finalEval =
+      intern.finalEvaluation !== undefined && intern.finalEvaluation !== null
+        ? Number(intern.finalEvaluation)
+        : null;
     return {
       id: intern.id,
       internId: intern.internId ?? null,
       status: intern.status ?? null,
       isActive: intern.isActive ?? null,
+      finalEvaluation: Number.isFinite(finalEval as number) ? (finalEval as number) : null,
+      gradingStatus: (intern as any).gradingStatus ?? null,
       isSuspended: intern.isSuspended ?? false,
       suspensionReason: intern.suspensionReason ?? null,
       // Basic identity (from linked user)
@@ -115,6 +121,10 @@ export class InternMapper {
   }
 
   static toDetailResponse(intern: InternEntity) {
+    const finalEval =
+      intern.finalEvaluation !== undefined && intern.finalEvaluation !== null
+        ? Number(intern.finalEvaluation)
+        : null;
     const submissions = Array.isArray(intern.submissions)
       ? intern.submissions.map(toSubmissionResponse)
       : [];
@@ -122,14 +132,21 @@ export class InternMapper {
       id: intern.id,
       internId: intern.internId ?? null,
       status: intern.status ?? null,
+      gradingStatus: intern.gradingStatus ?? null,
       isActive: intern.isActive ?? null,
       startDate: intern.startDate,
       endDate: intern.endDate,
       skills: intern.skills ?? [],
       interviewNotes: intern.interviewNotes ?? null,
-      finalEvaluation: intern.finalEvaluation ?? null,
+      finalEvaluation: Number.isFinite(finalEval as number) ? (finalEval as number) : null,
       completionNotes: intern.completionNotes ?? null,
       terminationReason: intern.terminationReason ?? null,
+      supervisorEvaluation: {
+        attendance: intern.supervisorAttendance ?? null,
+        protocol: intern.supervisorProtocol ?? null,
+        conduct: intern.supervisorConduct ?? null,
+        workFinished: intern.supervisorWorkFinished ?? null,
+      },
       certificateUrl: intern.certificateUrl ?? null,
       certificateIssued: intern.certificateIssued ?? false,
       department: toDepartmentResponse(intern),

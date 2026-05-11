@@ -22,6 +22,7 @@ import {
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { listApplications, ApplicationListItem } from "@/lib/services/applications";
+import { listInterns } from "@/lib/services/interns";
 import { listStudents } from "@/lib/services/students";
 import { toast } from "sonner";
 
@@ -40,6 +41,7 @@ export default function UniversityDashboardPage() {
   });
 
   const [recentApplications, setRecentApplications] = useState<ApplicationListItem[]>([]);
+  const [gradedInterns, setGradedInterns] = useState<any[]>([]);
 
   useEffect(() => {
     if (!token || user?.role !== "UNIVERSITY") return;
@@ -87,6 +89,15 @@ export default function UniversityDashboardPage() {
         awaitingArrival,
         arrived: arrivedCount,
       });
+
+      // Fetch interns with grades for this university so coordinators can see approved grade flow
+      const internsRes = await listInterns({ limit: 50 }, token || undefined);
+      const internItems = (internsRes as any)?.data?.items ?? [];
+      const graded = internItems.filter(
+        (i: any) =>
+          typeof i.finalEvaluation === "number" && i.gradingStatus === "APPROVED"
+      );
+      setGradedInterns(graded);
     } catch (error: any) {
       // Gracefully handle permission errors without spamming the console
       const status = error?.status ?? error?.code;
@@ -322,6 +333,78 @@ export default function UniversityDashboardPage() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Intern Grades Overview for University Coordinator */}
+      <Card>
+        <CardHeader className="px-4 sm:px-6 pt-3 sm:pt-4 pb-2 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+          <div>
+            <CardTitle className="flex items-center gap-2">
+              <TrendingUp className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
+              Intern Grades
+            </CardTitle>
+            <CardDescription className="text-xs sm:text-sm">
+              Snapshot of recent internship grades. Use the button to view all.
+            </CardDescription>
+          </div>
+          <Link href="/dashboard/university/grades">
+            <Button variant="outline" size="sm" className="text-xs">
+              View all grades
+            </Button>
+          </Link>
+        </CardHeader>
+        <CardContent className="px-3 sm:px-6 pb-4 sm:pb-6">
+          {gradedInterns.length === 0 ? (
+            <p className="text-[11px] sm:text-xs text-muted-foreground">
+              No graded interns are available yet. Grades will appear here after supervisors submit and admin approves them.
+            </p>
+          ) : (
+            <div className="space-y-2 text-xs sm:text-sm">
+              {gradedInterns.slice(0, 6).map((intern) => {
+                const fullName = `${intern.firstName || ""} ${intern.lastName || ""}`.trim() || "Unknown";
+                const finalPercent =
+                  typeof intern.finalEvaluation === "number"
+                    ? (intern.finalEvaluation * 25).toFixed(1)
+                    : null;
+                return (
+                  <div
+                    key={intern.id}
+                    className="flex items-center justify-between rounded-md border border-border/60 bg-muted/40 px-3 py-2"
+                  >
+                    <div className="flex flex-col gap-0.5 min-w-0">
+                      <span className="font-medium truncate">{fullName}</span>
+                      <span className="text-[11px] text-muted-foreground truncate">
+                        {intern.internId || "ID pending"}
+                      </span>
+                    </div>
+                    <div className="flex flex-col items-end gap-0.5">
+                      <span className="text-[11px] font-mono text-foreground">
+                        {finalPercent !== null ? `${finalPercent} / 100` : "Not set"}
+                      </span>
+                      <Badge
+                        variant={
+                          intern.gradingStatus === "APPROVED"
+                            ? "success"
+                            : intern.gradingStatus === "REJECTED"
+                            ? "destructive"
+                            : "outline"
+                        }
+                        className="text-[10px] px-2 py-0.5"
+                      >
+                        {intern.gradingStatus || "PENDING"}
+                      </Badge>
+                    </div>
+                  </div>
+                );
+              })}
+              {gradedInterns.length > 6 && (
+                <p className="text-[11px] sm:text-xs text-muted-foreground">
+                  Showing the latest 6 graded interns. Use the admin view for full details.
+                </p>
+              )}
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
       {/* Recent Applications */}
       <Card>

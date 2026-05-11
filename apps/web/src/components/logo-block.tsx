@@ -48,10 +48,10 @@ export function LogoBlock({ showText = true }: LogoBlockProps) {
       </div>
 
       <div className={cn(
-        "flex flex-col transition-all duration-300 ease-[cubic-bezier(0.25,1,0.5,1)]",
+        "flex flex-col overflow-hidden transition-all duration-300 ease-[cubic-bezier(0.25,1,0.5,1)]",
         showText
           ? "opacity-100 translate-x-0 visible"
-          : "opacity-0 -translate-x-4 invisible pointer-events-none w-0"
+          : "opacity-0 -translate-x-4 invisible pointer-events-none w-0 group-hover/sidebar:w-auto group-hover/sidebar:opacity-100 group-hover/sidebar:translate-x-0 group-hover/sidebar:visible group-hover/sidebar:pointer-events-auto"
       )}>
         <div className="font-bold text-base leading-none tracking-tight text-foreground whitespace-nowrap">INSA</div>
         <div className="text-[10px] uppercase font-bold text-muted-foreground/80 tracking-widest mt-0.5 whitespace-nowrap">

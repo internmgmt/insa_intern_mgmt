@@ -259,9 +259,9 @@ export default function AdminUsersPage() {
           <Table>
             <TableHeader className="bg-muted/30">
               <TableRow>
-                <TableHead className="font-bold py-4">User Identity</TableHead>
-                <TableHead className="font-bold">Access Role</TableHead>
-                <TableHead className="font-bold">Affiliation</TableHead>
+                <TableHead className="font-bold py-4">Name</TableHead>
+                <TableHead className="font-bold">Role</TableHead>
+                <TableHead className="font-bold">Department</TableHead>
                 <TableHead className="font-bold">Status</TableHead>
                 <TableHead className="text-right font-bold pr-6">Management</TableHead>
               </TableRow>

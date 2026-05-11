@@ -126,7 +126,7 @@ export default function AdminDocumentsPage() {
 
       const mappedDocs = items.map((item: any) => {
         let type = "OTHER";
-        let uploadedBy = "Unknown";
+        let uploadedBy: string | null = null;
         let universityName =
           item?.student?.application?.university?.name ||
           item?.university?.name ||
@@ -139,11 +139,16 @@ export default function AdminDocumentsPage() {
                 ? JSON.parse(item.metadata)
                 : item.metadata;
             if (meta?.documentType) type = meta.documentType;
-            if (meta?.uploadedBy) uploadedBy = meta.uploadedBy;
+            if (meta?.uploadedBy) uploadedBy = String(meta.uploadedBy);
           }
         } catch (e) {
           console.error("Error parsing metadata for document:", item?.id, e);
         }
+
+        // Prefer a human name when possible instead of raw IDs
+        const displayUploadedBy = item?.student
+          ? `${item.student.firstName} ${item.student.lastName}`
+          : uploadedBy || "ADMIN";
 
         return {
           id: item?.id || "",
@@ -153,11 +158,7 @@ export default function AdminDocumentsPage() {
           type: type,
           status: item?.student?.status || "VERIFIED",
           uploadedAt: item?.createdAt || new Date().toISOString(),
-          uploadedBy:
-            uploadedBy ||
-            (item.student
-              ? `${item.student.firstName} ${item.student.lastName}`
-              : "ADMIN"),
+          uploadedBy: displayUploadedBy,
           universityName: universityName,
           relatedTo:
             item?.student?.studentId ||

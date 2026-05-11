@@ -33,11 +33,13 @@ import { UpdateInternDto } from './dto/update-intern.dto';
 import { CompleteInternDto } from './dto/complete-intern.dto';
 import { TerminateInternDto } from './dto/terminate-intern.dto';
 import { IssueCertificateDto } from './dto/issue-certificate.dto';
+import { SupervisorFinalEvaluationDto } from './dto/supervisor-final-evaluation.dto';
 import { SuspendInternDto } from './dto/suspend-intern.dto';
 import { AssignSupervisorDto } from './dto/assign-supervisor.dto';
 import { UserEntity } from '../entities/user.entity';
 import { InternEntity } from '../entities/intern.entity';
 import { SUPERVISOR_WRONG_DEPARTMENT } from '../common/filters/http-exception.filter';
+import { CurrentUser } from '../auth/decorators/current-user.decorator';
 
 @ApiTags('interns')
 @Controller('interns')
@@ -76,7 +78,7 @@ export class InternsController {
   }
 
   @Get()
-  @Roles(UserRole.ADMIN, UserRole.SUPERVISOR, UserRole.MENTOR)
+  @Roles(UserRole.ADMIN, UserRole.SUPERVISOR, UserRole.MENTOR, UserRole.UNIVERSITY)
   @ApiOperation({ summary: 'List interns with optional pagination' })
   @ApiResponse({ status: 200, description: 'Interns retrieved successfully' })
   async list(@Query() query: QueryInternsDto, @Req() req: any) {
@@ -172,6 +174,23 @@ export class InternsController {
     return this.internsService.complete(id, completeDto);
   }
 
+  @Post(':id/final-evaluation')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.SUPERVISOR)
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary:
+      'Record final evaluation as supervisor (50% mentor aggregate, 50% supervisor metrics)',
+  })
+  @ApiResponse({ status: 200, description: 'Final evaluation recorded' })
+  async setFinalEvaluation(
+    @Param('id') id: string,
+    @Body() dto: SupervisorFinalEvaluationDto,
+    @CurrentUser() user: any,
+  ) {
+    return this.internsService.setFinalEvaluationAsSupervisor(id, dto, user);
+  }
+
   @Post(':id/terminate')
   @Roles(UserRole.ADMIN)
   @HttpCode(HttpStatus.OK)
@@ -215,6 +234,27 @@ export class InternsController {
     @Body() issueCertificateDto: IssueCertificateDto,
   ) {
     return this.internsService.issueCertificate(id, issueCertificateDto);
+  }
+
+  @Post(':id/approve-grading')
+  @Roles(UserRole.ADMIN)
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Approve intern grading' })
+  @ApiResponse({ status: 200, description: 'Intern grading approved' })
+  async approveGrading(@Param('id') id: string) {
+    return this.internsService.approveGrading(id);
+  }
+
+  @Post(':id/reject-grading')
+  @Roles(UserRole.ADMIN)
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Reject intern grading' })
+  @ApiResponse({ status: 200, description: 'Intern grading rejected' })
+  async rejectGrading(
+    @Param('id') id: string,
+    @Body() body: { reason: string },
+  ) {
+    return this.internsService.rejectGrading(id, body.reason);
   }
 
   @Delete(':id')

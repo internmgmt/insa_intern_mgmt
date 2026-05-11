@@ -11,7 +11,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { LogOut, Moon, Sun, Key, User } from "lucide-react";
 import Link from "next/link";
 
@@ -33,8 +33,15 @@ export function AccountMenu() {
     email.charAt(0).toUpperCase() ||
     "?";
 
-  const isDark =
-    theme === "dark" || document.documentElement.classList.contains("dark");
+  const isDark = theme === "dark";
+
+  const prettyRole = role
+    ? role
+        .toLowerCase()
+        .split("_")
+        .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+        .join(" ")
+    : "";
 
   return (
     <DropdownMenu>
@@ -44,20 +51,30 @@ export function AccountMenu() {
           className="group relative h-9 px-1 rounded-full hover:bg-muted transition-all duration-200"
           aria-label="Account menu"
         >
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 max-w-[160px] sm:max-w-none">
             <Avatar className="h-8 w-8 border border-border shadow-sm group-hover:border-primary/30 transition-colors">
               <AvatarFallback className="bg-primary/10 text-primary font-semibold text-xs transition-colors group-hover:bg-primary/20">
                 {initials}
               </AvatarFallback>
             </Avatar>
-            <div className="hidden lg:flex flex-col items-start pr-1">
-              <span className="text-xs font-semibold leading-none">{name || email.split('@')[0]}</span>
-              <span className="text-[10px] text-muted-foreground leading-none mt-1 uppercase tracking-tight font-medium">{role.toLowerCase()}</span>
+            <div className="hidden sm:flex flex-col items-start pr-1 min-w-0">
+              <span className="text-xs font-semibold leading-none truncate max-w-[110px] sm:max-w-[160px]">
+                {name || email.split("@")[0]}
+              </span>
+              {prettyRole && (
+                <span className="text-[10px] text-muted-foreground leading-none mt-1 uppercase tracking-tight font-medium truncate max-w-[110px] sm:max-w-[160px]">
+                  {prettyRole}
+                </span>
+              )}
             </div>
           </div>
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-[calc(100vw-32px)] sm:w-80 space-y-2 p-3">
+      <DropdownMenuContent
+        align="end"
+        sideOffset={8}
+        className="w-[calc(100vw-24px)] xs:w-[calc(100vw-32px)] sm:w-80 max-w-sm space-y-2 p-3 rounded-xl border-border/70"
+      >
         <DropdownMenuLabel className="font-normal">
           <div className="flex items-center gap-3 rounded-md bg-muted px-3 py-2">
             <Avatar className="h-10 w-10">
@@ -74,9 +91,9 @@ export function AccountMenu() {
                   {email}
                 </div>
               )}
-              {role && (
-                <div className="mt-0.5 text-[11px] uppercase tracking-wide text-muted-foreground">
-                  {role}
+              {prettyRole && (
+                <div className="mt-0.5 text-[11px] uppercase tracking-wide text-muted-foreground truncate">
+                  {prettyRole}
                 </div>
               )}
             </div>

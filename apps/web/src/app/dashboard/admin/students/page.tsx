@@ -91,9 +91,12 @@ export default function AdminStudentsPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const [departments, setDepartments] = useState<any[]>([]);
+  const [supervisors, setSupervisors] = useState<any[]>([]);
+  const [supervisorsLoading, setSupervisorsLoading] = useState(false);
   const [rejectReason, setRejectReason] = useState("");
   const [assignmentData, setAssignmentData] = useState({
     departmentId: "",
+    supervisorId: "",
     startDate: "",
     endDate: "",
   });
@@ -161,6 +164,25 @@ export default function AdminStudentsPage() {
       });
     }
   }, [showAssignDialog, token]);
+
+  useEffect(() => {
+    if (!showAssignDialog || !token || !assignmentData.departmentId) {
+      setSupervisors([]);
+      return;
+    }
+    setSupervisorsLoading(true);
+    listUsers({ page: 1, limit: 100, role: "SUPERVISOR", departmentId: assignmentData.departmentId }, token)
+      .then(res => {
+        const items = (res as any)?.data?.items ?? (res as any)?.data ?? [];
+        setSupervisors(Array.isArray(items) ? items : []);
+      })
+      .catch(() => {
+        setSupervisors([]);
+      })
+      .finally(() => {
+        setSupervisorsLoading(false);
+      });
+  }, [showAssignDialog, token, assignmentData.departmentId]);
 
   const fetchStudentsData = useCallback(async () => {
     if (!token) return;
@@ -334,6 +356,7 @@ export default function AdminStudentsPage() {
     setSelectedStudent(s);
     setAssignmentData({
       departmentId: "",
+      supervisorId: "",
       startDate: "",
       endDate: "",
     });
@@ -352,6 +375,7 @@ export default function AdminStudentsPage() {
       await createIntern({
         studentId: selectedStudent.id,
         departmentId: assignmentData.departmentId,
+        supervisorId: assignmentData.supervisorId || undefined,
         startDate: assignmentData.startDate || undefined,
         endDate: assignmentData.endDate || undefined,
       }, token);
@@ -869,6 +893,27 @@ export default function AdminStudentsPage() {
                 <SelectContent>
                   {Array.isArray(departments) && departments.map(d => (
                     <SelectItem key={d.id} value={d.id}>{d.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="grid gap-2">
+              <Label htmlFor="supervisor">Supervisor (optional)</Label>
+              <Select
+                value={assignmentData.supervisorId}
+                onValueChange={(val) => setAssignmentData(prev => ({ ...prev, supervisorId: val }))}
+                disabled={!assignmentData.departmentId || supervisorsLoading}
+              >
+                <SelectTrigger id="supervisor">
+                  <SelectValue placeholder={supervisorsLoading ? "Loading supervisors..." : "Select Supervisor (optional)"} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">No supervisor (assign later)</SelectItem>
+                  {Array.isArray(supervisors) && supervisors.map((s) => (
+                    <SelectItem key={s.id} value={s.id}>
+                      {s.firstName} {s.lastName}
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
