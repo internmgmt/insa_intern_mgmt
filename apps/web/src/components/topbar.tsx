@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { Input } from "@/components/ui/input";
 import { AccountMenu } from "@/components/account-menu";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { NotificationDropdown } from "@/components/notifications/notification-dropdown";
 import { Separator } from "@/components/ui/separator";
 import { Menu } from "lucide-react";
 import { useAuth } from "@/components/auth-provider";
@@ -82,6 +83,7 @@ export function Topbar() {
         {/* Actions */}
         <div className="flex items-center gap-1.5 sm:gap-3 shrink-0">
           {user?.role !== "INTERN" && <ThemeToggle />}
+          <NotificationDropdown />
           <AccountMenu />
         </div>
       </div>

@@ -3,6 +3,7 @@
 import { useEffect } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { useAuth } from "@/components/auth-provider";
+import { NotificationProvider } from "@/components/notifications/notification-provider";
 import { Sidebar } from "@/components/sidebar";
 import { Topbar } from "@/components/topbar";
 import { cn } from "@/lib/utils";
@@ -73,7 +74,9 @@ export default function DashboardLayout({
         <Topbar />
         <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8 lg:p-10 overflow-x-hidden">
           <div className="mx-auto w-full max-w-6xl animate-fade-in">
-            {children}
+            <NotificationProvider>
+              {children}
+            </NotificationProvider>
           </div>
         </main>
       </div>

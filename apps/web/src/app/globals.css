@@ -139,7 +139,7 @@
   --muted: 245 247 251;
   --primary: 30 99 216; /* #1E63D8, slightly more muted */
   --primary-foreground: 255 255 255;
-  --secondary: 75 85 99;
+  --secondary: 95 105 120; /* Lightened secondary for better contrast */
   --success: 16 185 129;
   --warning: 245 158 11;
   --destructive: 239 68 68;
@@ -205,9 +205,9 @@
   --muted: 245 247 251;
   --primary: 212 70 46; /* #D4482E slightly darker */
   --primary-foreground: 255 255 255;
-  --secondary: 95 62 51;
+  --secondary: 135 95 75; /* Further lightened secondary for 4.5:1 contrast */
   --success: 46 139 87;
-  --warning: 224 139 45;
+  --warning: 180 90 40; /* Darkened warning for better contrast */
   --destructive: 193 39 45;
   --border: 243 236 231;
   --input: 254 246 243;

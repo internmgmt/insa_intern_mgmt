@@ -17,6 +17,7 @@ import {
     Key,
     LogOut,
     ClipboardList,
+    TrendingUp,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { LogoBlock } from "@/components/logo-block";
@@ -31,6 +32,7 @@ export type NavItem = {
 export const roleNavItems: Record<string, NavItem[]> = {
     ADMIN: [
         { title: "Dashboard", href: "/dashboard/admin", icon: LayoutDashboard },
+        { title: "Hierarchical View", href: "/dashboard/admin/hierarchical", icon: TrendingUp },
         { title: "Users", href: "/dashboard/admin/users", icon: Users },
         { title: "Universities", href: "/dashboard/admin/universities", icon: Building2 },
         { title: "Departments", href: "/dashboard/admin/departments", icon: Briefcase },

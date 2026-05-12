@@ -224,58 +224,20 @@ export default function UniversitiesPage() {
                     <CardContent className="grid gap-3 md:grid-cols-2">
                         <div className="space-y-1">
                             <label className="text-xs font-medium">Name</label>
-                            <Popover open={openCombobox} onOpenChange={setOpenCombobox}>
-                                <PopoverTrigger asChild>
-                                    <Button
-                                        variant="outline"
-                                        role="combobox"
-                                        aria-expanded={openCombobox}
-                                        className="w-full justify-between font-normal"
-                                    >
-                                        {newUni.name
-                                            ? ETHIOPIAN_UNIVERSITIES.find((u) => u.name === newUni.name)?.name
-                                            : "Select university..."}
-                                        <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                                    </Button>
-                                </PopoverTrigger>
-                                <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
-                                    <Command>
-                                        <CommandInput placeholder="Search university..." />
-                                        <CommandList>
-                                            <CommandEmpty>No university found.</CommandEmpty>
-                                            <CommandGroup>
-                                                {ETHIOPIAN_UNIVERSITIES.map((uni) => (
-                                                    <CommandItem
-                                                        key={uni.name}
-                                                        value={uni.name}
-                                                        onSelect={(currentValue) => {
-                                                            const selected = ETHIOPIAN_UNIVERSITIES.find(
-                                                                (u) => u.name.toLowerCase() === currentValue.toLowerCase()
-                                                            );
-                                                            if (selected) {
-                                                                setNewUni((prev) => ({
-                                                                    ...prev,
-                                                                    name: selected.name,
-                                                                    address: selected.town,
-                                                                }));
-                                                            }
-                                                            setOpenCombobox(false);
-                                                        }}
-                                                    >
-                                                        <Check
-                                                            className={cn(
-                                                                "mr-2 h-4 w-4",
-                                                                newUni.name === uni.name ? "opacity-100" : "opacity-0"
-                                                            )}
-                                                        />
-                                                        {uni.name}
-                                                    </CommandItem>
-                                                ))}
-                                            </CommandGroup>
-                                        </CommandList>
-                                    </Command>
-                                </PopoverContent>
-                            </Popover>
+                            <Input
+                                placeholder="Enter university name or select from suggestions..."
+                                value={newUni.name}
+                                onChange={(e) => setNewUni({ ...newUni, name: e.target.value })}
+                                list="university-suggestions"
+                            />
+                            <datalist id="university-suggestions">
+                                {ETHIOPIAN_UNIVERSITIES.map((uni) => (
+                                    <option key={uni.name} value={uni.name} />
+                                ))}
+                            </datalist>
+                            <p className="text-xs text-muted-foreground">
+                                Start typing to see Ethiopian university suggestions, or enter a custom university name
+                            </p>
                         </div>
                         <div className="space-y-1">
                             <label className="text-xs font-medium">Contact Email</label>

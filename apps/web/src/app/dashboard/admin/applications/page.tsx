@@ -43,13 +43,16 @@ import {
     Activity,
     ClipboardList,
     RotateCcw,
-    FileDown
+    FileDown,
+    Trash2,
+    AlertTriangle
 } from "lucide-react";
 import Link from "next/link";
 import {
     listApplications,
     reviewApplication,
-    submitApplication
+    submitApplication,
+    deleteApplication
 } from "@/lib/services/applications";
 import { listUniversities } from "@/lib/services/universities";
 import { listDocuments } from "@/lib/services/documents";
@@ -77,6 +80,10 @@ export default function AdminApplicationsPage() {
     const [selectedRejectionApp, setSelectedRejectionApp] = useState<any>(null);
     const [rejectionReason, setRejectionReason] = useState("");
     const [isSubmittingReview, setIsSubmittingReview] = useState(false);
+    const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+    const [selectedDeleteApp, setSelectedDeleteApp] = useState<any>(null);
+    const [deleteConfirmText, setDeleteConfirmText] = useState("");
+    const [isSubmittingDelete, setIsSubmittingDelete] = useState(false);
 
     // Helpers
     const academicYears = useMemo(() => {
@@ -200,10 +207,32 @@ export default function AdminApplicationsPage() {
             toast.success(`Application "${appName}" ${decision === 'APPROVE' ? 'approved' : 'rejected'}`);
             setShowRejectionDialog(false);
             fetchApplications();
-        } catch (error: any) {
-            toast.error(error?.message || 'Failed to review application');
+        } catch (err: any) {
+            toast.error(err?.message || `Failed to ${decision === 'APPROVE' ? 'approve' : 'reject'} application`);
         } finally {
             setIsSubmittingReview(false);
+        }
+    }
+
+    async function handleDeleteApplication() {
+        if (!selectedDeleteApp) return;
+        if (deleteConfirmText.trim() !== "DELETE") {
+            toast.error("Type DELETE to confirm");
+            return;
+        }
+
+        try {
+            setIsSubmittingDelete(true);
+            await deleteApplication(selectedDeleteApp.id, token || undefined);
+            toast.success("Application deleted successfully");
+            setShowDeleteDialog(false);
+            setDeleteConfirmText("");
+            setSelectedDeleteApp(null);
+            fetchApplications();
+        } catch (err: any) {
+            toast.error(err?.message || "Failed to delete application");
+        } finally {
+            setIsSubmittingDelete(false);
         }
     }
 
@@ -428,6 +457,20 @@ export default function AdminApplicationsPage() {
                                                             <Eye className="h-4 w-4" />
                                                         </Link>
                                                     </Button>
+                                                    {app.status !== 'APPROVED' && (
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="icon"
+                                                            className="h-8 w-8 text-destructive hover:bg-destructive/10"
+                                                            onClick={() => {
+                                                                setSelectedDeleteApp(app);
+                                                                setShowDeleteDialog(true);
+                                                            }}
+                                                            title="Delete Application"
+                                                        >
+                                                            <Trash2 className="h-4 w-4" />
+                                                        </Button>
+                                                    )}
                                                 </div>
                                             </TableCell>
                                         </TableRow>
@@ -486,6 +529,51 @@ export default function AdminApplicationsPage() {
                             disabled={!rejectionReason.trim() || isSubmittingReview}
                         >
                             {isSubmittingReview ? "Processing..." : "Confirm Rejection"}
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+            {/* Delete Application Dialog */}
+            <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle className="text-destructive flex items-center gap-2">
+                            <AlertTriangle className="h-5 w-5" />
+                            Delete Application
+                        </DialogTitle>
+                        <DialogDescription>
+                            This action will permanently remove the application from <strong>{selectedDeleteApp?.university?.name}</strong> and all associated data. Type <strong>DELETE</strong> in the box below to confirm.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="space-y-4 py-4">
+                        <div className="space-y-2">
+                            <Label htmlFor="delete-confirm">Confirmation</Label>
+                            <Input
+                                id="delete-confirm"
+                                placeholder="Type DELETE to confirm"
+                                value={deleteConfirmText}
+                                onChange={(e) => setDeleteConfirmText(e.target.value)}
+                            />
+                        </div>
+                    </div>
+                    <DialogFooter>
+                        <Button
+                            variant="outline"
+                            onClick={() => {
+                                setShowDeleteDialog(false);
+                                setDeleteConfirmText("");
+                                setSelectedDeleteApp(null);
+                            }}
+                        >
+                            Cancel
+                        </Button>
+                        <Button
+                            variant="destructive"
+                            onClick={handleDeleteApplication}
+                            disabled={isSubmittingDelete || deleteConfirmText.trim() !== "DELETE"}
+                        >
+                            {isSubmittingDelete ? "Deleting..." : "Delete Permanently"}
                         </Button>
                     </DialogFooter>
                 </DialogContent>
