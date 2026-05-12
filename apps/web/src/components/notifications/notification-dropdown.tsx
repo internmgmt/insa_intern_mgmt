@@ -208,7 +208,8 @@ export function NotificationDropdown() {
                   </div>
                 </DropdownMenuItem>
               );
-            })}
+            })
+          )}
         </ScrollArea>
         
         {notifications.length > 0 && (
