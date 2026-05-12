@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Plus, Shield, Trash2, Power, Search, Building2, School as SchoolIcon, Filter } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { listUsers, createUser, updateUser, deactivateUser } from "@/lib/services/users";
-import { listUniversities } from "@/lib/services/universities";
+import { createUniversity, listUniversities } from "@/lib/services/universities";
 import { listDepartments } from "@/lib/services/departments";
 import { useAuth } from "@/components/auth-provider";
 import type { User, UserRole } from "@/lib/types";
@@ -36,6 +36,8 @@ export default function AdminUsersPage() {
   const [search, setSearch] = useState("");
 
   const [showNewUserForm, setShowNewUserForm] = useState(false);
+  const [newUniversityName, setNewUniversityName] = useState("");
+  const [newUniversityTown, setNewUniversityTown] = useState("");
   const [newUser, setNewUser] = useState<NewUser>({
     firstName: "",
     lastName: "",
@@ -49,9 +51,9 @@ export default function AdminUsersPage() {
     newUser.firstName.trim() &&
     newUser.lastName.trim() &&
     newUser.email.trim() &&
-    (newUser.role !== "UNIVERSITY" || newUser.universityId) &&
+    (newUser.role !== "UNIVERSITY" || (newUser.universityId && (newUser.universityId !== "__NEW__" || newUniversityName.trim()))) &&
     (newUser.role !== "SUPERVISOR" || newUser.departmentId),
-    [newUser]);
+    [newUser, newUniversityName]);
 
   useEffect(() => {
     void fetchUsers();
@@ -93,17 +95,36 @@ export default function AdminUsersPage() {
       lastName: newUser.lastName.trim(),
     });
     try {
+      let resolvedUniversityId = newUser.universityId || undefined;
+
+      if (newUser.role === "UNIVERSITY" && newUser.universityId === "__NEW__") {
+        const universityPayload = {
+          name: newUniversityName.trim(),
+          address: newUniversityTown.trim() || undefined,
+        };
+
+        const created = await createUniversity(universityPayload, token || undefined);
+        resolvedUniversityId = (created as any)?.data?.id;
+
+        if (!resolvedUniversityId) {
+          throw new Error("Failed to create university record");
+        }
+      }
+
       await createUser({
         email: cleanData.email,
         firstName: cleanData.firstName,
         lastName: cleanData.lastName,
         role: newUser.role,
-        universityId: newUser.role === "UNIVERSITY" ? (newUser.universityId || undefined) : undefined,
+        universityId: newUser.role === "UNIVERSITY" ? resolvedUniversityId : undefined,
         departmentId: newUser.role === "SUPERVISOR" ? (newUser.departmentId || undefined) : undefined,
       }, token || undefined);
       toast.success("User created and credentials emailed");
       setShowNewUserForm(false);
       setNewUser({ firstName: "", lastName: "", email: "", role: "ADMIN", universityId: "", departmentId: "" });
+      setNewUniversityName("");
+      setNewUniversityTown("");
+      await fetchResources();
       void fetchUsers();
     } catch (error: any) {
       toast.error(error?.message || "Failed to create user");
@@ -207,8 +228,23 @@ export default function AdminUsersPage() {
                           onChange={(e) => setNewUser({ ...newUser, universityId: e.target.value })}
                         >
                           <option value="">Select University...</option>
+                          <option value="__NEW__">+ Add New University</option>
                           {universities.map((uni) => <option key={uni.id} value={uni.id}>{uni.name}</option>)}
                         </select>
+                        {newUser.universityId === "__NEW__" && (
+                          <div className="mt-2 grid grid-cols-1 md:grid-cols-2 gap-2">
+                            <Input
+                              placeholder="New university name"
+                              value={newUniversityName}
+                              onChange={(e) => setNewUniversityName(e.target.value)}
+                            />
+                            <Input
+                              placeholder="Town / address (optional)"
+                              value={newUniversityTown}
+                              onChange={(e) => setNewUniversityTown(e.target.value)}
+                            />
+                          </div>
+                        )}
                       </div>
                     </>
                   ) : (
