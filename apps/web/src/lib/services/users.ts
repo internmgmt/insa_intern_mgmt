@@ -8,6 +8,7 @@ export type ListUsersParams = {
   search?: string;
   isActive?: boolean;
   departmentId?: string;
+  universityId?: string;
 };
 
 export async function listUsers(params: ListUsersParams = {}, token?: string) {
@@ -18,6 +19,7 @@ export async function listUsers(params: ListUsersParams = {}, token?: string) {
   if (params.search) qs.set("search", params.search);
   if (typeof params.isActive === "boolean") qs.set("isActive", String(params.isActive));
   if (params.departmentId) qs.set("departmentId", params.departmentId);
+  if (params.universityId) qs.set("universityId", params.universityId);
   const query = qs.toString();
   const path = `/users${query ? `?${query}` : ""}`;
   return apiFetch<ApiSuccess<Paginated<User>>>(path, { method: "GET", token });
