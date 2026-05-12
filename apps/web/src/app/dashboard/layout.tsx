@@ -68,18 +68,18 @@ export default function DashboardLayout({
       </aside>
 
       {/* Main Content - Margin adjusts smoothly with sidebar hover */}
-      <div
-        className="flex flex-col min-h-screen w-full transition-[margin] duration-200 ease-out md:ml-[76px] peer-hover/sidebar:md:ml-[260px]"
-      >
-        <Topbar />
-        <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8 lg:p-10 overflow-x-hidden">
-          <div className="mx-auto w-full max-w-6xl animate-fade-in">
-            <NotificationProvider>
+      <NotificationProvider>
+        <div
+          className="flex flex-col min-h-screen w-full transition-[margin] duration-200 ease-out md:ml-[76px] peer-hover/sidebar:md:ml-[260px]"
+        >
+          <Topbar />
+          <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8 lg:p-10 overflow-x-hidden">
+            <div className="mx-auto w-full max-w-6xl animate-fade-in">
               {children}
-            </NotificationProvider>
-          </div>
-        </main>
-      </div>
+            </div>
+          </main>
+        </div>
+      </NotificationProvider>
     </div>
   );
 }
