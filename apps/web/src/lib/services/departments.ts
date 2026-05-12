@@ -21,6 +21,10 @@ export async function createDepartment(body: { name: string; type: DepartmentTyp
   return apiFetch<ApiSuccess<Department>>(`/departments`, { method: "POST", body, token });
 }
 
+export async function getDepartmentById(id: string, token?: string) {
+  return apiFetch<ApiSuccess<Department>>(`/departments/${id}`, { method: "GET", token });
+}
+
 export async function updateDepartment(id: string, body: { name?: string; description?: string }, token?: string) {
   return apiFetch<ApiSuccess<Department>>(`/departments/${id}`, { method: "PATCH", body, token });
 }
