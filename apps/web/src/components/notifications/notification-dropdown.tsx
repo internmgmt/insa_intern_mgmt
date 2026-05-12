@@ -12,7 +12,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   Bell,
   Check,
@@ -132,7 +131,7 @@ export function NotificationDropdown() {
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
         
-        <ScrollArea className="h-96">
+        <div className="max-h-96 overflow-y-auto">
           {notifications.length === 0 ? (
             <div className="p-4 text-center text-muted-foreground">
               <Bell className="h-8 w-8 mx-auto mb-2 opacity-50" />
@@ -210,7 +209,7 @@ export function NotificationDropdown() {
               );
             })
           )}
-        </ScrollArea>
+        </div>
         
         {notifications.length > 0 && (
           <>
