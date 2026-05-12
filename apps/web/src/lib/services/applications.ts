@@ -23,6 +23,7 @@ export type ListApplicationsParams = {
   limit?: number;
   status?: ApplicationStatus;
   universityId?: string;
+  departmentId?: string;
   academicYear?: string;
   startDate?: string;
   endDate?: string;
@@ -34,6 +35,7 @@ export async function listApplications(params: ListApplicationsParams = {}, toke
   if (params.limit) qs.set("limit", String(params.limit));
   if (params.status) qs.set("status", params.status);
   if (params.universityId) qs.set("universityId", params.universityId);
+  if (params.departmentId) qs.set("departmentId", params.departmentId);
   if (params.academicYear) qs.set("academicYear", params.academicYear);
   if (params.startDate) qs.set("startDate", params.startDate);
   if (params.endDate) qs.set("endDate", params.endDate);
