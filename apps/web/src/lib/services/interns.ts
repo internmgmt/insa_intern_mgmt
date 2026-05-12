@@ -6,6 +6,7 @@ export type ListInternsParams = {
   limit?: number;
   status?: "ACTIVE" | "COMPLETED" | "TERMINATED";
   departmentId?: string;
+  universityId?: string;
   supervisorId?: string;
   search?: string;
   startDateFrom?: string;
@@ -21,6 +22,7 @@ export async function listInterns(params: ListInternsParams = {}, token?: string
   }
   if (params.status) qs.set("status", params.status);
   if (params.departmentId) qs.set("departmentId", params.departmentId);
+  if (params.universityId) qs.set("universityId", params.universityId);
   if (params.supervisorId) qs.set("supervisorId", params.supervisorId);
   if (params.search) qs.set("search", params.search);
   if (params.startDateFrom) qs.set("startDateFrom", params.startDateFrom);
