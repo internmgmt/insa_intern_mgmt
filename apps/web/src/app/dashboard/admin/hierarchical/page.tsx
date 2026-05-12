@@ -290,7 +290,9 @@ export default function HierarchicalAdminPage() {
         
         {/* Get unique years from applications */}
         {(() => {
-          const years = [...new Set((data.applications || []).map((app: any) => app.academicYear))];
+          const years = Array.from(
+            new Set((data.applications || []).map((app: any) => app.academicYear))
+          ).map((year) => String(year)).filter((year) => year.length > 0);
           return years.map(year => (
             <Card key={year} className="hover:shadow-md transition-shadow cursor-pointer group mb-4"
                   onClick={() => navigateTo({ level: 'year', year })}>
