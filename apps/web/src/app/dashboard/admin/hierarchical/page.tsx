@@ -36,6 +36,7 @@ interface NavigationState {
 
 export default function HierarchicalAdminPage() {
   const { token } = useAuth();
+  const authToken = token ?? undefined;
   const [navigation, setNavigation] = useState<NavigationState>({ level: 'root' });
   const [loading, setLoading] = useState(false);
   const [data, setData] = useState<any>({});
@@ -78,8 +79,8 @@ export default function HierarchicalAdminPage() {
 
   const fetchRootData = async () => {
     const [universitiesRes, departmentsRes] = await Promise.all([
-      listUniversities({ page: 1, limit: 100 }, token),
-      listDepartments({ page: 1, limit: 100 }, token)
+      listUniversities({ page: 1, limit: 100 }, authToken),
+      listDepartments({ page: 1, limit: 100 }, authToken)
     ]);
 
     const universities = (universitiesRes as any)?.data?.items || [];
@@ -102,10 +103,10 @@ export default function HierarchicalAdminPage() {
 
   const fetchUniversityData = async () => {
     const [departmentsRes, applicationsRes, studentsRes, internsRes] = await Promise.all([
-      listDepartments({ page: 1, limit: 100 }, token),
-      listApplications({ universityId: navigation.universityId, limit: 100 }, token),
-      listStudents({ universityId: navigation.universityId, limit: 100 }, token),
-      listInterns({ universityId: navigation.universityId, limit: 100 }, token)
+      listDepartments({ page: 1, limit: 100 }, authToken),
+      listApplications({ universityId: navigation.universityId, limit: 100 }, authToken),
+      listStudents({ universityId: navigation.universityId, limit: 100 }, authToken),
+      listInterns({ universityId: navigation.universityId, limit: 100 }, authToken)
     ]);
 
     setData({
@@ -118,8 +119,8 @@ export default function HierarchicalAdminPage() {
 
   const fetchDepartmentData = async () => {
     const [internsRes, applicationsRes] = await Promise.all([
-      listInterns({ departmentId: navigation.departmentId, limit: 100 }, token),
-      listApplications({ departmentId: navigation.departmentId, limit: 100 }, token)
+      listInterns({ departmentId: navigation.departmentId, limit: 100 }, authToken),
+      listApplications({ departmentId: navigation.departmentId, limit: 100 }, authToken)
     ]);
 
     setData({
@@ -133,7 +134,7 @@ export default function HierarchicalAdminPage() {
       universityId: navigation.universityId,
       academicYear: navigation.year,
       limit: 100
-    }, token);
+    }, authToken);
 
     setData({
       applications: (applicationsRes as any)?.data?.items || [],

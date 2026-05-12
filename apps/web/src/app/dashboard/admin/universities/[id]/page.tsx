@@ -54,17 +54,19 @@ export default function UniversityDetailPage() {
     try {
       setLoading(true);
 
+      const authToken = token ?? undefined;
+
       // Fetch university details
-      const universityRes = await getUniversityById(universityId, token);
+      const universityRes = await getUniversityById(universityId, authToken);
       setUniversity(universityRes.data);
 
       // Fetch related data
       const [applicationsRes, studentsRes, internsRes, usersRes, documentsRes] = await Promise.all([
-        listApplications({ universityId, limit: 100 }, token),
-        listStudents({ universityId, limit: 100 }, token),
-        listInterns({ universityId, limit: 100 }, token),
-        listUsers({ universityId, limit: 100 }, token),
-        listDocuments({ universityId, limit: 100 }, token)
+        listApplications({ universityId, limit: 100 }, authToken),
+        listStudents({ universityId, limit: 100 }, authToken),
+        listInterns({ universityId, limit: 100 }, authToken),
+        listUsers({ universityId, limit: 100 }, authToken),
+        listDocuments({ universityId, limit: 100 }, authToken)
       ]);
 
       setApplications((applicationsRes as any)?.data?.items || []);

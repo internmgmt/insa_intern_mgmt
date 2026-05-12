@@ -46,15 +46,17 @@ export default function DepartmentDetailPage() {
     try {
       setLoading(true);
 
+      const authToken = token ?? undefined;
+
       // Fetch department details
-      const departmentRes = await getDepartmentById(departmentId, token);
+      const departmentRes = await getDepartmentById(departmentId, authToken);
       setDepartment(departmentRes.data);
 
       // Fetch related data
       const [internsRes, applicationsRes, usersRes] = await Promise.all([
-        listInterns({ departmentId, limit: 100 }, token),
-        listApplications({ departmentId, limit: 100 }, token),
-        listUsers({ departmentId, limit: 100 }, token)
+        listInterns({ departmentId, limit: 100 }, authToken),
+        listApplications({ departmentId, limit: 100 }, authToken),
+        listUsers({ departmentId, limit: 100 }, authToken)
       ]);
 
       setInterns((internsRes as any)?.data?.items || []);
