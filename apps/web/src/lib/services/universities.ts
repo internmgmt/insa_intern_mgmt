@@ -22,3 +22,22 @@ export async function listUniversities(params: ListUniversitiesParams = {}, toke
 export async function getUniversityById(id: string, token?: string) {
   return apiFetch<ApiSuccess<University>>(`/universities/${id}`, { method: "GET", token });
 }
+
+export async function createUniversity(
+  body: { name: string; address?: string; contactEmail?: string; contactPhone?: string },
+  token?: string,
+) {
+  return apiFetch<ApiSuccess<University>>(`/universities`, { method: "POST", token, body });
+}
+
+export async function updateUniversity(
+  id: string,
+  body: { name?: string; address?: string; contactPhone?: string; contactEmail?: string },
+  token?: string,
+) {
+  return apiFetch<ApiSuccess<University>>(`/universities/${id}`, { method: "PUT", token, body });
+}
+
+export async function deleteUniversity(id: string, token?: string) {
+  return apiFetch<ApiSuccess<void>>(`/universities/${id}`, { method: "DELETE", token });
+}

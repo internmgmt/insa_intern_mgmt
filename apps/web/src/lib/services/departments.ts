@@ -28,3 +28,7 @@ export async function getDepartmentById(id: string, token?: string) {
 export async function updateDepartment(id: string, body: { name?: string; description?: string }, token?: string) {
   return apiFetch<ApiSuccess<Department>>(`/departments/${id}`, { method: "PATCH", body, token });
 }
+
+export async function deleteDepartment(id: string, token?: string) {
+  return apiFetch<ApiSuccess<void>>(`/departments/${id}`, { method: "DELETE", token });
+}
