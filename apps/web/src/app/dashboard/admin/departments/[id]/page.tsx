@@ -16,17 +16,29 @@ import {
   ArrowLeft,
   Edit,
   Eye,
-  UserCheck
+  UserCheck,
+  Trash2
 } from "lucide-react";
 import Link from "next/link";
-import { getDepartmentById } from "@/lib/services/departments";
+import { deleteDepartment, getDepartmentById } from "@/lib/services/departments";
 import { listInterns } from "@/lib/services/interns";
 import { listApplications } from "@/lib/services/applications";
 import { listUsers } from "@/lib/services/users";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
 
 export default function DepartmentDetailPage() {
-  const { token } = useAuth();
+  const { token, user } = useAuth();
   const params = useParams();
   const router = useRouter();
   const departmentId = params.id as string;
@@ -36,6 +48,7 @@ export default function DepartmentDetailPage() {
   const [interns, setInterns] = useState<any[]>([]);
   const [applications, setApplications] = useState<any[]>([]);
   const [users, setUsers] = useState<any[]>([]);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
     if (!token || !departmentId) return;
@@ -101,6 +114,21 @@ export default function DepartmentDetailPage() {
     return <Badge variant={config.variant}>{config.label}</Badge>;
   };
 
+  const handleDeleteDepartment = async () => {
+    if (!token || !departmentId) return;
+
+    try {
+      setIsDeleting(true);
+      await deleteDepartment(departmentId, token ?? undefined);
+      toast.success("Department deleted successfully");
+      router.push("/dashboard/admin/departments");
+    } catch (error: any) {
+      toast.error(error?.message || "Failed to delete department");
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center py-20">
@@ -142,6 +170,35 @@ export default function DepartmentDetailPage() {
             <Edit className="h-4 w-4 mr-2" />
             Edit
           </Button>
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button
+                variant="destructive"
+                size="sm"
+                disabled={user?.role !== "ADMIN" || isDeleting}
+              >
+                <Trash2 className="h-4 w-4 mr-2" />
+                {isDeleting ? "Deleting..." : "Delete"}
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Delete department permanently?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  This action cannot be undone. Related application and intern records may be affected by backend constraints.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction
+                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                  onClick={handleDeleteDepartment}
+                >
+                  Delete Permanently
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
         </div>
       </div>
 

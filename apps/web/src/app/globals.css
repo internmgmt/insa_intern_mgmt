@@ -52,14 +52,16 @@
   --popover: 255 255 255;
   --popover-foreground: 34 38 43;
 
-  --primary: 74 124 125; /* Soft Teal */
+  --primary: 74 124 125;
+  /* Soft Teal */
   --primary-foreground: 255 255 255;
 
   --secondary: 226 232 240;
   --secondary-foreground: 34 38 43;
 
   --muted: 241 243 245;
-  --muted-foreground: 100 110 120;
+  --muted-foreground: 64 74 86;
+  /* Darker for better contrast in light mode */
 
   --accent: 242 246 250;
   --accent-foreground: 34 38 43;
@@ -79,10 +81,9 @@
 
   --radius: 0.625rem;
 
-  /* Font Fallbacks for build environments with restricted internet */
-  --font-geist-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
-  --font-geist-mono: "JetBrains Mono", ui-mono, monospace;
-  --font-newsreader: "Georgia", ui-serif, serif;
+  /* Roboto font variables - loaded via next/font/google */
+  --font-roboto: var(--font-roboto, "Roboto", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif);
+  --font-jetbrains-mono: var(--font-jetbrains-mono, "JetBrains Mono", monospace);
 }
 
 .dark {
@@ -103,7 +104,8 @@
   --secondary-foreground: 224 229 235;
 
   --muted: 34 38 43;
-  --muted-foreground: 156 163 175;
+  --muted-foreground: 176 184 198;
+  /* Lighter for better contrast in dark mode */
 
   --accent: 184 134 107;
   --accent-foreground: 18 20 23;
@@ -133,13 +135,20 @@
 /* New user-provided palettes */
 [data-palette="obsidian"] {
   /* softened blue palette */
-  --background: 251 251 253; /* #FBFBFD */
-  --card: 245 247 251; /* #F5F7FB */
-  --foreground: 28 27 35; /* slightly warmer near-black */
+  --background: 251 251 253;
+  /* #FBFBFD */
+  --card: 245 247 251;
+  /* #F5F7FB */
+  --foreground: 28 27 35;
+  /* slightly warmer near-black */
   --muted: 245 247 251;
-  --primary: 30 99 216; /* #1E63D8, slightly more muted */
+  --muted-foreground: 60 68 90;
+  /* Better contrast in light mode */
+  --primary: 30 99 216;
+  /* #1E63D8, slightly more muted */
   --primary-foreground: 255 255 255;
-  --secondary: 95 105 120; /* Lightened secondary for better contrast */
+  --secondary: 95 105 120;
+  /* Lightened secondary for better contrast */
   --success: 16 185 129;
   --warning: 245 158 11;
   --destructive: 239 68 68;
@@ -153,7 +162,10 @@
   --card: 22 23 29;
   --foreground: 230 234 240;
   --muted: 28 38 56;
-  --primary: 51 94 217; /* #335ED9 */
+  --muted-foreground: 176 186 208;
+  /* Better contrast in dark mode */
+  --primary: 51 94 217;
+  /* #335ED9 */
   --primary-foreground: 255 255 255;
   --secondary: 98 108 128;
   --success: 52 211 153;
@@ -166,11 +178,17 @@
 
 [data-palette="slateforge"] {
   /* refined purple slate */
-  --background: 254 254 255; /* #FEFEFF */
-  --card: 250 250 252; /* #FAFAFC */
-  --foreground: 15 23 36; /* deeper near-black */
+  --background: 254 254 255;
+  /* #FEFEFF */
+  --card: 250 250 252;
+  /* #FAFAFC */
+  --foreground: 15 23 36;
+  /* deeper near-black */
   --muted: 245 247 251;
-  --primary: 107 59 214; /* #6B3BD6 - slightly warmer, less neon */
+  --muted-foreground: 55 65 81;
+  /* Better contrast in light mode */
+  --primary: 107 59 214;
+  /* #6B3BD6 - slightly warmer, less neon */
   --primary-foreground: 255 255 255;
   --secondary: 55 65 81;
   --success: 5 150 105;
@@ -186,7 +204,10 @@
   --card: 18 18 28;
   --foreground: 243 244 246;
   --muted: 28 38 56;
-  --primary: 122 76 230; /* #7A4CE6 */
+  --muted-foreground: 176 184 202;
+  /* Better contrast in dark mode */
+  --primary: 122 76 230;
+  /* #7A4CE6 */
   --primary-foreground: 255 255 255;
   --secondary: 70 78 97;
   --success: 52 211 153;
@@ -199,15 +220,21 @@
 
 [data-palette="embercore"] {
   /* warmer ember tones, less saturated */
-  --background: 255 250 248; /* #FFFAF8 */
+  --background: 255 250 248;
+  /* #FFFAF8 */
   --card: 255 252 250;
   --foreground: 41 18 12;
   --muted: 245 247 251;
-  --primary: 212 70 46; /* #D4482E slightly darker */
+  --muted-foreground: 80 50 35;
+  /* Better contrast in light mode */
+  --primary: 212 70 46;
+  /* #D4482E slightly darker */
   --primary-foreground: 255 255 255;
-  --secondary: 135 95 75; /* Further lightened secondary for 4.5:1 contrast */
+  --secondary: 135 95 75;
+  /* Further lightened secondary for 4.5:1 contrast */
   --success: 46 139 87;
-  --warning: 180 90 40; /* Darkened warning for better contrast */
+  --warning: 180 90 40;
+  /* Darkened warning for better contrast */
   --destructive: 193 39 45;
   --border: 243 236 231;
   --input: 254 246 243;
@@ -219,7 +246,10 @@
   --card: 26 16 11;
   --foreground: 250 238 233;
   --muted: 28 38 56;
-  --primary: 225 74 55; /* #E14A37 */
+  --muted-foreground: 196 168 150;
+  /* Better contrast in dark mode */
+  --primary: 225 74 55;
+  /* #E14A37 */
   --primary-foreground: 255 255 255;
   --secondary: 138 96 79;
   --success: 60 179 113;
@@ -236,7 +266,10 @@
   --card: 246 247 254;
   --foreground: 27 26 44;
   --muted: 245 247 251;
-  --primary: 88 88 230; /* #5858EA - softer than before */
+  --muted-foreground: 60 65 100;
+  /* Better contrast in light mode */
+  --primary: 88 88 230;
+  /* #5858EA - softer than before */
   --primary-foreground: 255 255 255;
   --secondary: 76 79 113;
   --success: 59 130 97;
@@ -252,7 +285,10 @@
   --card: 18 17 32;
   --foreground: 232 231 255;
   --muted: 28 38 56;
-  --primary: 110 112 244; /* #6E70F4 */
+  --muted-foreground: 180 185 220;
+  /* Better contrast in dark mode */
+  --primary: 110 112 244;
+  /* #6E70F4 */
   --primary-foreground: 255 255 255;
   --secondary: 107 110 146;
   --success: 74 222 128;
@@ -269,11 +305,14 @@
   --card: 255 255 255;
   --foreground: 34 38 43;
   --muted: 241 243 245;
-  --muted-foreground: 100 110 120;
-  --primary: 74 124 125; /* Darker soft teal */
+  --muted-foreground: 64 74 86;
+  /* Better contrast in light mode */
+  --primary: 74 124 125;
+  /* Darker soft teal */
   --primary-foreground: 255 255 255;
   --secondary: 226 232 240;
-  --accent: 138 100 79; /* Darker weathered copper */
+  --accent: 138 100 79;
+  /* Darker weathered copper */
   --success: 60 140 110;
   --warning: 180 120 70;
   --destructive: 180 80 80;
@@ -288,6 +327,8 @@
   --card: 28 31 35;
   --foreground: 224 229 235;
   --muted: 34 38 43;
+  --muted-foreground: 176 184 198;
+  /* Better contrast in dark mode */
   --primary: 107 158 159;
   --primary-foreground: 18 20 23;
   --secondary: 58 63 69;
@@ -307,8 +348,12 @@
 body {
   background-color: rgb(var(--background));
   color: rgb(var(--foreground));
-  font-family: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
-  font-feature-settings: "rlig" 1, "calt" 1;
+  font-family: var(--font-roboto), -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-size: 16px;
+  font-weight: 400;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 h1,
@@ -317,9 +362,40 @@ h3,
 h4,
 h5,
 h6 {
-  font-family: var(--font-newsreader), ui-serif, Georgia, Cambria, "Times New Roman", Times, serif;
-  font-weight: 500;
-  letter-spacing: -0.02em;
+  font-family: var(--font-roboto), -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  line-height: 1.25;
+}
+
+h1 {
+  font-size: 2rem;
+  font-weight: 700;
+}
+
+h2 {
+  font-size: 1.5rem;
+  font-weight: 700;
+}
+
+h3 {
+  font-size: 1.25rem;
+  font-weight: 600;
+}
+
+h4 {
+  font-size: 1.125rem;
+  font-weight: 600;
+}
+
+h5 {
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+h6 {
+  font-size: 0.875rem;
+  font-weight: 600;
 }
 
 ::selection {
@@ -327,8 +403,13 @@ h6 {
 }
 
 /* Subtle elevation tokens */
-.elevation-1 { box-shadow: 0 1px 2px rgb(0 0 0 / 0.05), 0 1px 1px rgb(0 0 0 / 0.03); }
-.elevation-2 { box-shadow: 0 4px 12px rgb(0 0 0 / 0.06), 0 2px 6px rgb(0 0 0 / 0.04); }
+.elevation-1 {
+  box-shadow: 0 1px 2px rgb(0 0 0 / 0.05), 0 1px 1px rgb(0 0 0 / 0.03);
+}
+
+.elevation-2 {
+  box-shadow: 0 4px 12px rgb(0 0 0 / 0.06), 0 2px 6px rgb(0 0 0 / 0.04);
+}
 
 /* Glass header backdrop - changed to solid to avoid transparency issues requested by user */
 .header-glass {
@@ -349,18 +430,39 @@ h6 {
 
 /* Micro-animations */
 @keyframes fade-in {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
 }
 
 @keyframes slide-up-fade {
-  from { opacity: 0; transform: translateY(6px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
-.animate-fade-in { animation: fade-in 220ms ease-out both; }
-.animate-slide-up-fade { animation: slide-up-fade 260ms cubic-bezier(0.22, 1, 0.36, 1) both; }
+.animate-fade-in {
+  animation: fade-in 220ms ease-out both;
+}
+
+.animate-slide-up-fade {
+  animation: slide-up-fade 260ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
 
 @media (prefers-reduced-motion: reduce) {
-  .animate-fade-in, .animate-slide-up-fade { animation: none; }
+
+  .animate-fade-in,
+  .animate-slide-up-fade {
+    animation: none;
+  }
 }

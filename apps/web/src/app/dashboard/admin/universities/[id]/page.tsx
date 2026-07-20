@@ -20,19 +20,31 @@ import {
   ArrowLeft,
   Edit,
   Download,
-  Eye
+  Eye,
+  Trash2
 } from "lucide-react";
 import Link from "next/link";
-import { getUniversityById } from "@/lib/services/universities";
+import { deleteUniversity, getUniversityById } from "@/lib/services/universities";
 import { listApplications } from "@/lib/services/applications";
 import { listStudents } from "@/lib/services/students";
 import { listInterns } from "@/lib/services/interns";
 import { listUsers } from "@/lib/services/users";
 import { listDocuments } from "@/lib/services/documents";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
 
 export default function UniversityDetailPage() {
-  const { token } = useAuth();
+  const { token, user } = useAuth();
   const params = useParams();
   const router = useRouter();
   const universityId = params.id as string;
@@ -44,6 +56,7 @@ export default function UniversityDetailPage() {
   const [interns, setInterns] = useState<any[]>([]);
   const [users, setUsers] = useState<any[]>([]);
   const [documents, setDocuments] = useState<any[]>([]);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
     if (!token || !universityId) return;
@@ -99,6 +112,21 @@ export default function UniversityDetailPage() {
     return <Badge variant={config.variant}>{config.label}</Badge>;
   };
 
+  const handleDeleteUniversity = async () => {
+    if (!token || !universityId) return;
+
+    try {
+      setIsDeleting(true);
+      await deleteUniversity(universityId, token ?? undefined);
+      toast.success("University deleted successfully");
+      router.push("/dashboard/admin/universities");
+    } catch (error: any) {
+      toast.error(error?.message || "Failed to delete university");
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center py-20">
@@ -140,6 +168,35 @@ export default function UniversityDetailPage() {
             <Edit className="h-4 w-4 mr-2" />
             Edit
           </Button>
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button
+                variant="destructive"
+                size="sm"
+                disabled={user?.role !== "ADMIN" || isDeleting}
+              >
+                <Trash2 className="h-4 w-4 mr-2" />
+                {isDeleting ? "Deleting..." : "Delete"}
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Delete university permanently?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  This action cannot be undone. All related records may become inaccessible if your backend enforces cascading rules.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction
+                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                  onClick={handleDeleteUniversity}
+                >
+                  Delete Permanently
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
         </div>
       </div>
 
